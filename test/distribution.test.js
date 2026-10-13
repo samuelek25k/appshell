@@ -3,12 +3,12 @@ import assert from 'node:assert/strict';
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { pathToFileURL } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import * as tar from 'tar';
 import { createStore, latestRelease, pack, sha256, sourceAllowed, compareVersions, parseCatalog } from '../packages/distribution/index.js';
 
 const HOST = '0.1.0';
-const fixture = new URL('./fixtures/apps/victim', import.meta.url).pathname;
+const fixture = fileURLToPath(new URL('./fixtures/apps/victim', import.meta.url));
 const devPolicy = { developerMode: true, allowedSources: ['https://github.com/example/'] };
 
 /** @typedef {import('../packages/distribution/index.js').Release} Release */
@@ -116,7 +116,8 @@ test('sources outside the allowlist are refused before download', async (t) => {
   await assert.rejects(store.install(entry([v1]), v1, { hostVersion: HOST, policy: { allowedSources: ['https://github.com/example/'] } }), { code: 'SOURCE_NOT_ALLOWED' }, 'file:// needs developer mode');
 });
 
-test('symlinks in a package are not extracted', async (t) => {
+// Creating symlinks on Windows needs extra privileges; the extraction filter is platform-independent.
+test('symlinks in a package are not extracted', { skip: process.platform === 'win32' }, async (t) => {
   const work = workspace(t);
   const src = join(work, 'src');
   cpSync(fixture, src, { recursive: true });
