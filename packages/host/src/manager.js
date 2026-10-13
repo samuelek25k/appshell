@@ -56,7 +56,7 @@ export function createManager({ policy, catalogUrl, root, hostVersion, fetch }) 
       for (const [id, s] of installed) {
         if (!catalog.some((e) => e.id === id)) rows.push({ id, title: id, publisher: s.current.repository, description: '', repository: s.current.repository, latest: null, installed: s.current.version, previous: s.previous?.version ?? null });
       }
-      return { rows, error: catalogError };
+      return { rows, error: catalogError, enabled: Boolean(catalogUrl) };
     },
 
     /** Installs or updates to the newest release in the product's channel. @param {string} id */

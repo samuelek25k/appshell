@@ -65,8 +65,9 @@ function render(state) {
   renderCatalog(state.manager);
 }
 
-/** @param {{ rows: any[], error: string | null, actionError: string | null, pendingInstall: string | null }} manager */
+/** @param {{ rows: any[], error: string | null, enabled: boolean, actionError: string | null, pendingInstall: string | null }} manager */
 function renderCatalog(manager) {
+  $('catalog-section').hidden = !manager.enabled && manager.rows.length === 0;
   const pending = manager.rows.find((r) => r.id === manager.pendingInstall);
   $('install-confirm').hidden = !pending;
   if (pending) {
