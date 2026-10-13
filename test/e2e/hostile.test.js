@@ -58,7 +58,7 @@ test('hostile app cannot escape its sandbox', { timeout: 90_000 }, async (t) => 
 
   const escaped = Object.entries(report).filter(([, outcome]) => outcome !== 'blocked');
   assert.deepEqual(escaped, [], `escapes: ${JSON.stringify(escaped, null, 2)}`);
-  assert.ok(Object.keys(report).length >= 20, `expected every check to report, got ${Object.keys(report).join(', ')}`);
+  assert.ok(Object.keys(report).length >= 21, `expected every check to report, got ${Object.keys(report).join(', ')}`);
 
   const victim = readJson(join(userData, 'apps', 'victim', 'storage.json'));
   assert.equal(victim.token, 'victim-token', 'victim data was changed or never written');

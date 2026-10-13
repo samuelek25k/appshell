@@ -24,6 +24,7 @@ await check('otherAppStorage', async () => ((await storage.get('token')) === nul
 await check('undeclaredSecret', () => denied('CAPABILITY_DENIED')(call('secrets.get', { name: 'victim-key' })));
 await check('undeclaredNotification', () => denied('CAPABILITY_DENIED')(call('notifications.show', { title: 'x' })));
 await check('spoofWidget', () => denied('CAPABILITY_DENIED')(call('widgets.update', { id: 'status', descriptor: { blocks: [] } })));
+await check('undeclaredIdentity', () => denied('CAPABILITY_DENIED')(call('identity.token', { audience: 'app:victim' })));
 await check('hostMethod', () => denied('UNKNOWN_METHOD')(call('host:open', {})));
 await check('prototypeMethod', () => denied('UNKNOWN_METHOD')(call('toString', {})));
 await check('notificationPermission', async () => ((await Notification.requestPermission()) === 'granted' ? 'ESCAPED: granted' : 'blocked'));
