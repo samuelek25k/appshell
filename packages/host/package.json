@@ -5,6 +5,7 @@
   "main": "src/main.js",
   "dependencies": {
     "@appshell/contracts": "workspace:*",
+    "@appshell/distribution": "workspace:*",
     "@appshell/sdk": "workspace:*"
   }
 }
