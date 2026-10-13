@@ -34,4 +34,6 @@ test('capability checks name what is missing', () => {
   assert.equal(METHODS['secrets.get'].requires(manifest, { name: 'other' }), 'secrets:other');
   assert.equal(METHODS['notifications.show'].requires(manifest, {}), 'notifications');
   assert.equal(METHODS['widgets.update'].requires(manifest, { id: 'nope' }), 'widgets:nope');
+  assert.equal(METHODS['identity.token'].requires(manifest, {}), 'identity');
+  assert.equal(METHODS['identity.token'].requires({ ...manifest, capabilities: { identity: true } }, {}), null);
 });

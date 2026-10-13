@@ -8,6 +8,7 @@ import { fail } from './services.js';
  *   policy: { capabilities: 'warn' | 'enforce', developerMode?: boolean },
  *   services: ReturnType<typeof import('./services.js').createServices>,
  *   backendFor: (appId: string) => ReturnType<typeof import('./backend.js').createBackend>,
+ *   identity: ReturnType<typeof import('./identity.js').createIdentity>,
  *   onTitle: (appId: string, title: string) => void,
  *   onWidget: (appId: string, widgetId: string, descriptor: object) => void,
  *   onCloseResponse: (appId: string, nonce: string, allow: boolean) => void,
@@ -47,6 +48,8 @@ export function createBridge(deps) {
     'notifications.show': (_id, p) => services.notify(p.title, p.body),
     'log.write': (id, p) => services.log(id, p.level, p.message),
     'backend.call': (id, p) => deps.backendFor(id).call(p.method, p.params),
+    'identity.token': (id) => deps.identity.mint(id),
+    'identity.publicKey': () => deps.identity.publicJwk(),
   };
 
   return async (app, method, params) => {

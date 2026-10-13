@@ -38,6 +38,13 @@ export const widgets = {
   onAction: (/** @type {(e: { widget: string, action: string }) => void} */ fn) => bridge.on('widgets.action', fn),
 };
 
+export const identity = {
+  /** A token for this app (`aud: app:<id>`), valid 5 minutes. Needs `capabilities.identity`. */
+  token: () => call('identity.token'),
+  /** The host's public key (JWK) for verifying tokens. */
+  publicKey: () => call('identity.publicKey'),
+};
+
 export const backend = {
   call: (/** @type {string} */ method, /** @type {object} */ params = {}) => call('backend.call', { method, params }),
 };
