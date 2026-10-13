@@ -1,12 +1,13 @@
 // Appshell host entry. Usage in development:
-//   electron packages/host --product <product.json> [--apps <dir>] [--user-data <dir>] [<protocol>://<app-id>/<path>]
-import { app, BrowserWindow, ipcMain, protocol } from 'electron';
+//   electron packages/host --product <product.json> [--apps <dir>] [--catalog <url>] [--user-data <dir>] [<protocol>://<app-id>/<path>]
+import { app, BrowserWindow, ipcMain, net, protocol, session } from 'electron';
 import { randomUUID } from 'node:crypto';
 import { appendFileSync, mkdirSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { CLOSE_VETO_TIMEOUT_MS } from '@appshell/contracts';
-import { loadProduct, loadApps } from './registry.js';
+import { loadProduct, loadApps, HOST_VERSION } from './registry.js';
+import { createManager } from './manager.js';
 import { createServices } from './services.js';
 import { createBackend } from './backend.js';
 import { createBridge } from './bridge.js';
@@ -42,8 +43,20 @@ protocol.registerSchemesAsPrivileged([
 
 if (!app.requestSingleInstanceLock()) app.exit(0);
 
-const apps = loadApps(product, appsRoot, hostLog);
+// A --catalog override is for app authors only.
+const catalogFlag = flag('--catalog');
+if (catalogFlag && !product.policy.developerMode) throw new Error('--catalog needs policy.developerMode');
+const manager = createManager({
+  policy: product.policy,
+  catalogUrl: catalogFlag ?? product.catalog,
+  root: join(dataRoot, 'installed'),
+  hostVersion: HOST_VERSION,
+  fetch: /** @type {typeof globalThis.fetch} */ ((input, init) => net.fetch(/** @type {any} */ (input), init)),
+});
+let apps = loadApps(product, appsRoot, manager.installed(), hostLog);
 const services = createServices(dataRoot);
+/** @type {string | null} */
+let managerError = null;
 
 /** @typedef {{ view: Electron.WebContentsView, title: string }} Running */
 /** @type {Map<string, Running>} */
@@ -104,7 +117,28 @@ function publish() {
         const descriptor = widgets.get(manifest.id)?.[w.id];
         return descriptor ? [{ appId: manifest.id, widgetId: w.id, title: w.title, descriptor }] : [];
       })),
+    manager: { ...manager.rows(), actionError: managerError },
   });
+}
+
+/**
+ * Runs an install, update, rollback or removal: the app is stopped first, so it never
+ * runs from files that are being replaced, and the app list is reloaded afterwards.
+ * @param {string} appId
+ * @param {() => unknown} action
+ */
+async function manage(appId, action) {
+  if (apps.get(appId)?.protected) { managerError = `${appId} is a core app`; publish(); return; }
+  stop(appId);
+  try {
+    await action();
+    managerError = null;
+  } catch (error) {
+    managerError = `${appId}: ${error instanceof Error ? error.message : String(error)}`;
+    hostLog(`manage ${managerError}`);
+  }
+  apps = loadApps(product, appsRoot, manager.installed(), hostLog);
+  publish();
 }
 
 function layout() {
@@ -183,6 +217,14 @@ ipcMain.handle('appshell:call', (event, method, params) => {
   return { ok: false, error: { code: 'UNKNOWN_CALLER', message: 'caller is not a running app' } };
 });
 ipcMain.handle('host:ready', (event) => { if (fromHost(event)) publish(); });
+ipcMain.handle('host:refreshCatalog', async (event) => { if (fromHost(event)) { await manager.refresh(); publish(); } });
+ipcMain.handle('host:install', (event, id) => fromHost(event) && manage(id, () => manager.install(id)));
+ipcMain.handle('host:rollback', (event, id) => fromHost(event) && manage(id, () => manager.rollback(id)));
+ipcMain.handle('host:uninstall', (event, id) => fromHost(event) && manage(id, async () => {
+  manager.uninstall(id);
+  services.removeAppData(id);
+  await session.fromPartition(`persist:app:${id}`).clearStorageData();
+}));
 ipcMain.handle('host:open', (event, id) => fromHost(event) && open(id));
 ipcMain.handle('host:home', (event) => {
   if (!fromHost(event)) return;
@@ -233,5 +275,6 @@ app.whenReady().then(async () => {
   win.webContents.on('preload-error', (_e, file, error) => hostLog(`host preload ${file}: ${error.message}`));
   await win.loadFile(HOST_UI);
   hostLog(`started ${product.name} with ${apps.size} app(s)`);
+  manager.refresh().then(publish);
   links(process.argv).forEach(handleLink);
 });

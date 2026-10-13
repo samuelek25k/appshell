@@ -1,10 +1,11 @@
 // Loads the product configuration and the app manifests it lists.
-import { readFileSync, existsSync, realpathSync } from 'node:fs';
-import { resolve, sep } from 'node:path';
-import { validate, satisfiesEngine } from '@appshell/contracts';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { validate } from '@appshell/contracts';
+import { checkAppDir, isInside } from '@appshell/distribution';
 
 /** @typedef {import('@appshell/contracts').Manifest} Manifest */
-/** @typedef {{ name: string, protocol: string, dataDirectory: string, package: { extension: string, displayName: string }, catalog?: string, apps: { path: string, protected?: boolean }[], policy: { capabilities: 'warn' | 'enforce', developerMode?: boolean } }} Product */
+/** @typedef {{ name: string, protocol: string, dataDirectory: string, package: { extension: string, displayName: string }, catalog?: string, apps: { path: string, protected?: boolean }[], policy: { capabilities: 'warn' | 'enforce', developerMode?: boolean, allowedSources?: string[], channel?: 'stable' | 'beta' } }} Product */
 /** @typedef {{ manifest: Manifest, dir: string, protected: boolean }} InstalledApp */
 
 const HOST_VERSION = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')).version;
@@ -24,45 +25,29 @@ export function loadProduct(productFile) {
 }
 
 /**
- * True when `child` resolves inside `parent`. Used for every app file path.
- * @param {string} parent
- * @param {string} child
- */
-export function isInside(parent, child) {
-  return child === parent || child.startsWith(parent.endsWith(sep) ? parent : parent + sep);
-}
-
-/**
- * Reads and validates each app listed by the product. Invalid apps are skipped and reported.
+ * Pre-installed apps from the product, then apps installed from the catalog.
+ * Invalid apps are skipped and reported; a pre-installed app wins an id clash.
  * @param {Product} product
  * @param {string} appsRoot folder the product's app paths are relative to
+ * @param {{ dir: string }[]} installed folders of current catalog installs
  * @param {(message: string) => void} report
  * @returns {Map<string, InstalledApp>}
  */
-export function loadApps(product, appsRoot, report) {
+export function loadApps(product, appsRoot, installed, report) {
   /** @type {Map<string, InstalledApp>} */
   const apps = new Map();
-  for (const entry of product.apps) {
-    const where = resolve(appsRoot, entry.path);
+  const add = (/** @type {string} */ where, /** @type {boolean} */ isProtected) => {
     try {
-      const dir = realpathSync(where);
-      const manifest = readJson(resolve(dir, 'manifest.json'));
-      const result = validate('manifest', manifest);
-      if (!result.ok) throw new Error(result.errors.join('; '));
-      if (!satisfiesEngine(manifest.engines.appshell, HOST_VERSION)) {
-        throw new Error(`needs appshell ${manifest.engines.appshell}, host is ${HOST_VERSION}`);
-      }
-      for (const file of Object.values(manifest.entry)) {
-        const full = resolve(dir, file);
-        if (!isInside(dir, full) || !existsSync(full)) throw new Error(`entry ${file} missing or outside the app folder`);
-      }
+      const { dir, manifest } = checkAppDir(where, HOST_VERSION);
       if (apps.has(manifest.id)) throw new Error(`duplicate app id ${manifest.id}`);
-      apps.set(manifest.id, { manifest, dir, protected: entry.protected === true });
+      apps.set(manifest.id, { manifest, dir, protected: isProtected });
     } catch (error) {
       report(`Skipped app at ${where}: ${error instanceof Error ? error.message : error}`);
     }
-  }
+  };
+  for (const entry of product.apps) add(resolve(appsRoot, entry.path), entry.protected === true);
+  for (const entry of installed) add(entry.dir, false);
   return apps;
 }
 
-export { HOST_VERSION };
+export { HOST_VERSION, isInside };
