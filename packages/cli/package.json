@@ -1,0 +1,7 @@
+{
+  "name": "@appshell/cli",
+  "version": "0.1.0",
+  "type": "module",
+  "bin": { "appshell": "./bin.js" },
+  "dependencies": { "@appshell/contracts": "workspace:*", "@appshell/distribution": "workspace:*", "@appshell/host": "workspace:*", "@appshell/sdk": "workspace:*" }
+}
