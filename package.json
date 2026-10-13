@@ -1,0 +1,26 @@
+{
+  "name": "appshell",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.28.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "check": "tsc -p tsconfig.json",
+    "test": "node --test test/*.test.js",
+    "e2e": "node --test test/e2e/*.test.js",
+    "secrets": "secretlint \"**/*\"",
+    "start": "electron packages/host --product products/appshell/product.json --apps ../appshell-apps",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "@secretlint/secretlint-rule-preset-recommend": "^13.0.7",
+    "@types/node": "^24.19.2",
+    "electron": "44.7.0",
+    "electron-builder": "26.15.3",
+    "husky": "^9.1.7",
+    "secretlint": "^13.0.7",
+    "typescript": "^7.0.2"
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "name": "@appshell/contracts",
+  "version": "0.1.0",
+  "type": "module",
+  "exports": { ".": "./index.js", "./schemas/*": "./schemas/*" },
+  "dependencies": { "ajv": "^8.17.1" }
+}

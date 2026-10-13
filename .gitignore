@@ -1,0 +1,7 @@
+node_modules/
+out/
+dist/
+*.log
+.appshell-test/
+electron-builder.json
+products/*/apps/

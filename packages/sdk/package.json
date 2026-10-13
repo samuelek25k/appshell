@@ -1,0 +1,9 @@
+{
+  "name": "@appshell/sdk",
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    ".": "./index.js",
+    "./backend": "./backend.cjs"
+  }
+}

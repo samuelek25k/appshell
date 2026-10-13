@@ -1,0 +1,71 @@
+{
+  "$id": "https://appshell.dev/schemas/widget.schema.json",
+  "title": "Appshell widget descriptor",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["blocks"],
+  "properties": {
+    "blocks": {
+      "type": "array",
+      "maxItems": 8,
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["type", "text"],
+            "properties": { "type": { "const": "text" }, "text": { "type": "string", "maxLength": 280 } }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["type", "label", "value"],
+            "properties": {
+              "type": { "const": "metric" },
+              "label": { "type": "string", "maxLength": 40 },
+              "value": { "type": ["string", "number"] },
+              "unit": { "type": "string", "maxLength": 12 },
+              "tone": { "enum": ["neutral", "good", "warning", "critical"] }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["type", "items"],
+            "properties": {
+              "type": { "const": "list" },
+              "items": {
+                "type": "array",
+                "maxItems": 10,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["label"],
+                  "properties": { "label": { "type": "string", "maxLength": 80 }, "value": { "type": "string", "maxLength": 40 } }
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["type", "actions"],
+            "properties": {
+              "type": { "const": "actions" },
+              "actions": {
+                "type": "array",
+                "maxItems": 3,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["id", "label"],
+                  "properties": { "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" }, "label": { "type": "string", "maxLength": 24 } }
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

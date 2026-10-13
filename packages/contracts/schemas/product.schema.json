@@ -1,0 +1,42 @@
+{
+  "$id": "https://appshell.dev/schemas/product.schema.json",
+  "title": "Appshell product configuration",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["name", "protocol", "dataDirectory", "package", "apps", "policy"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "name": { "type": "string", "minLength": 1, "maxLength": 60 },
+    "protocol": { "type": "string", "pattern": "^[a-z][a-z0-9+.-]*$", "not": { "enum": ["app", "file", "http", "https"] } },
+    "dataDirectory": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+    "package": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["extension", "displayName"],
+      "properties": {
+        "extension": { "type": "string", "pattern": "^\\.[a-z0-9]+$" },
+        "displayName": { "type": "string", "minLength": 1 }
+      }
+    },
+    "catalog": { "type": "string", "pattern": "^https://" },
+    "apps": {
+      "description": "Pre-installed app folders, relative to the apps root (--apps flag, default <product folder>/apps). Protected apps cannot be removed by users.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path"],
+        "properties": { "path": { "type": "string" }, "protected": { "type": "boolean" } }
+      }
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["capabilities"],
+      "properties": {
+        "capabilities": { "enum": ["warn", "enforce"] },
+        "developerMode": { "type": "boolean", "default": false }
+      }
+    }
+  }
+}

@@ -1,0 +1,41 @@
+name: ci
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verify:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm secrets
+      - run: pnpm check
+      - run: pnpm test
+      - name: Hostile app e2e
+        if: runner.os == 'Linux'
+        env:
+          APPSHELL_E2E_REPORT: ${{ runner.temp }}/hostile.json
+        # Ubuntu 24 blocks the unprivileged user namespaces Chromium's sandbox needs.
+        run: |
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          xvfb-run -a pnpm e2e
+      - name: Hostile app e2e
+        if: runner.os != 'Linux'
+        env:
+          APPSHELL_E2E_REPORT: ${{ runner.temp }}/hostile.json
+        run: pnpm e2e
+      - name: Show hostile report
+        if: failure()
+        shell: bash
+        run: echo "::error title=hostile report (${{ runner.os }})::$(tr '\n' ' ' < "$RUNNER_TEMP/hostile.json" 2>/dev/null || echo none)"

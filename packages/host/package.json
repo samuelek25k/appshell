@@ -1,0 +1,10 @@
+{
+  "name": "@appshell/host",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "src/main.js",
+  "dependencies": {
+    "@appshell/contracts": "workspace:*",
+    "@appshell/sdk": "workspace:*"
+  }
+}
