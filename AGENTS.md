@@ -9,7 +9,7 @@ Appshell is a repository-driven desktop platform on Electron. Read this file fir
 | What the platform guarantees and its API | `docs/contracts.md` |
 | Why something is built the way it is | `docs/decisions.md` |
 | Schemas | `packages/contracts/schemas/` |
-| What to build next | Pending entries in `docs/decisions.md` |
+| Current state and what to build next | `TODO.md` |
 | Reusable procedures | `.claude/skills/` |
 
 ## Principles
