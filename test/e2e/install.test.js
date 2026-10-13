@@ -49,7 +49,7 @@ test('catalog apps install, run and uninstall; tampered packages are refused', {
 
   await ui("host.open('victim')");
   const storage = join(userData, 'apps', 'victim', 'storage.json');
-  for (let i = 0; i < 40 && !existsSync(storage); i++) await new Promise((r) => setTimeout(r, 250));
+  for (let i = 0; i < 80 && !existsSync(storage); i++) await new Promise((r) => setTimeout(r, 250));
   assert.ok(existsSync(storage), 'installed app ran and used its storage');
 
   await ui("host.install('hostile')");
