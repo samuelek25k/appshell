@@ -38,7 +38,7 @@ test('catalog apps install, run and uninstall; tampered packages are refused', {
     rmSync(work, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
   });
 
-  await waitForPage(port, 'file://');
+  await waitForPage(port, 'file://', "typeof host === 'object' && document.readyState === 'complete'");
   const ui = (/** @type {string} */ js) => evaluate(port, 'file://', js);
   await ui('host.refreshCatalog()');
 

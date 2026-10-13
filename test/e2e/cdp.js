@@ -15,12 +15,15 @@ export async function evaluate(port, prefix, expression) {
   return result.result.value;
 }
 
-/** Waits until the DevTools endpoint lists a page with the prefix. @param {number} port @param {string} prefix */
-export async function waitForPage(port, prefix, timeoutMs = 30_000) {
+/**
+ * Waits until a page with the prefix is listed and `ready` evaluates truthy in it.
+ * A page is listed before its preload runs, so callers pass a readiness check.
+ * @param {number} port @param {string} prefix @param {string} ready
+ */
+export async function waitForPage(port, prefix, ready = "document.readyState === 'complete'", timeoutMs = 30_000) {
   for (let waited = 0; waited < timeoutMs; waited += 250) {
     try {
-      const targets = await (await fetch(`http://127.0.0.1:${port}/json`)).json();
-      if (targets.some((/** @type {{ url: string }} */ t) => t.url.startsWith(prefix))) return;
+      if (await evaluate(port, prefix, ready)) return;
     } catch { /* not up yet */ }
     await new Promise((r) => setTimeout(r, 250));
   }
