@@ -60,6 +60,8 @@ let apps = loadApps(product, appsRoot, manager.installed(), hostLog);
 const services = createServices(dataRoot);
 /** @type {string | null} */
 let managerError = null;
+/** App id awaiting the user's confirmation after an install link. @type {string | null} */
+let pendingInstall = null;
 
 /** @typedef {{ view: Electron.WebContentsView, title: string }} Running */
 /** @type {Map<string, Running>} */
@@ -121,7 +123,7 @@ function publish() {
         const descriptor = widgets.get(manifest.id)?.[w.id];
         return descriptor ? [{ appId: manifest.id, widgetId: w.id, title: w.title, descriptor }] : [];
       })),
-    manager: { ...manager.rows(), actionError: managerError },
+    manager: { ...manager.rows(), actionError: managerError, pendingInstall },
   });
 }
 
@@ -203,10 +205,31 @@ async function requestClose(appId) {
 function handleLink(link) {
   let url;
   try { url = new URL(link); } catch { return; }
-  if (url.protocol !== `${product.protocol}:` || !open(url.host)) return;
+  if (url.protocol !== `${product.protocol}:`) return;
+  // `_` is the shell itself (never a valid app id): <protocol>://_/install/<app-id>
+  const install = url.host === '_' && /^\/install\/([a-z][a-z0-9.-]{0,63})$/.exec(url.pathname);
+  if (install) { requestInstall(install[1]); return; }
+  if (!open(url.host)) return;
   const wc = running.get(url.host)?.view.webContents;
   const send = () => wc?.send('appshell:event', 'shell.deepLink', { path: url.pathname + url.search });
   if (wc?.isLoading()) wc.once('did-finish-load', send); else send();
+}
+
+/**
+ * Install links (e.g. from a store web page) only ask: the user confirms in the host,
+ * and only apps from the product's own catalog can be installed.
+ * @param {string} appId
+ */
+async function requestInstall(appId) {
+  await manager.refresh();
+  const row = manager.rows().rows.find((r) => r.id === appId);
+  pendingInstall = row?.latest ? appId : null;
+  managerError = row?.latest ? null : `${appId}: not in this product's catalog`;
+  active = null;
+  layout();
+  if (win?.isMinimized()) win.restore();
+  win?.focus();
+  publish();
 }
 
 const links = (/** @type {string[]} */ argv) => argv.filter((a) => a.startsWith(`${product.protocol}://`));
@@ -222,7 +245,12 @@ ipcMain.handle('appshell:call', (event, method, params) => {
 });
 ipcMain.handle('host:ready', (event) => { if (fromHost(event)) publish(); });
 ipcMain.handle('host:refreshCatalog', async (event) => { if (fromHost(event)) { await manager.refresh(); publish(); } });
-ipcMain.handle('host:install', (event, id) => fromHost(event) && manage(id, () => manager.install(id)));
+ipcMain.handle('host:install', (event, id) => {
+  if (!fromHost(event)) return;
+  if (pendingInstall === id) pendingInstall = null;
+  return manage(id, () => manager.install(id));
+});
+ipcMain.handle('host:dismissInstall', (event) => { if (fromHost(event)) { pendingInstall = null; publish(); } });
 ipcMain.handle('host:rollback', (event, id) => fromHost(event) && manage(id, () => manager.rollback(id)));
 ipcMain.handle('host:uninstall', (event, id) => fromHost(event) && manage(id, async () => {
   manager.uninstall(id);

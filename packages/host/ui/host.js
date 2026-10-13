@@ -65,8 +65,17 @@ function render(state) {
   renderCatalog(state.manager);
 }
 
-/** @param {{ rows: any[], error: string | null, actionError: string | null }} manager */
+/** @param {{ rows: any[], error: string | null, actionError: string | null, pendingInstall: string | null }} manager */
 function renderCatalog(manager) {
+  const pending = manager.rows.find((r) => r.id === manager.pendingInstall);
+  $('install-confirm').hidden = !pending;
+  if (pending) {
+    $('install-title').textContent = `Install ${pending.title}?`;
+    $('install-detail').textContent = `${pending.title} ${pending.latest} by ${pending.publisher}${pending.description ? ` — ${pending.description}` : ''}`;
+    $('install-source').textContent = `Source: ${pending.repository}`;
+    $('install-yes').onclick = () => api.install(pending.id);
+    $('install-no').onclick = () => api.dismissInstall();
+  }
   const error = manager.actionError ?? (manager.error ? `Catalog unavailable: ${manager.error}` : null);
   $('manager-error').textContent = error ?? '';
   $('manager-error').hidden = !error;
@@ -84,7 +93,7 @@ function renderCatalog(manager) {
       ? `${r.installed} installed${r.latest && r.latest !== r.installed ? ` · ${r.latest} available` : ''}`
       : r.latest ? `${r.latest} available` : 'No release in this channel';
     return el('li', {}, [
-      el('div', { class: 'info' }, [el('strong', {}, [r.title]), el('span', {}, [`${r.publisher} · ${status}`])]),
+      el('div', { class: 'info' }, [el('strong', {}, [r.title]), el('span', {}, [`${r.publisher} · ${status}`]), r.description ? el('span', { class: 'desc' }, [r.description]) : '']),
       !r.installed && r.latest ? action('Install', () => api.install(r.id), true) : '',
       r.installed && r.latest && r.latest !== r.installed ? action(`Update to ${r.latest}`, () => api.install(r.id), true) : '',
       r.previous ? action(`Roll back to ${r.previous}`, () => api.rollback(r.id)) : '',

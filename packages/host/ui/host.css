@@ -54,4 +54,11 @@ h2 .link { margin-left: 8px; padding: 0; border: 0; background: none; color: var
 .catalog button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
 .catalog button:disabled { opacity: 0.5; cursor: default; }
 .error { margin: 0 0 12px; color: var(--critical); }
+.confirm { padding: 16px; border: 2px solid var(--accent); border-radius: 8px; background: var(--panel); }
+.confirm h2 { color: var(--ink); text-transform: none; letter-spacing: 0; font-size: 15px; }
+.confirm p { margin: 0 0 8px; }
+.confirm .quiet, .catalog .desc { color: var(--quiet); font-size: 12px; overflow-wrap: anywhere; }
+.confirm .actions { display: flex; gap: 8px; margin-top: 12px; }
+.confirm button { padding: 6px 14px; border: 1px solid var(--line); border-radius: 6px; background: transparent; color: var(--ink); cursor: pointer; font: inherit; }
+.confirm button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
 body.app-open main { display: none; }
