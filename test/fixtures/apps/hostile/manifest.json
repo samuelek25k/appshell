@@ -1,0 +1,6 @@
+{
+  "id": "hostile", "version": "1.0.0", "title": "Hostile", "publisher": "Test",
+  "engines": { "appshell": "^0.1" },
+  "entry": { "ui": "index.html", "backend": "backend/main.cjs" },
+  "widgets": [{ "id": "own", "title": "Hostile" }]
+}

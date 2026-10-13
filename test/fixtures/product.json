@@ -1,0 +1,8 @@
+{
+  "name": "Appshell Test",
+  "protocol": "appshelltest",
+  "dataDirectory": "appshell-test",
+  "package": { "extension": ".testapp", "displayName": "Test App" },
+  "apps": [{ "path": "victim", "protected": true }, { "path": "hostile" }],
+  "policy": { "capabilities": "enforce", "developerMode": true }
+}

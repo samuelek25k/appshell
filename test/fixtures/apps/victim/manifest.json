@@ -1,0 +1,7 @@
+{
+  "id": "victim", "version": "1.0.0", "title": "Victim", "publisher": "Test",
+  "engines": { "appshell": "^0.1" },
+  "entry": { "ui": "index.html" },
+  "widgets": [{ "id": "status", "title": "Victim status" }],
+  "capabilities": { "secrets": ["victim-key"] }
+}
