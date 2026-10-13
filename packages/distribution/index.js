@@ -10,7 +10,7 @@ import { validate, satisfiesEngine } from '@appshell/contracts';
 
 /** @typedef {import('@appshell/contracts').Manifest} Manifest */
 /** @typedef {{ version: string, channel: 'stable' | 'beta', url: string, sha256: string, commit: string }} Release */
-/** @typedef {{ id: string, title: string, publisher: string, repository: string, releases: Release[] }} CatalogEntry */
+/** @typedef {{ id: string, title: string, publisher: string, repository: string, releases: Release[], description?: string, categories?: string[], icon?: string, screenshots?: string[] }} CatalogEntry */
 /** @typedef {{ id: string, version: string, repository: string, url: string, sha256: string, commit: string, installedAt: string }} Provenance */
 
 const MAX_PACKAGE_BYTES = 100 * 1024 * 1024;
