@@ -12,9 +12,9 @@ Every architecture, tooling and dependency choice is recorded here. Agents add e
 | D6 | Product configuration | Decided 2026-10-13 | One `product.json` per product, validated by `product.schema.json`. JSON instead of YAML so validation needs no parser dependency. |
 | D7 | Engineering harness | Decided 2026-10-13 | `AGENTS.md`, this register, secretlint in a husky pre-commit hook and CI, type check, tests, hostile app e2e. AI review advisory only. |
 | D8 | Identity handoff | Pending | Recommendation: host mints short-lived tokens with `aud: app:<id>`. Phase 1. |
-| D9 | Install artifact | Pending | Recommendation: CI-built release archives pinned by SHA-256 and commit; clone-and-build only in developer mode. Phase 1. |
-| D10 | Discovery and providers | Pending | Recommendation: catalog `index.json` in `appshell-apps`; generic Git and GitHub releases first. Phase 1. |
-| D11 | Versioning and updates | Pending | Recommendation: semver tags pointing at digests, stable and beta channels, keep previous version for rollback. Phase 1. |
+| D9 | Install artifact | Decided 2026-10-13 | Gzipped tar of regular files only, built by CI, pinned in the catalog by SHA-256 and commit. The host verifies the digest, refuses links and paths outside the package, and checks the manifest id and version against the catalog. `file://` packages only in developer mode. |
+| D10 | Discovery and providers | Decided 2026-10-13 | One catalog `index.json` per product (`catalog.schema.json`), from the product config. Repository and release URLs must match `policy.allowedSources`. No provider adapters: any HTTPS release URL works. |
+| D11 | Versioning and updates | Decided 2026-10-13 | Semver releases on `stable` or `beta`; the product's `policy.channel` picks what users see. Current and previous versions stay on disk, so rollback needs no download. Updates are user-initiated in Phase 1. |
 | D12 | Signing | Pending | Sigstore or internal PKI; decide in Phase 2. |
 
 ## Dependencies
@@ -24,6 +24,7 @@ Every architecture, tooling and dependency choice is recorded here. Agents add e
 | `electron` | The runtime. | Decided (D1) |
 | `ajv` | JSON Schema validation for manifests, product config and widgets; the schemas are the contract. | Decided (D5, D6) |
 | `typescript` (dev) | Type checks JSDoc-annotated JavaScript with `checkJs`; no build step. | Decided (D7) |
+| `tar` | Reads and writes app packages; maintained by the npm team, used by npm itself. Node has no built-in tar. | Decided (D9) |
 | `electron-builder` (dev) | Builds installers; the Windows `.exe` pipeline was requested by the product owner on 2026-10-13. Unsigned until D12. | Decided |
 | `secretlint`, `@secretlint/secretlint-rule-preset-recommend`, `husky` (dev) | Secret scanning before commit and in CI. | Decided (D7) |
 

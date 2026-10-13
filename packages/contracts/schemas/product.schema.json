@@ -18,7 +18,7 @@
         "displayName": { "type": "string", "minLength": 1 }
       }
     },
-    "catalog": { "type": "string", "pattern": "^https://" },
+    "catalog": { "description": "URL of the catalog index.json", "type": "string", "pattern": "^https://" },
     "apps": {
       "description": "Pre-installed app folders, relative to the apps root (--apps flag, default <product folder>/apps). Protected apps cannot be removed by users.",
       "type": "array",
@@ -35,7 +35,13 @@
       "required": ["capabilities"],
       "properties": {
         "capabilities": { "enum": ["warn", "enforce"] },
-        "developerMode": { "type": "boolean", "default": false }
+        "developerMode": { "type": "boolean", "default": false },
+        "allowedSources": {
+          "description": "URL prefixes that catalog repositories and release downloads must start with. file:// sources need developerMode.",
+          "type": "array",
+          "items": { "type": "string", "pattern": "^https://" }
+        },
+        "channel": { "enum": ["stable", "beta"], "default": "stable" }
       }
     }
   }
