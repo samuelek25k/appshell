@@ -1,0 +1,47 @@
+:root {
+  --bg: #f6f7f9; --panel: #ffffff; --ink: #16181d; --quiet: #5c6370; --line: #dde1e7;
+  --accent: #2f5bd3; --good: #1f8a4c; --warning: #b26a00; --critical: #c0362c;
+  color-scheme: light dark;
+  font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #14161a; --panel: #1c1f24; --ink: #e8eaed; --quiet: #9aa1ac; --line: #2c3038; --accent: #7c9cff; }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); }
+.chrome {
+  height: 48px; display: flex; align-items: center; gap: 4px; padding: 0 8px;
+  background: var(--panel); border-bottom: 1px solid var(--line); -webkit-app-region: drag;
+}
+.chrome button {
+  -webkit-app-region: no-drag; width: 36px; height: 32px; border: 0; border-radius: 6px;
+  background: transparent; color: var(--ink); font-size: 16px; cursor: pointer;
+}
+.chrome button:hover:not(:disabled) { background: var(--line); }
+.chrome button:disabled { opacity: 0.35; cursor: default; }
+.chrome h1 { flex: 1; margin: 0 8px; font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+main { padding: 24px; display: grid; gap: 32px; max-width: 1100px; }
+h2 { margin: 0 0 12px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--quiet); }
+.apps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
+.apps button {
+  width: 100%; text-align: left; padding: 14px; border: 1px solid var(--line); border-radius: 8px;
+  background: var(--panel); color: var(--ink); cursor: pointer; font: inherit;
+}
+.apps button:hover { border-color: var(--accent); }
+.apps strong { display: block; font-weight: 600; }
+.apps span { color: var(--quiet); font-size: 12px; }
+.apps .badge { float: right; color: var(--accent); }
+.widgets { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
+.widget { padding: 14px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); display: grid; gap: 8px; }
+.widget h3 { margin: 0; font-size: 13px; font-weight: 600; }
+.widget .from { color: var(--quiet); font-size: 12px; }
+.metric b { font-size: 22px; font-weight: 600; }
+.metric[data-tone="good"] b { color: var(--good); }
+.metric[data-tone="warning"] b { color: var(--warning); }
+.metric[data-tone="critical"] b { color: var(--critical); }
+.widget ul { margin: 0; padding: 0; list-style: none; }
+.widget li { display: flex; justify-content: space-between; padding: 2px 0; }
+.widget .actions { display: flex; gap: 6px; }
+.widget .actions button { padding: 4px 10px; border: 1px solid var(--line); border-radius: 6px; background: transparent; color: var(--ink); cursor: pointer; }
+.empty { color: var(--quiet); margin: 0; }
+body.app-open main { display: none; }

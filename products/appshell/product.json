@@ -1,0 +1,21 @@
+{
+  "$schema": "../../packages/contracts/schemas/product.schema.json",
+  "name": "Appshell",
+  "protocol": "appshell",
+  "dataDirectory": "appshell",
+  "package": {
+    "extension": ".appshell",
+    "displayName": "Appshell App"
+  },
+  "catalog": "https://github.com/samuelek25k/appshell-apps",
+  "apps": [
+    {
+      "path": "profile",
+      "protected": true
+    }
+  ],
+  "policy": {
+    "capabilities": "warn",
+    "developerMode": true
+  }
+}

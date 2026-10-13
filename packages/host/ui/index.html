@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:">
+  <title>Appshell</title>
+  <link rel="stylesheet" href="host.css">
+  <script src="host.js" defer></script>
+</head>
+<body>
+  <header class="chrome">
+    <button id="back" title="Back" aria-label="Back">&#8592;</button>
+    <button id="home" title="Home" aria-label="Home">&#8962;</button>
+    <h1 id="title"></h1>
+    <button id="close" title="Close app" aria-label="Close app">&#10005;</button>
+  </header>
+  <main id="dashboard">
+    <section>
+      <h2>Apps</h2>
+      <ul id="apps" class="apps"></ul>
+    </section>
+    <section>
+      <h2>Widgets</h2>
+      <div id="widgets" class="widgets"></div>
+      <p id="no-widgets" class="empty">Widgets appear here once an app publishes them.</p>
+    </section>
+  </main>
+</body>
+</html>
