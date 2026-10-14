@@ -1,0 +1,7 @@
+{
+  "name": "@appshell/distribution",
+  "version": "0.1.0",
+  "type": "module",
+  "exports": { ".": "./index.js" },
+  "dependencies": { "@appshell/contracts": "workspace:*", "tar": "^7.5.22" }
+}

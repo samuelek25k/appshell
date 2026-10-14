@@ -13,10 +13,11 @@ const validators = {
   manifest: ajv.compile(load('manifest')),
   product: ajv.compile(load('product')),
   widget: ajv.compile(load('widget')),
+  catalog: ajv.compile(load('catalog')),
 };
 
 /**
- * @param {'manifest' | 'product' | 'widget'} kind
+ * @param {'manifest' | 'product' | 'widget' | 'catalog'} kind
  * @param {unknown} value
  * @returns {{ ok: true } | { ok: false, errors: string[] }}
  */

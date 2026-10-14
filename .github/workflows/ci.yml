@@ -22,20 +22,23 @@ jobs:
       - run: pnpm secrets
       - run: pnpm check
       - run: pnpm test
-      - name: Hostile app e2e
-        if: runner.os == 'Linux'
+      - name: E2E (hostile-app gate, installs, template)
+        shell: bash
         env:
           APPSHELL_E2E_REPORT: ${{ runner.temp }}/hostile.json
-        # Ubuntu 24 blocks the unprivileged user namespaces Chromium's sandbox needs.
         run: |
-          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
-          xvfb-run -a pnpm e2e
-      - name: Hostile app e2e
-        if: runner.os != 'Linux'
-        env:
-          APPSHELL_E2E_REPORT: ${{ runner.temp }}/hostile.json
-        run: pnpm e2e
-      - name: Show hostile report
+          set -o pipefail
+          if [ "$RUNNER_OS" = Linux ]; then
+            # Ubuntu 24 blocks the unprivileged user namespaces Chromium's sandbox needs.
+            sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+            xvfb-run -a pnpm e2e 2>&1 | tee "$RUNNER_TEMP/e2e.log"
+          else
+            pnpm e2e 2>&1 | tee "$RUNNER_TEMP/e2e.log"
+          fi
+      # Job logs are not always reachable; annotations are.
+      - name: Show e2e failures
         if: failure()
         shell: bash
-        run: echo "::error title=hostile report (${{ runner.os }})::$(tr '\n' ' ' < "$RUNNER_TEMP/hostile.json" 2>/dev/null || echo none)"
+        run: |
+          echo "::error title=hostile report (${{ runner.os }})::$(tr '\n' ' ' < "$RUNNER_TEMP/hostile.json" 2>/dev/null || echo none)"
+          echo "::error title=failed tests (${{ runner.os }})::$(grep -A40 '^not ok' "$RUNNER_TEMP/e2e.log" 2>/dev/null | grep -v dbus | head -60 | tr '\n' ' ' || echo none)"

@@ -6,6 +6,10 @@ contextBridge.exposeInMainWorld('host', {
   home: () => ipcRenderer.invoke('host:home'),
   back: () => ipcRenderer.invoke('host:back'),
   close: () => ipcRenderer.invoke('host:close'),
+  refreshCatalog: () => ipcRenderer.invoke('host:refreshCatalog'),
+  install: (appId) => ipcRenderer.invoke('host:install', String(appId)),
+  rollback: (appId) => ipcRenderer.invoke('host:rollback', String(appId)),
+  uninstall: (appId) => ipcRenderer.invoke('host:uninstall', String(appId)),
   widgetAction: (appId, widgetId, actionId) => ipcRenderer.invoke('host:widgetAction', String(appId), String(widgetId), String(actionId)),
   onState(fn) {
     ipcRenderer.on('host:state', (_event, state) => fn(state));

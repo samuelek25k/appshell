@@ -62,9 +62,40 @@ function render(state) {
     ]);
   }));
   $('no-widgets').hidden = state.widgets.length > 0;
+  renderCatalog(state.manager);
+}
+
+/** @param {{ rows: any[], error: string | null, actionError: string | null }} manager */
+function renderCatalog(manager) {
+  const error = manager.actionError ?? (manager.error ? `Catalog unavailable: ${manager.error}` : null);
+  $('manager-error').textContent = error ?? '';
+  $('manager-error').hidden = !error;
+  /** @type {(label: string, run: () => Promise<unknown>, primary?: boolean) => HTMLElement} */
+  const action = (label, run, primary = false) => {
+    const button = /** @type {HTMLButtonElement} */ (el('button', primary ? { class: 'primary' } : {}, [label]));
+    button.addEventListener('click', async () => {
+      for (const b of document.querySelectorAll('.catalog button')) /** @type {HTMLButtonElement} */ (b).disabled = true;
+      await run();
+    });
+    return button;
+  };
+  $('catalog').replaceChildren(...manager.rows.map((r) => {
+    const status = r.installed
+      ? `${r.installed} installed${r.latest && r.latest !== r.installed ? ` · ${r.latest} available` : ''}`
+      : r.latest ? `${r.latest} available` : 'No release in this channel';
+    return el('li', {}, [
+      el('div', { class: 'info' }, [el('strong', {}, [r.title]), el('span', {}, [`${r.publisher} · ${status}`])]),
+      !r.installed && r.latest ? action('Install', () => api.install(r.id), true) : '',
+      r.installed && r.latest && r.latest !== r.installed ? action(`Update to ${r.latest}`, () => api.install(r.id), true) : '',
+      r.previous ? action(`Roll back to ${r.previous}`, () => api.rollback(r.id)) : '',
+      r.installed ? action('Remove', () => api.uninstall(r.id)) : '',
+    ]);
+  }));
+  $('no-catalog').hidden = manager.rows.length > 0;
 }
 
 $('back').addEventListener('click', () => api.back());
 $('home').addEventListener('click', () => api.home());
 $('close').addEventListener('click', () => api.close());
+$('refresh').addEventListener('click', () => api.refreshCatalog());
 api.onState(render);

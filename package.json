@@ -9,7 +9,7 @@
   "scripts": {
     "check": "tsc -p tsconfig.json",
     "test": "node --test test/*.test.js",
-    "e2e": "node --test test/e2e/*.test.js",
+    "e2e": "node --test --test-concurrency=1 test/e2e/*.test.js",
     "secrets": "secretlint \"**/*\"",
     "start": "electron packages/host --product products/appshell/product.json --apps ../appshell-apps",
     "prepare": "husky"
@@ -21,6 +21,7 @@
     "electron-builder": "26.15.3",
     "husky": "^9.1.7",
     "secretlint": "^13.0.7",
-    "typescript": "^7.0.2"
+    "typescript": "^7.0.2",
+    "tar": "^7.5.22"
   }
 }

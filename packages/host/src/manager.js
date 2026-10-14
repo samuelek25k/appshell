@@ -1,0 +1,70 @@
+// App manager: the catalog, and install, update, rollback and removal of catalog apps.
+import { createStore, latestRelease, parseCatalog, readUrl } from '@appshell/distribution';
+
+/**
+ * The catalog URL is trusted configuration; each app's repository and release URLs
+ * are checked against the product's allowed sources at install time.
+ * @param {{
+ *   policy: import('./registry.js').Product['policy'],
+ *   catalogUrl: string | undefined,
+ *   root: string,
+ *   hostVersion: string,
+ *   fetch: typeof globalThis.fetch,
+ * }} options
+ */
+export function createManager({ policy, catalogUrl, root, hostVersion, fetch }) {
+  const store = createStore(root);
+  const channel = policy.channel ?? 'stable';
+  /** @type {import('@appshell/distribution').CatalogEntry[]} */
+  let catalog = [];
+  /** @type {string | null} */
+  let catalogError = null;
+
+  /** @param {string} id */
+  const entryFor = (id) => {
+    const entry = catalog.find((e) => e.id === id);
+    if (!entry) throw new Error(`${id} is not in the catalog`);
+    const release = latestRelease(entry, channel);
+    if (!release) throw new Error(`${id} has no ${channel} release`);
+    return { entry, release };
+  };
+
+  return {
+    installed: () => store.list(),
+
+    async refresh() {
+      if (!catalogUrl) return;
+      try {
+        catalog = parseCatalog(new TextDecoder().decode(await readUrl(catalogUrl, fetch)));
+        catalogError = null;
+      } catch (error) {
+        catalogError = error instanceof Error ? error.message : String(error);
+      }
+    },
+
+    /** Rows for the host UI: every catalog app plus anything installed that left the catalog. */
+    rows() {
+      const installed = new Map(store.list().map((s) => [s.current.id, s]));
+      const rows = catalog.map((entry) => {
+        const s = installed.get(entry.id);
+        return {
+          id: entry.id, title: entry.title, publisher: entry.publisher,
+          latest: latestRelease(entry, channel)?.version ?? null,
+          installed: s?.current.version ?? null, previous: s?.previous?.version ?? null,
+        };
+      });
+      for (const [id, s] of installed) {
+        if (!catalog.some((e) => e.id === id)) rows.push({ id, title: id, publisher: s.current.repository, latest: null, installed: s.current.version, previous: s.previous?.version ?? null });
+      }
+      return { rows, error: catalogError };
+    },
+
+    /** Installs or updates to the newest release in the product's channel. @param {string} id */
+    install(id) {
+      const { entry, release } = entryFor(id);
+      return store.install(entry, release, { hostVersion, policy, fetch });
+    },
+    rollback: (/** @type {string} */ id) => store.rollback(id),
+    uninstall: (/** @type {string} */ id) => store.uninstall(id),
+  };
+}

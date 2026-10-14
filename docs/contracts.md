@@ -24,6 +24,18 @@ A folder with `manifest.json` (`manifest.schema.json`). `engines.appshell` is a 
 
 Not yet enforced: network limits for backends (Phase 2), signing (D12).
 
+## Catalog and installs
+
+`product.catalog` points at an `index.json` (`catalog.schema.json`): apps with their repository and releases (`version`, `channel`, `url`, `sha256`, `commit`). The host shows the newest release in `policy.channel` (`beta` also sees stable).
+
+Install and update download the package, then refuse it unless:
+- the repository and release URL start with an entry in `policy.allowedSources` (`file://` needs developer mode);
+- its SHA-256 equals the catalog's;
+- it contains only regular files and folders inside the package;
+- its manifest id and version equal the catalog's, and its engine range accepts the host.
+
+Installed apps live in `<userData>/installed/<id>/<version>/`, with provenance (repository, commit, URL, digest, time) in `installed.json`. The previous version is kept for rollback. Remove deletes every version and the app's data. Running apps stop before any change. Pre-installed (protected) apps cannot be changed from the catalog.
+
 ## Bridge
 
 UI: `await window.appshell.call(method, params)`; failures reject with `Error("<CODE>: <message>")`. Use `import … from '/__appshell/sdk.js'` for typed wrappers. The host identifies the caller by its view, never by the message.

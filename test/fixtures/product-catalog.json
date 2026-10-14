@@ -1,0 +1,8 @@
+{
+  "name": "Appshell Catalog Test",
+  "protocol": "appshellcatalog",
+  "dataDirectory": "appshell-catalog-test",
+  "package": { "extension": ".testapp", "displayName": "Test App" },
+  "apps": [],
+  "policy": { "capabilities": "enforce", "developerMode": true, "allowedSources": ["https://github.com/example/"], "channel": "stable" }
+}
