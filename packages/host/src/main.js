@@ -1,5 +1,5 @@
 // Appshell host entry. Usage in development:
-//   electron packages/host --product <product.json> [--apps <dir>] [--catalog <url>] [--user-data <dir>] [<protocol>://<app-id>/<path>]
+//   electron packages/host --product <product.json> [--apps <dir>] [--catalog=<url>] [--user-data <dir>] [<protocol>://<app-id>/<path>]
 import { app, BrowserWindow, ipcMain, net, protocol, session } from 'electron';
 import { randomUUID } from 'node:crypto';
 import { appendFileSync, mkdirSync } from 'node:fs';
@@ -17,8 +17,10 @@ const CHROME_HEIGHT = 48;
 const HOST_UI = fileURLToPath(new URL('../ui/index.html', import.meta.url));
 const HOST_PRELOAD = fileURLToPath(new URL('../preload/host.cjs', import.meta.url));
 
-/** @param {string} name */
+/** Reads `--name value` or `--name=value`. @param {string} name */
 const flag = (name) => {
+  const joined = process.argv.find((a) => a.startsWith(`${name}=`));
+  if (joined) return joined.slice(name.length + 1);
   const i = process.argv.indexOf(name);
   return i > 0 ? process.argv[i + 1] : undefined;
 };

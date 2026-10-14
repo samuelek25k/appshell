@@ -30,7 +30,8 @@ test('catalog apps install, run and uninstall; tampered packages are refused', {
   const port = 9400 + Math.floor(Math.random() * 400);
   const child = spawn(electron, [
     join(root, 'packages/host'), '--product', join(root, 'test/fixtures/product-catalog.json'),
-    '--catalog', pathToFileURL(catalogFile).href, '--user-data', userData, `--remote-debugging-port=${port}`,
+    // One argument: on Windows a separate URL-like argument stops Electron from starting.
+    `--catalog=${pathToFileURL(catalogFile).href}`, '--user-data', userData, `--remote-debugging-port=${port}`,
     ...(process.getuid?.() === 0 ? ['--no-sandbox'] : []),
   ], { stdio: 'ignore' });
   t.after(async () => {
