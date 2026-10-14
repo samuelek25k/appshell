@@ -1,6 +1,6 @@
 # TODO
 
-Status on 2026-10-13. Update this file when work lands; delete items that are done.
+Status on 2026-10-14. Update this file when work lands; delete items that are done.
 
 ## Where things stand
 
@@ -15,9 +15,8 @@ The PRs are stacked. Merge each one, deleting its branch, so GitHub retargets th
 2. appshell #2: developer CLI and app template
 3. appshell #3: app-scoped identity tokens (D8)
 4. appshell #4: install links from a web store, with confirmation
-5. appshell #5: Appshell product page
-6. appshell-apps #1: release apps from tags into the catalog
-7. appshell-apps #2: app store on GitHub Pages. Merge only after appshell #4, because older hosts reject the new catalog fields.
+5. appshell #5: Appshell product page, and `store/prepare.js` support in the store-screenshots skill
+6. appshell-apps #4: rich store, Quick Notes and World Clock. Publish catalog releases only after appshell #4, because older hosts reject the new catalog fields.
 
 ## Needs the repo owner
 
@@ -40,6 +39,11 @@ The PRs are stacked. Merge each one, deleting its branch, so GitHub retargets th
 - [ ] Package signing and publisher identity (D12).
 - [ ] Admin policy management, review workflow and audit log.
 - [ ] Automatic update checks; updates are user-initiated today.
+
+## Later
+
+- [ ] Multiple sign-in methods as a platform feature: each product (tenant) chooses its providers, such as OIDC, SAML or a local account, in `product.json`, and apps keep using identity tokens. Needs a decision before work starts.
+- [ ] Ratings and reviews in the store. Skipped for now; they need a backend the static store does not have.
 
 ## Known limitations
 
