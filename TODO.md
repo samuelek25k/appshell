@@ -5,18 +5,11 @@ Status on 2026-10-14. Update this file when work lands; delete items that are do
 ## Where things stand
 
 - **Phase 0 (on `main`):** the platform contract, the isolated app runtime, the bridge, the shell, the SDK, the hostile-app gate on Windows, macOS and Linux, and the Windows installer pipeline.
-- **Phase 1 (in pull requests, all tests passing):** catalog installs, the CLI and template, identity tokens, install links from the store, the product page.
+- **Phase 1 (on `main`):** catalog installs (D9–D11), developer CLI & template, app-scoped identity tokens (D8), store install links with confirmation, and the Appshell product page.
 
-## Merge order
+## Next steps
 
-The PRs are stacked. Merge each one, deleting its branch, so GitHub retargets the next PR to `main`.
-
-1. appshell #1: install apps from verified catalog releases (D9–D11)
-2. appshell #2: developer CLI and app template
-3. appshell #3: app-scoped identity tokens (D8)
-4. appshell #4: install links from a web store, with confirmation
-5. appshell #5: Appshell product page, and `store/prepare.js` support in the store-screenshots skill
-6. appshell-apps #4: rich store, Quick Notes and World Clock. Publish catalog releases only after appshell #4, because older hosts reject the new catalog fields.
+1. appshell-apps #4: rich store, Quick Notes and World Clock. Publish catalog releases from appshell-apps.
 
 ## Needs the repo owner
 
