@@ -4,8 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Appshell: one governed desktop shell for many independently delivered apps.">
-  <title>Appshell</title>
+  <title>Appshell · Governed Desktop Platform</title>
   <link rel="icon" type="image/svg+xml" href="mark.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap">
   <link rel="stylesheet" href="site.css">
 </head>
 <body>
@@ -18,76 +21,181 @@
       <a href="#how">How it works</a>
       <a href="#security">Security</a>
       <a href="#build">Build an app</a>
-      <a class="pill" href="https://samuelek25k.github.io/appshell-apps/">App store</a>
+      <a class="pill" href="https://samuelek25k.github.io/appshell-apps/">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        App Store
+      </a>
     </nav>
   </header>
 
   <main>
     <section class="hero">
-      <h1>One desktop shell. Many apps, delivered independently.</h1>
-      <p>Appshell is a desktop platform on Electron. Teams build apps in their own repositories and release them by tag. Users install them from a catalog into one governed shell, without reinstalling anything.</p>
+      <div class="hero-badge">✦ Governed Desktop Platform on Electron</div>
+      <h1>One desktop shell.<br><span class="hero-gradient">Many apps, delivered independently.</span></h1>
+      <p>Teams build apps in their own repositories and release them by git tag. Users install verified apps into one isolated desktop shell without reinstalling or restarting anything.</p>
+      
       <div class="cta">
-        <a class="button" href="https://samuelek25k.github.io/appshell-apps/">Browse the app store</a>
-        <a class="button quiet" href="https://github.com/samuelek25k/appshell/releases">Download for Windows</a>
+        <a class="button" href="https://samuelek25k.github.io/appshell-apps/">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+          Browse App Store
+        </a>
+        <a class="button quiet" href="https://github.com/samuelek25k/appshell/releases">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download for Windows
+        </a>
       </div>
-      <img class="shot" src="images/dashboard.png" alt="The Appshell dashboard: apps, widgets from each app, and the app catalog with an installed app" width="1200" height="800">
+
+      <div class="window-frame">
+        <div class="window-bar">
+          <div class="traffic-dots">
+            <span class="dot red"></span>
+            <span class="dot yellow"></span>
+            <span class="dot green"></span>
+          </div>
+          <span class="window-title">Appshell — Governed Desktop Workspace</span>
+        </div>
+        <img class="shot" src="images/dashboard.png" alt="The Appshell dashboard: apps, widgets from each app, and the app catalog with an installed app" width="1200" height="800">
+      </div>
     </section>
 
     <section id="how">
       <h2>How it works</h2>
+      <p class="section-desc">From development to release in minutes, with zero host liability.</p>
       <ol class="steps">
-        <li><h3>Build</h3><p><code>appshell create</code> scaffolds an app with a UI, a sandboxed backend and a dashboard widget. <code>appshell dev</code> runs it in a development shell.</p></li>
-        <li><h3>Release</h3><p>Tag <code>&lt;app&gt;-v1.2.0</code>. CI packages the app, publishes a release and records its version, commit and SHA-256 in the catalog.</p></li>
-        <li><h3>Install</h3><p>Users click Install in the store or the shell. The shell asks first, then checks the source, digest and manifest before the app goes live.</p></li>
+        <li>
+          <div class="step-num">1</div>
+          <h3>Build & Scaffold</h3>
+          <p><code>appshell create</code> scaffolds an app with a sandboxed UI, isolated backend and dashboard widget. <code>appshell dev</code> launches the live development shell.</p>
+        </li>
+        <li>
+          <div class="step-num">2</div>
+          <h3>Release by Tag</h3>
+          <p>Push a git tag like <code>v1.2.0</code>. CI builds verified packages, computes SHA-256 digests, and publishes directly to the catalog release feed.</p>
+        </li>
+        <li>
+          <div class="step-num">3</div>
+          <h3>Install with Consent</h3>
+          <p>Users click Install in the web store or shell. The host prompts for user confirmation, verifies integrity, checks manifest permissions, and runs the app isolated.</p>
+        </li>
       </ol>
     </section>
 
     <section class="split">
       <div>
-        <h2>Install from the store, confirm in the shell</h2>
-        <p>The store's Install button hands the app's id to the desktop app. The shell shows what will be installed and from where, and downloads nothing until the user agrees. Updates and one-step rollback are on the same screen.</p>
+        <h2>Install from web store, confirm in the shell</h2>
+        <p>The store's Install button uses a secure deep link (<code>appshellcatalog://</code>) to hand off to the desktop client. The host displays provenance, permissions, and origin, downloading nothing until the user explicitly consents.</p>
+        <p>Automatic updates and instant zero-download rollbacks are managed right on the dashboard.</p>
       </div>
-      <img class="shot" src="images/install.png" alt="The shell asking whether to install Welcome 0.1.0, showing publisher, description and source" width="1200" height="800" loading="lazy">
+      <div class="window-frame">
+        <div class="window-bar">
+          <div class="traffic-dots">
+            <span class="dot red"></span>
+            <span class="dot yellow"></span>
+            <span class="dot green"></span>
+          </div>
+          <span class="window-title">Consent Gate — Verified App Installation</span>
+        </div>
+        <img class="shot" src="images/install.png" alt="The shell asking whether to install Welcome 0.1.0, showing publisher, description and source" width="1200" height="800" loading="lazy">
+      </div>
     </section>
 
     <section id="security">
       <h2>Secure by design</h2>
+      <p class="section-desc">Third-party code is adversarial. Core apps get no exemption.</p>
       <ul class="cards">
-        <li><h3>Every app isolated</h3><p>Each app runs sandboxed on its own origin and storage, with no Node access. Its backend can read only its own folder.</p></li>
-        <li><h3>Verified packages</h3><p>Installs must match the catalog's SHA-256, come from an allowed source and contain only regular files.</p></li>
-        <li><h3>Declared capabilities</h3><p>Network hosts, notifications, secrets and identity are declared in the manifest and checked on every call.</p></li>
-        <li><h3>Identity, not credentials</h3><p>Apps get 5-minute tokens signed by the shell for that app alone. They never see the user's credentials.</p></li>
-        <li><h3>Widgets as data</h3><p>Apps describe widgets in JSON and the shell draws them, so no app code runs on the dashboard.</p></li>
-        <li><h3>Tested against a hostile app</h3><p>Every change runs an app that tries 21 ways to escape, on Windows, macOS and Linux.</p></li>
+        <li>
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/><path d="M15 3v18"/></svg>
+          </div>
+          <h3>Every app isolated</h3>
+          <p>Sandboxed <code>WebContentsView</code> on origin <code>app://&lt;id&gt;/</code> with its own session partition. Zero Node access, zero cross-app fetches.</p>
+        </li>
+        <li>
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </div>
+          <h3>Verified packages</h3>
+          <p>Packages are strictly checked against catalog SHA-256 hashes, restricted to allowed sources, and stripped of symlinks.</p>
+        </li>
+        <li>
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          </div>
+          <h3>Declared capabilities</h3>
+          <p>Network destinations, secrets, notifications and identity must be pre-declared in <code>manifest.json</code> and enforced on every single IPC call.</p>
+        </li>
+        <li>
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          </div>
+          <h3>Identity, not credentials</h3>
+          <p>Apps receive 5-minute Ed25519 JSON Web Tokens signed by the host and scoped to their application ID alone. No credentials ever leak.</p>
+        </li>
+        <li>
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+          </div>
+          <h3>Widgets as pure data</h3>
+          <p>Dashboard widgets are plain JSON descriptors. The host shell renders them using native components—no third-party code runs on the dashboard.</p>
+        </li>
+        <li>
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4"/><path d="m4.93 4.93 2.83 2.83"/><path d="M2 12h4"/><path d="m4.93 19.07 2.83-2.83"/><path d="M12 22v-4"/><path d="m19.07 19.07-2.83-2.83"/><path d="M22 12h-4"/><path d="m19.07 4.93-2.83 2.83"/></svg>
+          </div>
+          <h3>Tested against hostile apps</h3>
+          <p>Every commit runs a suite testing 21 distinct sandbox evasion vectors across Windows, macOS, and Linux runners.</p>
+        </li>
       </ul>
     </section>
 
     <section id="build" class="split">
       <div>
-        <h2>Build an app</h2>
+        <h2>Build your first app</h2>
+        <p>Scaffold a fully isolated mini-app in 10 seconds. Includes UI, Node backend, widgets, and typed SDK bindings.</p>
         <pre><code>pnpm appshell create ../my-app --id my-app
 pnpm appshell dev ../my-app
 pnpm appshell package ../my-app</code></pre>
-        <p>The app talks to the shell through a small SDK: storage, secrets, notifications, widgets, identity and its own backend.</p>
+        <p>The SDK exposes storage, secrets, notifications, widgets, identity, and the utility backend.</p>
       </div>
-      <img class="shot" src="images/app.png" alt="The Profile app open inside the shell" width="1200" height="800" loading="lazy">
+      <div class="window-frame">
+        <div class="window-bar">
+          <div class="traffic-dots">
+            <span class="dot red"></span>
+            <span class="dot yellow"></span>
+            <span class="dot green"></span>
+          </div>
+          <span class="window-title">App View — Running inside Appshell</span>
+        </div>
+        <img class="shot" src="images/app.png" alt="The Profile app open inside the shell" width="1200" height="800" loading="lazy">
+      </div>
     </section>
 
     <section>
       <h2>Make it your product</h2>
-      <p>A product is one configuration file: its name, deep-link protocol, data folder, package format, pre-installed apps and policy. Appshell is the default product; each tenant can have its own.</p>
+      <p class="section-desc">One configuration file defines branding, deep-link protocols, and security policy.</p>
       <pre><code>{
   "name": "Appshell",
   "protocol": "appshell",
   "package": { "extension": ".appshell", "displayName": "Appshell App" },
-  "catalog": "https://…/index.json",
-  "policy": { "capabilities": "enforce", "allowedSources": ["https://github.com/your-org/"] }
+  "catalog": "https://samuelek25k.github.io/appshell-apps/index.json",
+  "policy": { 
+    "capabilities": "enforce", 
+    "allowedSources": ["https://github.com/samuelek25k/"] 
+  }
 }</code></pre>
     </section>
   </main>
 
   <footer class="foot">
-    <p>Appshell · <a href="https://samuelek25k.github.io/appshell-apps/">App store</a> · <a href="https://github.com/samuelek25k/appshell-apps">Apps repository</a></p>
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <img src="mark.svg" alt="" width="24" height="24" style="border-radius: 6px;">
+      <span><strong>Appshell</strong> · Governed Desktop Platform</span>
+    </div>
+    <div class="foot-links">
+      <a href="https://samuelek25k.github.io/appshell-apps/">App Store</a>
+      <a href="https://github.com/samuelek25k/appshell">GitHub</a>
+      <a href="https://github.com/samuelek25k/appshell-apps">Apps Catalog</a>
+    </div>
   </footer>
 </body>
 </html>

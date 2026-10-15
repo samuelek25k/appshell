@@ -1,55 +1,41 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
   <defs>
-    <!-- Facet Gradients for high-contrast precision geometry in both light and dark modes -->
-    <linearGradient id="facet-core" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#0284C7" />
-      <stop offset="100%" stop-color="#2563EB" />
+    <!-- Vibrant Electric Sky Gradient -->
+    <linearGradient id="appshell-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4ea8de" />
+      <stop offset="50%" stop-color="#38bdf8" />
+      <stop offset="100%" stop-color="#2563eb" />
     </linearGradient>
-    <linearGradient id="facet-left" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#4F46E5" />
-      <stop offset="100%" stop-color="#3730A3" />
-    </linearGradient>
-    <linearGradient id="facet-right" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#06B6D4" />
-      <stop offset="100%" stop-color="#0284C7" />
-    </linearGradient>
-    <linearGradient id="facet-base" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#4338CA" />
-      <stop offset="100%" stop-color="#0891B2" />
-    </linearGradient>
+
+    <!-- Clip path to keep white channels flush with the rounded squircle boundary -->
+    <clipPath id="squircle-clip">
+      <rect x="4" y="4" width="92" height="92" rx="24" ry="24" />
+    </clipPath>
   </defs>
 
-  <style>
-    .theme-frame { stroke: #0f172a; opacity: 0.85; }
-    .theme-crease { stroke: #ffffff; }
-    .theme-accent { stroke: #0284c7; }
-    @media (prefers-color-scheme: dark) {
-      .theme-frame { stroke: #f8fafc; opacity: 0.9; }
-      .theme-crease { stroke: #ffffff; }
-    }
-    :root.dark .theme-frame { stroke: #f8fafc; opacity: 0.9; }
-    :root:not(.dark) .theme-frame { stroke: #0f172a; opacity: 0.85; }
-  </style>
+  <!-- Base Squircle -->
+  <rect x="4" y="4" width="92" height="92" rx="24" ry="24" fill="url(#appshell-bg)" />
 
-  <!-- Transparent Background: Precision Outer Geometric Boundary -->
-  <rect x="2" y="2" width="60" height="60" class="theme-frame" stroke-width="1.5" stroke-opacity="0.25" fill="none" />
-  
-  <!-- Corner Precision Index Marks -->
-  <path d="M2 10H8 M10 2V8 M56 2V8 M58 10H62 M2 54H8 M10 56V62 M56 56V62 M58 54H62" class="theme-frame" stroke-width="1.5" opacity="0.6" />
+  <!-- Clipped Interdigitated Circuit Bus Traces -->
+  <g clip-path="url(#squircle-clip)">
+    <!-- Trace 1 (Col 1): Open at bottom, terminates at high node -->
+    <path d="M 27 100 V 32" stroke="#ffffff" stroke-width="8.5" stroke-linecap="round" />
+    <circle cx="27" cy="32" r="8" fill="#ffffff" />
+    <circle cx="27" cy="32" r="4.25" fill="#111625" />
 
-  <!-- Left Wing Structural Facet (VS Code & Mahindra origami precision) -->
-  <polygon points="12,46 25,18 32,23 20,49" fill="url(#facet-left)" />
-  
-  <!-- Right Wing Structural Facet -->
-  <polygon points="52,46 39,18 32,23 44,49" fill="url(#facet-right)" />
+    <!-- Trace 2 (Col 2): Open at top, terminates at low node -->
+    <path d="M 43 0 V 68" stroke="#ffffff" stroke-width="8.5" stroke-linecap="round" />
+    <circle cx="43" cy="68" r="8" fill="#ffffff" />
+    <circle cx="43" cy="68" r="4.25" fill="#111625" />
 
-  <!-- Center Diamond Interlocking Keystone -->
-  <polygon points="32,15 41,27 32,36 23,27" fill="url(#facet-core)" />
+    <!-- Trace 3 (Col 3): Open at bottom, terminates at high node -->
+    <path d="M 57 100 V 32" stroke="#ffffff" stroke-width="8.5" stroke-linecap="round" />
+    <circle cx="57" cy="32" r="8" fill="#ffffff" />
+    <circle cx="57" cy="32" r="4.25" fill="#111625" />
 
-  <!-- Lower Base Horizon Geometry -->
-  <polygon points="20,49 32,41 44,49 32,53" fill="url(#facet-base)" />
-
-  <!-- High-Precision Crisp Crease Highlights -->
-  <polyline points="25,18 32,23 39,18" stroke="#FFFFFF" stroke-width="1.5" stroke-linejoin="miter" stroke-linecap="square" opacity="0.9" />
-  <polyline points="20,49 32,41 44,49" stroke="#E0F2FE" stroke-width="1.2" stroke-linejoin="miter" stroke-linecap="square" opacity="0.85" />
+    <!-- Trace 4 (Col 4): Open at top, terminates at low node -->
+    <path d="M 73 0 V 68" stroke="#ffffff" stroke-width="8.5" stroke-linecap="round" />
+    <circle cx="73" cy="68" r="8" fill="#ffffff" />
+    <circle cx="73" cy="68" r="4.25" fill="#111625" />
+  </g>
 </svg>
