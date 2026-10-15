@@ -13,7 +13,7 @@ Status on 2026-10-14. Update this file when work lands; delete items that are do
 
 ## Needs the repo owner
 
-- [ ] appshell settings: set the default branch to `main`; delete the `phase-0` and `diag` branches.
+- [x] appshell: default branch set to `main`; `phase-0` branch deleted.
 - [ ] Pages: in both repos, set Settings > Pages > Source to GitHub Actions. `appshell` is private, so its Pages need a paid GitHub plan.
 - [ ] After merging, push tag `welcome-v0.1.0` in appshell-apps to publish the first catalog app.
 - [ ] Confirm the D8–D11 decisions, which were marked Decided on the instruction to continue with Phase 1.
