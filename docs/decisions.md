@@ -16,6 +16,7 @@ Every architecture, tooling and dependency choice is recorded here. Agents add e
 | D10 | Discovery and providers | Decided 2026-10-13 | One catalog `index.json` per product (`catalog.schema.json`), from the product config. Repository and release URLs must match `policy.allowedSources`. No provider adapters: any HTTPS release URL works. |
 | D11 | Versioning and updates | Decided 2026-10-13 | Semver releases on `stable` or `beta`; the product's `policy.channel` picks what users see. Current and previous versions stay on disk, so rollback needs no download. Updates are user-initiated in Phase 1. |
 | D12 | Signing | Pending | Sigstore or internal PKI; decide in Phase 2. |
+| D13 | Launcher app & shell screen customization | Pending | Allow apps declaring `role: "launcher"` to serve as alternative shell home screens, customize docking/wallpapers/theming, and launch installed apps via sandboxed bridge calls. Zero Node or host IPC access; fallback to native dashboard guaranteed. |
 
 ## Dependencies
 

@@ -37,9 +37,14 @@ Status on 2026-10-14. Update this file when work lands; delete items that are do
 
 - [ ] Multiple sign-in methods as a platform feature: each product (tenant) chooses its providers, such as OIDC, SAML or a local account, in `product.json`, and apps keep using identity tokens. Needs a decision before work starts.
 - [ ] Ratings and reviews in the store. Skipped for now; they need a backend the static store does not have.
+- [ ] **Custom Launcher App & Shell Screen Customization (D13 concept):**
+  - Allow specialized apps to act as the desktop shell's home screen / launcher surface (`role: "launcher"`).
+  - Enable customizable shell screens: layout grids, custom app organization, docking trays, quick-launch command palettes, wallpapers, and accent theming.
+  - Controlled bridge APIs: `shell.listInstalledApps()` (title, icon, categories, id), `shell.launchApp(id)`, `shell.getWidgets()`, and `shell.setDashboardPreferences(prefs)`.
+  - Security invariant: Launcher apps run in standard isolated `WebContentsView` sandboxes on origin `app://<id>/` with zero Node access and zero host IPC exposure.
+  - Reliability invariant: The host provides a guaranteed fallback hotkey/toggle (e.g. `Ctrl/Cmd + Shift + Esc`) to restore the default shell dashboard at any time.
 
 ## Known limitations
 
 - Widgets appear only after their app has run in the current session.
 - The shell's catalog list shows descriptions but not icons or screenshots, because its CSP blocks remote images.
-- The product page's Download button links to this private repo's Releases.
