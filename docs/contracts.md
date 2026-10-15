@@ -26,13 +26,15 @@ Not yet enforced: network limits for backends (Phase 2), signing (D12).
 
 ## Catalog and installs
 
-`product.catalog` points at an `index.json` (`catalog.schema.json`): apps with their repository and releases (`version`, `channel`, `url`, `sha256`, `commit`). The host shows the newest release in `policy.channel` (`beta` also sees stable).
+`product.catalog` points at an `index.json` (`catalog.schema.json`): apps with their repository and releases (`version`, `channel`, `url`, `sha256`, `commit`), plus optional store listing fields (`description`, `categories`, `icon`, `screenshots`; images are https URLs or paths relative to the catalog). The host shows the newest release in `policy.channel` (`beta` also sees stable).
 
 Install and update download the package, then refuse it unless:
 - the repository and release URL start with an entry in `policy.allowedSources` (`file://` needs developer mode);
 - its SHA-256 equals the catalog's;
 - it contains only regular files and folders inside the package;
 - its manifest id and version equal the catalog's, and its engine range accepts the host.
+
+Install links: `<protocol>://_/install/<app-id>` (for example from a store web page) opens the host and asks the user to confirm. The link carries only an id from the product's own catalog, never a URL, so a web page cannot make the host fetch anything else. `_` is never a valid app id.
 
 Installed apps live in `<userData>/installed/<id>/<version>/`, with provenance (repository, commit, URL, digest, time) in `installed.json`. The previous version is kept for rollback. Remove deletes every version and the app's data. Running apps stop before any change. Pre-installed (protected) apps cannot be changed from the catalog.
 

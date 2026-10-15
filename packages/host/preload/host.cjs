@@ -9,6 +9,7 @@ contextBridge.exposeInMainWorld('host', {
   refreshCatalog: () => ipcRenderer.invoke('host:refreshCatalog'),
   install: (appId) => ipcRenderer.invoke('host:install', String(appId)),
   rollback: (appId) => ipcRenderer.invoke('host:rollback', String(appId)),
+  dismissInstall: () => ipcRenderer.invoke('host:dismissInstall'),
   uninstall: (appId) => ipcRenderer.invoke('host:uninstall', String(appId)),
   widgetAction: (appId, widgetId, actionId) => ipcRenderer.invoke('host:widgetAction', String(appId), String(widgetId), String(actionId)),
   onState(fn) {

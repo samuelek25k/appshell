@@ -28,12 +28,13 @@ test('catalog apps install, run and uninstall; tampered packages are refused', {
   writeFileSync(catalogFile, JSON.stringify({ format: 1, apps: [app('victim', 'victim.tgz', victim.sha256), app('hostile', 'hostile.tgz', 'f'.repeat(64))] }));
 
   const port = 9400 + Math.floor(Math.random() * 400);
-  const child = spawn(electron, [
+  const launch = (/** @type {string[]} */ extra) => spawn(electron, [
     join(root, 'packages/host'), '--product', join(root, 'test/fixtures/product-catalog.json'),
     // One argument: on Windows a separate URL-like argument stops Electron from starting.
-    `--catalog=${pathToFileURL(catalogFile).href}`, '--user-data', userData, `--remote-debugging-port=${port}`,
-    ...(process.getuid?.() === 0 ? ['--no-sandbox'] : []),
+    `--catalog=${pathToFileURL(catalogFile).href}`, '--user-data', userData,
+    ...extra, ...(process.getuid?.() === 0 ? ['--no-sandbox'] : []),
   ], { stdio: 'ignore' });
+  const child = launch([`--remote-debugging-port=${port}`]);
   t.after(async () => {
     if (child.exitCode === null) { child.kill(); await once(child, 'exit'); }
     rmSync(work, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
@@ -60,4 +61,20 @@ test('catalog apps install, run and uninstall; tampered packages are refused', {
   await ui("host.uninstall('victim')");
   assert.equal(existsSync(join(userData, 'installed', 'victim')), false);
   assert.equal(existsSync(join(userData, 'apps', 'victim')), false, 'app data removed with the app');
+
+  // An install link (as a store page sends) only asks; nothing installs until the user confirms.
+  await once(launch(['appshellcatalog://_/install/victim']), 'exit');
+  const prompt = "document.getElementById('install-confirm').hidden ? '' : document.getElementById('install-title').textContent";
+  let title = '';
+  for (let i = 0; i < 40 && !title; i++) { await new Promise((r) => setTimeout(r, 250)); title = await ui(prompt); }
+  assert.equal(title, 'Install victim?');
+  assert.equal(existsSync(join(userData, 'installed', 'victim')), false, 'not installed before confirmation');
+  await ui("document.getElementById('install-yes').click()");
+  for (let i = 0; i < 40 && !existsSync(join(userData, 'installed', 'victim')); i++) await new Promise((r) => setTimeout(r, 250));
+  assert.ok(existsSync(join(userData, 'installed', 'victim', '1.0.0')), 'installed after confirmation');
+
+  await once(launch(['appshellcatalog://_/install/not-listed']), 'exit');
+  let error = '';
+  for (let i = 0; i < 40 && !error; i++) { await new Promise((r) => setTimeout(r, 250)); error = await ui("document.getElementById('manager-error').textContent"); }
+  assert.match(error, /not-listed: not in this product's catalog/);
 });
