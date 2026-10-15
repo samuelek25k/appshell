@@ -53,7 +53,6 @@
   </script>
   
   <style>
-    /* Subtle dot grid and glowing ambient light */
     .bg-grid-pattern {
       background-size: 32px 32px;
       background-image: radial-gradient(circle, rgba(148, 163, 184, 0.12) 1px, transparent 1px);
@@ -68,7 +67,7 @@
 </head>
 <body class="bg-[#f8fafc] text-slate-800 dark:bg-slate-900 dark:text-slate-100 min-h-screen flex flex-col font-sans antialiased transition-colors duration-200 bg-grid-pattern">
 
-  <!-- Top Navigation Header: Exact match with appshell-apps store -->
+  <!-- Top Navigation Header -->
   <header class="sticky top-0 z-50 w-full border-b border-slate-200/80 dark:border-slate-800/80 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
       
@@ -80,22 +79,21 @@
 
       <!-- Center Nav Links -->
       <nav class="hidden md:flex items-center gap-6 text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-400">
-        <a href="#architecture" class="hover:text-brand-600 dark:hover:text-brand-400 transition-colors">Architecture</a>
-        <a href="#isolation" class="hover:text-brand-600 dark:hover:text-brand-400 transition-colors">Isolation Model</a>
-        <a href="#how" class="hover:text-brand-600 dark:hover:text-brand-400 transition-colors">How It Works</a>
-        <a href="#build" class="hover:text-brand-600 dark:hover:text-brand-400 transition-colors">CLI & SDK</a>
+        <a href="#architecture" class="hover:text-brand-600 dark:hover:text-brand-400 transition-colors">How It Works</a>
+        <a href="#isolation" class="hover:text-brand-600 dark:hover:text-brand-400 transition-colors">Security Model</a>
+        <a href="#workflow" class="hover:text-brand-600 dark:hover:text-brand-400 transition-colors">Developer Flow</a>
+        <a href="#build" class="hover:text-brand-600 dark:hover:text-brand-400 transition-colors">CLI & Tools</a>
+        <a href="releases.html" class="hover:text-brand-600 dark:hover:text-brand-400 transition-colors">Releases</a>
         <a href="https://samuelek25k.github.io/appshell-apps/" class="hover:text-brand-600 dark:hover:text-brand-400 transition-colors">App Store ↗</a>
       </nav>
 
-      <!-- Right Header Actions: Theme Toggle + Repo + App Store CTA -->
+      <!-- Right Header Actions -->
       <div class="flex items-center gap-2 sm:gap-3 flex-shrink-0">
         <!-- Dark / Light Theme Switcher -->
         <button type="button" id="theme-toggle" class="p-2 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" aria-label="Toggle theme">
-          <!-- Sun Icon (shown in dark mode) -->
           <svg id="theme-toggle-light-icon" class="hidden w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
           </svg>
-          <!-- Moon Icon (shown in light mode) -->
           <svg id="theme-toggle-dark-icon" class="hidden w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
           </svg>
@@ -132,17 +130,17 @@
       </h1>
       
       <p class="text-base sm:text-xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto leading-relaxed">
-        Engineering teams release mini-apps from their own git repositories. Users install verified catalog releases into one governed shell without redeploying the desktop client.
+        Build and ship desktop mini-apps straight from git. Your team gets isolated, sandboxed tools that install in seconds — without full-system rebuilds or messy dependency tangles.
       </p>
 
       <div class="flex flex-wrap items-center justify-center gap-3 pt-2">
         <a href="https://samuelek25k.github.io/appshell-apps/" class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold bg-slate-900 text-white dark:bg-white dark:text-slate-900 hover:opacity-90 transition-all shadow-md">
           <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-          Browse Web Store
+          Browse App Store
         </a>
-        <a href="https://github.com/samuelek25k/appshell/releases" class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+        <a href="releases.html" class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
           <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          Download for Windows (.exe)
+          Download Appshell
         </a>
       </div>
 
@@ -161,17 +159,17 @@
       </div>
     </section>
 
-    <!-- ARCHITECTURE DIAGRAM SECTION (NEXT LEVEL VISUALIZATION) -->
+    <!-- ARCHITECTURE DIAGRAM SECTION -->
     <section id="architecture" class="scroll-mt-24 space-y-10">
       <div class="max-w-3xl">
         <div class="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold bg-cyan-50 text-cyan-600 dark:bg-cyan-500/10 dark:text-cyan-400 border border-cyan-200/50 dark:border-cyan-500/20 mb-3">
           Architecture
         </div>
         <h2 class="text-2xl sm:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">
-          Multi-layer defense & decoupled execution
+          Built with zero trust — so you can build with total peace of mind.
         </h2>
         <p class="mt-3 text-base text-slate-600 dark:text-slate-400 leading-relaxed">
-          Third-party code is strictly adversarial. Core applications get no exemption. Host IPC, file access, and background runtimes are separated into deterministic, hardened trust boundaries.
+          In Appshell, every app is treated as untrusted by default. Host resources, background runtimes, and local storage stay in strictly isolated sandboxes with zero cross-app visibility.
         </p>
       </div>
 
@@ -182,28 +180,28 @@
         <div class="p-5 border-2 border-brand-500/30 bg-brand-50/20 dark:bg-brand-500/[0.04] relative">
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-brand-500/20 mb-4">
             <div class="flex items-center gap-2">
-              <span class="px-2 py-0.5 text-[11px] font-mono font-bold bg-brand-600 text-white uppercase">Control Plane</span>
-              <h3 class="font-bold text-base text-slate-900 dark:text-white">Electron Host Process (Main)</h3>
+              <span class="px-2 py-0.5 text-[11px] font-mono font-bold bg-brand-600 text-white uppercase">The Host Shell</span>
+              <h3 class="font-bold text-base text-slate-900 dark:text-white">Electron Main Process</h3>
             </div>
-            <span class="text-xs font-mono text-brand-600 dark:text-brand-400 font-medium">Native OS & Capability Policy Enforcement</span>
+            <span class="text-xs font-mono text-brand-600 dark:text-brand-400 font-medium">Guards system resources & enforces policy</span>
           </div>
           
           <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-mono">
             <div class="p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-              <div class="font-bold text-slate-900 dark:text-white mb-1">Bridge Broker</div>
-              <div class="text-slate-500">IPC call validator & permission inspector</div>
+              <div class="font-bold text-slate-900 dark:text-white mb-1">IPC Bridge</div>
+              <div class="text-slate-500">Inspects and validates every call before execution</div>
             </div>
             <div class="p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-              <div class="font-bold text-slate-900 dark:text-white mb-1">Identity Mint</div>
-              <div class="text-slate-500">Ed25519 JWT issuer (5-min scoped tokens)</div>
+              <div class="font-bold text-slate-900 dark:text-white mb-1">Identity Tokens</div>
+              <div class="text-slate-500">Mints 5-min Ed25519 tokens without leaking passwords</div>
             </div>
             <div class="p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-              <div class="font-bold text-slate-900 dark:text-white mb-1">Catalog Store</div>
-              <div class="text-slate-500">SHA-256 package verification & rollback</div>
+              <div class="font-bold text-slate-900 dark:text-white mb-1">Verified Catalog</div>
+              <div class="text-slate-500">Checks SHA-256 hashes and handles instant rollbacks</div>
             </div>
             <div class="p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-              <div class="font-bold text-slate-900 dark:text-white mb-1">Widget Engine</div>
-              <div class="text-slate-500">Pure JSON descriptor native renderer</div>
+              <div class="font-bold text-slate-900 dark:text-white mb-1">Live Widgets</div>
+              <div class="text-slate-500">Draws native metrics directly from clean JSON data</div>
             </div>
           </div>
         </div>
@@ -212,7 +210,7 @@
         <div class="flex items-center justify-center gap-4 text-xs font-mono text-slate-400">
           <div class="h-8 border-l-2 border-dashed border-brand-400 dark:border-brand-500"></div>
           <span class="px-3 py-1 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-            Bidirectional Sandboxed Bridge: <code class="text-brand-500 font-bold">window.appshell.call()</code>
+            Secure Bridge: <code class="text-brand-500 font-bold">window.appshell.call()</code>
           </span>
           <div class="h-8 border-l-2 border-dashed border-brand-400 dark:border-brand-500"></div>
         </div>
@@ -224,13 +222,13 @@
           <div class="p-5 border-2 border-sky-500/30 bg-sky-50/20 dark:bg-sky-500/[0.04]">
             <div class="flex items-center justify-between pb-3 border-b border-sky-500/20 mb-3">
               <span class="px-2 py-0.5 text-[11px] font-mono font-bold bg-sky-600 text-white">Boundary 1</span>
-              <h4 class="font-bold text-sm text-slate-900 dark:text-white">App UI Sandbox (WebContentsView)</h4>
+              <h4 class="font-bold text-sm text-slate-900 dark:text-white">Sandboxed UI View</h4>
             </div>
             <ul class="space-y-2 text-xs text-slate-600 dark:text-slate-400 font-mono">
-              <li class="flex items-center gap-2"><span class="text-emerald-500">✓</span> Origin: <code class="text-sky-600 dark:text-sky-400">app://&lt;app-id&gt;/</code> (Isolated partition)</li>
-              <li class="flex items-center gap-2"><span class="text-emerald-500">✓</span> Node.js: <strong class="text-rose-500">Disabled</strong> (Context isolation enforced)</li>
-              <li class="flex items-center gap-2"><span class="text-emerald-500">✓</span> Network: Declared hosts only (CSP cancellation)</li>
-              <li class="flex items-center gap-2"><span class="text-emerald-500">✓</span> Cross-app fetches: <strong class="text-rose-500">Refused</strong> (Different origins)</li>
+              <li class="flex items-center gap-2"><span class="text-emerald-500">✓</span> Runs on its own origin: <code class="text-sky-600 dark:text-sky-400">app://&lt;app-id&gt;/</code></li>
+              <li class="flex items-center gap-2"><span class="text-emerald-500">✓</span> No Node.js integration inside browser contexts</li>
+              <li class="flex items-center gap-2"><span class="text-emerald-500">✓</span> Can only talk to APIs declared in its manifest</li>
+              <li class="flex items-center gap-2"><span class="text-emerald-500">✓</span> Cannot peek at other apps or shared cookies</li>
             </ul>
           </div>
 
@@ -238,13 +236,13 @@
           <div class="p-5 border-2 border-indigo-500/30 bg-indigo-50/20 dark:bg-indigo-500/[0.04]">
             <div class="flex items-center justify-between pb-3 border-b border-indigo-500/20 mb-3">
               <span class="px-2 py-0.5 text-[11px] font-mono font-bold bg-indigo-600 text-white">Boundary 2</span>
-              <h4 class="font-bold text-sm text-slate-900 dark:text-white">Backend Process (utilityProcess)</h4>
+              <h4 class="font-bold text-sm text-slate-900 dark:text-white">Isolated Utility Worker</h4>
             </div>
             <ul class="space-y-2 text-xs text-slate-600 dark:text-slate-400 font-mono">
-              <li class="flex items-center gap-2"><span class="text-emerald-500">✓</span> Filesystem: Read-only to app's own folder</li>
-              <li class="flex items-center gap-2"><span class="text-emerald-500">✓</span> Child Processes: <strong class="text-rose-500">Blocked</strong> via Node Permission Model</li>
-              <li class="flex items-center gap-2"><span class="text-emerald-500">✓</span> Host Environment: <strong class="text-rose-500">Not inherited</strong> (clean env)</li>
-              <li class="flex items-center gap-2"><span class="text-emerald-500">✓</span> Lifecycle: Spawned on first call, stopped idle (60s)</li>
+              <li class="flex items-center gap-2"><span class="text-emerald-500">✓</span> Reads only files inside its own directory</li>
+              <li class="flex items-center gap-2"><span class="text-emerald-500">✓</span> Cannot spawn child processes or worker threads</li>
+              <li class="flex items-center gap-2"><span class="text-emerald-500">✓</span> Does not inherit host environment variables</li>
+              <li class="flex items-center gap-2"><span class="text-emerald-500">✓</span> Starts on first call, auto-stops after 60s idle</li>
             </ul>
           </div>
         </div>
@@ -253,10 +251,10 @@
         <div class="p-4 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-mono">
           <div class="flex items-center gap-2">
             <span class="text-lg">🔐</span>
-            <span class="text-slate-700 dark:text-slate-300"><strong>Verified Provenance:</strong> GitHub Tag → CI Tarball → SHA-256 Digest in Catalog → User Consent Gate</span>
+            <span class="text-slate-700 dark:text-slate-300"><strong>Built & Verified in Public:</strong> Push git tag → CI builds tarball → Check SHA-256 → User confirms install</span>
           </div>
           <span class="px-2.5 py-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 font-semibold">
-            21-Vector Hostile Test Passed
+            Vetted against 21 hostile evasion tests
           </span>
         </div>
 
@@ -270,10 +268,10 @@
           Security Guarantees
         </div>
         <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
-          Formal platform boundaries & contracts
+          Real security, tested on every commit
         </h2>
         <p class="mt-3 text-base text-slate-600 dark:text-slate-400 leading-relaxed">
-          Every guarantee is proven by <code class="text-xs bg-slate-200 dark:bg-slate-800 px-1.5 py-0.5 font-mono">test/e2e/hostile.test.js</code> in automated continuous integration.
+          We never document a guarantee that isn't enforced by code and proven by our automated test suite (<code class="text-xs bg-slate-200 dark:bg-slate-800 px-1.5 py-0.5 font-mono">test/e2e/hostile.test.js</code>).
         </p>
       </div>
 
@@ -282,40 +280,40 @@
           <thead class="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-mono">
             <tr>
               <th class="p-4 font-semibold">Boundary</th>
-              <th class="p-4 font-semibold">Mechanism</th>
-              <th class="p-4 font-semibold">Adversarial Resistance</th>
+              <th class="p-4 font-semibold">How It's Enforced</th>
+              <th class="p-4 font-semibold">What It Protects You From</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100 dark:divide-slate-800/80">
             <tr>
-              <td class="p-4 font-bold text-slate-900 dark:text-white">UI Layer</td>
-              <td class="p-4 text-slate-600 dark:text-slate-400">Sandboxed <code class="font-mono text-xs">WebContentsView</code> on origin <code class="font-mono text-xs text-brand-500">app://&lt;id&gt;/</code> with session partition</td>
-              <td class="p-4 text-emerald-600 dark:text-emerald-400 font-mono text-xs">Node access zeroed, cross-origin cookies & local storage isolated</td>
+              <td class="p-4 font-bold text-slate-900 dark:text-white">User Interface</td>
+              <td class="p-4 text-slate-600 dark:text-slate-400">Sandboxed view on dedicated origin <code class="font-mono text-xs text-brand-500">app://&lt;id&gt;/</code></td>
+              <td class="p-4 text-emerald-600 dark:text-emerald-400 font-mono text-xs">No Node.js access in browsers, private cookies and storage</td>
             </tr>
             <tr>
-              <td class="p-4 font-bold text-slate-900 dark:text-white">File Serving</td>
-              <td class="p-4 text-slate-600 dark:text-slate-400">Protocol handler resolves symlinks and serves only the app's directory + SDK stub</td>
-              <td class="p-4 text-emerald-600 dark:text-emerald-400 font-mono text-xs">Path traversal outside app folder strictly returns 404</td>
+              <td class="p-4 font-bold text-slate-900 dark:text-white">File Access</td>
+              <td class="p-4 text-slate-600 dark:text-slate-400">Custom protocol serves only files inside the app's own directory</td>
+              <td class="p-4 text-emerald-600 dark:text-emerald-400 font-mono text-xs">Directory traversal attempts outside the app folder instantly 404</td>
             </tr>
             <tr>
-              <td class="p-4 font-bold text-slate-900 dark:text-white">Network</td>
-              <td class="p-4 text-slate-600 dark:text-slate-400">Declarative allowlist in <code class="font-mono text-xs">capabilities.network</code>; CSP mirrored dynamically</td>
-              <td class="p-4 text-emerald-600 dark:text-emerald-400 font-mono text-xs">Undeclared HTTP/WebSocket connections unconditionally aborted</td>
+              <td class="p-4 font-bold text-slate-900 dark:text-white">Network Traffic</td>
+              <td class="p-4 text-slate-600 dark:text-slate-400">Explicit allowlist in manifest; CSP blocks all unlisted domains</td>
+              <td class="p-4 text-emerald-600 dark:text-emerald-400 font-mono text-xs">Apps can't quietly phone home or leak telemetry unless allowed</td>
             </tr>
             <tr>
-              <td class="p-4 font-bold text-slate-900 dark:text-white">Backend Process</td>
-              <td class="p-4 text-slate-600 dark:text-slate-400"><code class="font-mono text-xs">utilityProcess</code> constrained by Node Permission Model (<code class="font-mono text-xs">--permission</code>)</td>
-              <td class="p-4 text-emerald-600 dark:text-emerald-400 font-mono text-xs">Read-only app directory; zero child_process or worker threads</td>
+              <td class="p-4 font-bold text-slate-900 dark:text-white">Background Node</td>
+              <td class="p-4 text-slate-600 dark:text-slate-400">Node Permission Model locks the utility process to read-only folder access</td>
+              <td class="p-4 text-emerald-600 dark:text-emerald-400 font-mono text-xs">Backends cannot execute shell scripts or fork unauthorized workers</td>
             </tr>
             <tr>
               <td class="p-4 font-bold text-slate-900 dark:text-white">Identity Access</td>
-              <td class="p-4 text-slate-600 dark:text-slate-400">Host signs 5-minute Ed25519 JWTs with audience <code class="font-mono text-xs">app:&lt;id&gt;</code></td>
-              <td class="p-4 text-emerald-600 dark:text-emerald-400 font-mono text-xs">Apps cannot impersonate peers; credentials never touch client apps</td>
+              <td class="p-4 text-slate-600 dark:text-slate-400">Host mints 5-minute Ed25519 tokens scoped specifically to <code class="font-mono text-xs">app:&lt;id&gt;</code></td>
+              <td class="p-4 text-emerald-600 dark:text-emerald-400 font-mono text-xs">Proves who you are without ever exposing your user credentials</td>
             </tr>
             <tr>
-              <td class="p-4 font-bold text-slate-900 dark:text-white">Widget Rendering</td>
-              <td class="p-4 text-slate-600 dark:text-slate-400">Pure JSON descriptor schema (<code class="font-mono text-xs">widget.schema.json</code>) rendered natively by shell</td>
-              <td class="p-4 text-emerald-600 dark:text-emerald-400 font-mono text-xs">Zero third-party JavaScript or HTML injected on the dashboard</td>
+              <td class="p-4 font-bold text-slate-900 dark:text-white">Dashboard Widgets</td>
+              <td class="p-4 text-slate-600 dark:text-slate-400">Apps send plain JSON descriptors; the shell handles all the rendering</td>
+              <td class="p-4 text-emerald-600 dark:text-emerald-400 font-mono text-xs">Zero third-party JavaScript running on your home dashboard</td>
             </tr>
           </tbody>
         </table>
@@ -323,16 +321,16 @@
     </section>
 
     <!-- HOW IT WORKS STEP-BY-STEP -->
-    <section id="how" class="scroll-mt-24 space-y-10">
+    <section id="workflow" class="scroll-mt-24 space-y-10">
       <div class="max-w-3xl">
         <div class="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400 border border-indigo-200/50 dark:border-indigo-500/20 mb-3">
           Workflow
         </div>
         <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
-          Ship apps independently in 3 steps
+          Ship apps independently in three steps
         </h2>
         <p class="mt-3 text-base text-slate-600 dark:text-slate-400 leading-relaxed">
-          No centralized app review bottlenecks. No heavyweight Electron bundling per app.
+          No centralized app store review queues. No heavy 150MB Electron builds for every tool.
         </p>
       </div>
 
@@ -341,23 +339,23 @@
           <div class="w-10 h-10 bg-brand-500/10 text-brand-600 dark:text-brand-400 flex items-center justify-center font-bold mb-4 font-mono text-sm border border-brand-500/20">01</div>
           <h3 class="text-base font-bold text-slate-900 dark:text-white">Scaffold in seconds</h3>
           <p class="mt-2 text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-            Run <code class="font-mono text-xs bg-slate-100 dark:bg-slate-900 px-1 py-0.5">appshell create</code>. Get a ready-to-code project with UI entrypoint, utility backend, and dashboard widget bindings.
+            Run <code class="font-mono text-xs bg-slate-100 dark:bg-slate-900 px-1 py-0.5">appshell create</code>. You get a clean starter project with a UI entrypoint, utility backend, and dashboard widget bindings ready to go.
           </p>
         </div>
 
         <div class="p-6 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950/70">
           <div class="w-10 h-10 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold mb-4 font-mono text-sm border border-indigo-500/20">02</div>
-          <h3 class="text-base font-bold text-slate-900 dark:text-white">Tag & Release via CI</h3>
+          <h3 class="text-base font-bold text-slate-900 dark:text-white">Tag to release</h3>
           <p class="mt-2 text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-            Push a git tag like <code class="font-mono text-xs bg-slate-100 dark:bg-slate-900 px-1 py-0.5">v1.0.0</code>. Automated CI builds the regular tarball, hashes it with SHA-256, and updates catalog records.
+            Push a git tag like <code class="font-mono text-xs bg-slate-100 dark:bg-slate-900 px-1 py-0.5">v1.0.0</code>. Automated GitHub Actions packages your app, verifies the SHA-256 checksum, and updates catalog records.
           </p>
         </div>
 
         <div class="p-6 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950/70">
           <div class="w-10 h-10 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold mb-4 font-mono text-sm border border-emerald-500/20">03</div>
-          <h3 class="text-base font-bold text-slate-900 dark:text-white">Install with Consent</h3>
+          <h3 class="text-base font-bold text-slate-900 dark:text-white">Install with consent</h3>
           <p class="mt-2 text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-            Click Install in the web store. The shell prompts the user, verifies cryptographic integrity, and launches the app inside its private sandbox.
+            Users click Install in the web store. The shell prompts for confirmation, verifies cryptographic integrity, and runs the app isolated.
           </p>
         </div>
       </div>
@@ -370,13 +368,13 @@
           Consent Gate
         </div>
         <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
-          Install from the web, confirm in the shell
+          Install from the web, confirm on your terms
         </h2>
         <p class="text-sm sm:text-base text-slate-600 dark:text-slate-400 leading-relaxed">
-          The web store initiates an install request via the registered OS deep-link protocol (<code class="font-mono text-xs bg-slate-100 dark:bg-slate-900 px-1 py-0.5">appshellcatalog://</code>).
+          Clicking Install in the web store sends a deep link to your desktop app (<code class="font-mono text-xs bg-slate-100 dark:bg-slate-900 px-1 py-0.5">appshellcatalog://</code>).
         </p>
         <p class="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-          The desktop shell halts execution and displays the package origin, publisher, and permissions. Downloads proceed only after explicit user confirmation. Rollback and updates are 1-click and instantaneous.
+          The desktop shell pauses and shows you exactly who made the app, what permissions it asks for, and where it's coming from. Nothing downloads until you click Install. Updates and one-click rollbacks happen right on your dashboard.
         </p>
       </div>
 
@@ -396,10 +394,10 @@
           Developer CLI
         </div>
         <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
-          Everything developers need in one binary
+          Everything you need to build, test, and ship
         </h2>
         <p class="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-          No boilerplate required. The Appshell CLI scaffolds, tests in live hot-reloading dev hosts, and packages verified tarballs ready for distribution.
+          One lightweight CLI scaffolds new projects, spins up live hot-reloading dev hosts, and packages verified tarballs ready for distribution.
         </p>
         
         <div class="p-4 bg-slate-900 text-slate-200 font-mono text-xs border border-slate-800 shadow-md">
@@ -407,10 +405,10 @@
           <pre class="leading-relaxed overflow-x-auto"><code><span class="text-slate-500"># 1. Create a new sandboxed app</span>
 pnpm appshell create ../my-app --id my-app --title "My App"
 
-<span class="text-slate-500"># 2. Run in live dev shell</span>
+<span class="text-slate-500"># 2. Test in the live development shell</span>
 pnpm appshell dev ../my-app
 
-<span class="text-slate-500"># 3. Package and calculate SHA-256</span>
+<span class="text-slate-500"># 3. Package and calculate the SHA-256 hash</span>
 pnpm appshell package ../my-app</code></pre>
         </div>
       </div>
@@ -429,13 +427,13 @@ pnpm appshell package ../my-app</code></pre>
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
         <div>
           <div class="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400 border border-indigo-200/50 dark:border-indigo-500/20 mb-3">
-            Multi-Tenant Configuration
+            Custom Products
           </div>
           <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
-            White-label & brand your desktop product
+            Brand it for your organization
           </h2>
           <p class="mt-3 text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-            A product is defined by a single configuration file (<code class="font-mono text-xs bg-slate-100 dark:bg-slate-900 px-1 py-0.5">product.json</code>). Configure custom names, deep-link protocol schemes, pre-bundled core apps, and security policies.
+            A single JSON file (<code class="font-mono text-xs bg-slate-100 dark:bg-slate-900 px-1 py-0.5">product.json</code>) defines your entire platform. Configure custom names, deep-link protocol schemes, pre-bundled core apps, and security policies for your team.
           </p>
         </div>
 
@@ -461,15 +459,16 @@ pnpm appshell package ../my-app</code></pre>
 
   </main>
 
-  <!-- Footer: Matching appshell-apps store layout -->
+  <!-- Footer -->
   <footer class="border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-10 mt-auto">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500 dark:text-slate-400">
       <div class="flex items-center gap-2.5">
         <img src="mark.svg" alt="Appshell" class="w-5 h-5" width="20" height="20">
         <span class="font-bold text-slate-800 dark:text-slate-200">Appshell Desktop Platform</span>
-        <span>· MIT License</span>
+        <span>· Open Source</span>
       </div>
       <div class="flex items-center gap-5 font-semibold">
+        <a href="releases.html" class="hover:text-slate-900 dark:hover:text-white transition-colors">Releases</a>
         <a href="https://samuelek25k.github.io/appshell-apps/" class="hover:text-slate-900 dark:hover:text-white transition-colors">App Store</a>
         <a href="https://github.com/samuelek25k/appshell" class="hover:text-slate-900 dark:hover:text-white transition-colors">GitHub</a>
         <a href="https://github.com/samuelek25k/appshell-apps" class="hover:text-slate-900 dark:hover:text-white transition-colors">Catalog Repo</a>
@@ -477,7 +476,7 @@ pnpm appshell package ../my-app</code></pre>
     </div>
   </footer>
 
-  <!-- Theme Switcher JavaScript (Exact same implementation as appshell-apps) -->
+  <!-- Theme Switcher JavaScript -->
   <script>
     (function setupTheme() {
       const themeToggle = document.getElementById('theme-toggle');
