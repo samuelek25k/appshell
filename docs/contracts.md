@@ -51,8 +51,14 @@ UI: `await window.appshell.call(method, params)`; failures reject with `Error("<
 | `notifications.show` | `title` ≤ 80, `body` ≤ 280 | `capabilities.notifications` |
 | `log.write` | `level`, `message` ≤ 2000 | |
 | `backend.call` | `method`, `params` | `entry.backend` |
+| `identity.token` | | `capabilities.identity` |
+| `identity.publicKey` | | |
 
 Limits: storage values ≤ 64 KB, ≤ 1 MB per app. Errors: `UNKNOWN_METHOD`, `INVALID_PARAMS`, `CAPABILITY_DENIED`, `BACKEND_UNAVAILABLE`, `BACKEND_TIMEOUT` (10 s), `BACKEND_ERROR`, `UNKNOWN_CALLER`, `INTERNAL`.
+
+## Identity
+
+`identity.token` returns `{ token, expiresAt }`: a compact JWS (EdDSA) with `iss` (product data folder), `sub` (installation id), `aud` (`app:<caller id>`, never chosen by the caller), `iat`, `exp` (5 minutes), `jti`. Verify with `identity.publicKey` (JWK); `verifyToken` in `packages/host/src/identity.js` is a reference. The signing key stays in the host's data folder (file mode 0600).
 
 ## Events (host to app, `appshell.on(name, fn)`)
 

@@ -45,7 +45,8 @@
       "properties": {
         "network": { "type": "array", "items": { "type": "string", "pattern": "^[a-z0-9.-]+(:\\d+)?$" } },
         "notifications": { "type": "boolean" },
-        "secrets": { "type": "array", "items": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" } }
+        "secrets": { "type": "array", "items": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" } },
+        "identity": { "type": "boolean" }
       }
     }
   }

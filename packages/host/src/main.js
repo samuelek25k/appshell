@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { CLOSE_VETO_TIMEOUT_MS } from '@appshell/contracts';
 import { loadProduct, loadApps, HOST_VERSION } from './registry.js';
 import { createManager } from './manager.js';
+import { createIdentity } from './identity.js';
 import { createServices } from './services.js';
 import { createBackend } from './backend.js';
 import { createBridge } from './bridge.js';
@@ -80,6 +81,7 @@ const appLog = (appId) => (/** @type {string} */ level, /** @type {string} */ me
 const bridge = createBridge({
   policy: product.policy,
   services,
+  identity: createIdentity(join(dataRoot, 'identity'), product.dataDirectory),
   hostLog,
   backendFor(appId) {
     let backend = backends.get(appId);

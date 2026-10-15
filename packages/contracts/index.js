@@ -49,7 +49,7 @@ export const ERRORS = /** @type {const} */ ({
  *   entry: { ui?: string, backend?: string },
  *   display?: 'shell' | 'standalone',
  *   widgets?: { id: string, title: string }[],
- *   capabilities?: { network?: string[], notifications?: boolean, secrets?: string[] }
+ *   capabilities?: { network?: string[], notifications?: boolean, secrets?: string[], identity?: boolean }
  * }} Manifest
  */
 
@@ -89,6 +89,8 @@ export const METHODS = {
     requires: () => null,
   },
   'backend.call': { params: (p) => str(p?.method, 64), requires: (m) => (m.entry.backend ? null : 'backend') },
+  'identity.token': { params: () => true, requires: (m) => (m.capabilities?.identity ? null : 'identity') },
+  'identity.publicKey': { params: () => true, requires: () => null },
 };
 
 /** Events the host sends to an app. */
