@@ -13,6 +13,9 @@ import { fail } from './services.js';
  *   onWidget: (appId: string, widgetId: string, descriptor: object) => void,
  *   onCloseResponse: (appId: string, nonce: string, allow: boolean) => void,
  *   hostLog: (message: string) => void,
+ *   onListApps?: () => { id: string, title: string, publisher: string, running: boolean }[],
+ *   onLaunchApp?: (appId: string) => boolean,
+ *   onGetWidgets?: () => object[],
  * }} BridgeDeps
  */
 
@@ -28,6 +31,11 @@ export function createBridge(deps) {
     'shell.hello': (id) => ({ protocol: SHELL_PROTOCOL, appId: id }),
     'shell.setTitle': (id, p) => deps.onTitle(id, p.title),
     'shell.closeResponse': (id, p) => deps.onCloseResponse(id, p.nonce, p.allow),
+    'shell.listInstalledApps': () => deps.onListApps?.() ?? [],
+    'shell.launchApp': (_id, p) => deps.onLaunchApp?.(p.id) ?? false,
+    'shell.getWidgets': () => deps.onGetWidgets?.() ?? [],
+    'shell.setPreferences': (id, p) => services.storage.set(id, '__launcher_prefs__', p.preferences),
+    'shell.getPreferences': async (id) => (await services.storage.get(id, '__launcher_prefs__')) ?? {},
     'widgets.update': (id, p) => {
       const result = validate('widget', p.descriptor);
       if (!result.ok) throw fail(ERRORS.INVALID_PARAMS, result.errors.join('; '));

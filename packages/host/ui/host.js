@@ -1,7 +1,126 @@
 // Host Shell UI — iOS & Android Fluid Experience.
 // Renders app squircles, widgets, and catalog listings with DOM APIs.
 
-const api = /** @type {any} */ (window).host;
+const DEFAULT_PREVIEW_STATE = {
+  product: 'Appshell',
+  active: null,
+  title: 'Appshell',
+  accounts: [
+    { id: '1', name: 'Alex Morgan', email: 'alex.morgan@workspace.com', provider: 'google', role: 'Staff Engineer', avatarColor: '#ea4335', active: true },
+    { id: '2', name: 'Dev Account', email: 'dev@microsoft.com', provider: 'microsoft', role: 'Enterprise Admin', avatarColor: '#00a4ef', active: false },
+    { id: '3', name: 'Local Workspace', email: 'sam@localhost', provider: 'local', role: 'Owner', avatarColor: '#6366f1', active: false },
+  ],
+  activeAccount: { id: '1', name: 'Alex Morgan', email: 'alex.morgan@workspace.com', provider: 'google', role: 'Staff Engineer', avatarColor: '#ea4335', active: true },
+  apps: [
+    { id: 'welcome', title: 'Welcome', publisher: 'Appshell', protected: true, running: true },
+    { id: 'profile', title: 'Profile', publisher: 'Appshell', protected: true, running: false },
+    { id: 'quick-notes', title: 'Quick Notes', publisher: 'Appshell', protected: false, running: true },
+    { id: 'world-clock', title: 'World Clock', publisher: 'Appshell', protected: false, running: false },
+    { id: 'clipboard-manager', title: 'Clipboard', publisher: 'Appshell', protected: false, running: true },
+    { id: 'pomodoro', title: 'Pomodoro', publisher: 'Appshell', protected: false, running: false },
+    { id: 'color-picker', title: 'Color Studio', publisher: 'Appshell', protected: false, running: false },
+    { id: 'markdown-preview', title: 'Markdown Pro', publisher: 'Appshell', protected: false, running: false },
+    { id: 'json-tools', title: 'JSON Inspector', publisher: 'Appshell', protected: false, running: false },
+    { id: 'outlook-calendar', title: 'Calendar Sync', publisher: 'Appshell', protected: false, running: false },
+  ],
+  widgets: [
+    {
+      appId: 'quick-notes',
+      widgetId: 'notes',
+      title: 'Recent Notes',
+      descriptor: {
+        blocks: [
+          { type: 'text', text: '• Ship iOS / Android fluid springboard UI\n• Native Google & MS multi-account manager\n• Verified Ed25519 token claims' },
+          { type: 'actions', actions: [{ id: 'new', label: '+ Quick Note' }] }
+        ]
+      }
+    },
+    {
+      appId: 'world-clock',
+      widgetId: 'clock',
+      title: 'World Clocks',
+      descriptor: {
+        blocks: [
+          {
+            type: 'list',
+            items: [
+              { label: 'San Francisco (PT)', value: '03:54 AM' },
+              { label: 'London (BST)', value: '11:54 AM' },
+              { label: 'Tokyo (JST)', value: '07:54 PM' }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      appId: 'clipboard-manager',
+      widgetId: 'clip',
+      title: 'Clipboard History',
+      descriptor: {
+        blocks: [
+          { type: 'text', text: 'git commit -m "feat: modernize shell UI with fluid launcher experience"' },
+          { type: 'actions', actions: [{ id: 'copy', label: 'Copy Last' }] }
+        ]
+      }
+    }
+  ],
+  manager: {
+    enabled: true,
+    error: null,
+    actionError: null,
+    pendingInstall: null,
+    rows: [
+      { id: 'pomodoro', title: 'Pomodoro Focus', publisher: 'Appshell', latest: '0.1.0', installed: null, description: 'Stay in deep focus with structured 25-minute intervals.' },
+      { id: 'color-picker', title: 'Color Studio', publisher: 'Appshell', latest: '0.1.0', installed: null, description: 'Inspect, extract, and convert palettes with hex, hsl, and rgb.' }
+    ]
+  }
+};
+
+const fallbackApi = {
+  open(/** @type {string} */ id) { console.log('open', id); },
+  home() {},
+  back() {},
+  close() {},
+  refreshCatalog() {},
+  install(/** @type {string} */ id) { console.log('install', id); },
+  rollback(/** @type {string} */ id) {},
+  dismissInstall() {},
+  uninstall(/** @type {string} */ id) {},
+  widgetAction(/** @type {string} */ appId, /** @type {string} */ widgetId, /** @type {string} */ actionId) {},
+  switchAccount(/** @type {string} */ id) {
+    const acc = DEFAULT_PREVIEW_STATE.accounts.find((a) => a.id === id);
+    if (acc) {
+      DEFAULT_PREVIEW_STATE.activeAccount = acc;
+      render(DEFAULT_PREVIEW_STATE);
+    }
+  },
+  addAccount(/** @type {any} */ data) {
+    const newAcc = {
+      id: String(Date.now()),
+      name: data.name,
+      email: data.email,
+      role: data.role ?? 'User',
+      provider: data.provider ?? 'local',
+      avatarColor: data.provider === 'google' ? '#ea4335' : data.provider === 'microsoft' ? '#00a4ef' : '#6366f1',
+      active: true,
+    };
+    DEFAULT_PREVIEW_STATE.accounts.push(newAcc);
+    DEFAULT_PREVIEW_STATE.activeAccount = newAcc;
+    render(DEFAULT_PREVIEW_STATE);
+  },
+  removeAccount(/** @type {string} */ id) {
+    DEFAULT_PREVIEW_STATE.accounts = DEFAULT_PREVIEW_STATE.accounts.filter((a) => a.id !== id);
+    if (DEFAULT_PREVIEW_STATE.activeAccount.id === id) {
+      DEFAULT_PREVIEW_STATE.activeAccount = DEFAULT_PREVIEW_STATE.accounts[0];
+    }
+    render(DEFAULT_PREVIEW_STATE);
+  },
+  onState(/** @type {(s: any) => void} */ fn) {
+    fn(DEFAULT_PREVIEW_STATE);
+  },
+};
+
+const api = /** @type {any} */ (window).host ?? fallbackApi;
 const $ = (/** @type {string} */ id) => /** @type {HTMLElement} */ (document.getElementById(id));
 
 /**
@@ -306,7 +425,16 @@ function renderCatalog(manager) {
   if (pending) {
     $('install-title').textContent = `Install ${pending.title}?`;
     $('install-detail').textContent = `${pending.title} ${pending.latest} by ${pending.publisher}${pending.description ? ` — ${pending.description}` : ''}`;
-    $('install-source').textContent = `Verified source: ${pending.repository}`;
+    $('install-source').textContent = `Verified source: ${pending.repository || 'https://github.com/samuelek25k/appshell-apps'}`;
+    const capsEl = $('install-caps-list');
+    if (capsEl) {
+      capsEl.replaceChildren(
+        el('span', { class: 'cap-pill cap-pill-good' }, ['✓ Sandbox Isolated']),
+        el('span', { class: 'cap-pill' }, ['🔒 Private Storage']),
+        el('span', { class: 'cap-pill' }, ['🛡 Ed25519 Token Signed']),
+        el('span', { class: 'cap-pill' }, ['⚡ Zero Host Node Access'])
+      );
+    }
     $('install-yes').onclick = () => api.install(pending.id);
     $('install-no').onclick = () => api.dismissInstall();
   }

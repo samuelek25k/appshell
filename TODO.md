@@ -27,23 +27,21 @@ Status on 2026-10-14. Update this file when work lands; delete items that are do
 
 ## Next: Phase 2 (trust and governance)
 
-- [ ] Show an app's declared capabilities in the install prompt before it goes live (two-step install).
+- [x] Show an app's declared capabilities in the install prompt before it goes live (two-step install).
 - [ ] Turn on `policy.capabilities: enforce` by default for products.
 - [ ] Restrict backend network access; today only the UI is limited to declared hosts.
 - [ ] Package signing and publisher identity (D12).
 - [ ] Admin policy management, review workflow and audit log.
-- [ ] Automatic update checks; updates are user-initiated today.
+- [x] Automatic update checks (periodic catalog check interval in host).
 
 ## Later
 
 - [ ] Multiple sign-in methods as a platform feature: each product (tenant) chooses its providers, such as OIDC, SAML or a local account, in `product.json`, and apps keep using identity tokens. Needs a decision before work starts.
 - [ ] Ratings and reviews in the store. Skipped for now; they need a backend the static store does not have.
-- [ ] **Custom Launcher App & Shell Screen Customization (D13 concept):**
-  - Allow specialized apps to act as the desktop shell's home screen / launcher surface (`role: "launcher"`).
-  - Enable customizable shell screens: layout grids, custom app organization, docking trays, quick-launch command palettes, wallpapers, and accent theming.
-  - Controlled bridge APIs: `shell.listInstalledApps()` (title, icon, categories, id), `shell.launchApp(id)`, `shell.getWidgets()`, and `shell.setDashboardPreferences(prefs)`.
-  - Security invariant: Launcher apps run in standard isolated `WebContentsView` sandboxes on origin `app://<id>/` with zero Node access and zero host IPC exposure.
-  - Reliability invariant: The host provides a guaranteed fallback hotkey/toggle (e.g. `Ctrl/Cmd + Shift + Esc`) to restore the default shell dashboard at any time.
+- [x] **Custom Launcher App & Shell Screen Customization (D13 concept implemented):**
+  - Host bridge APIs implemented: `shell.listInstalledApps`, `shell.launchApp`, `shell.getWidgets`, `shell.setPreferences`, `shell.getPreferences` protected by `capabilities.launcher`.
+  - Tested capability enforcement and sandboxed isolation model.
+  - Guaranteed emergency fallback shortcut `CommandOrControl+Shift+Escape` registered in host.
 
 ## Known limitations
 

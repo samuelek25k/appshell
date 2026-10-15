@@ -36,4 +36,11 @@ test('capability checks name what is missing', () => {
   assert.equal(METHODS['widgets.update'].requires(manifest, { id: 'nope' }), 'widgets:nope');
   assert.equal(METHODS['identity.token'].requires(manifest, {}), 'identity');
   assert.equal(METHODS['identity.token'].requires({ ...manifest, capabilities: { identity: true } }, {}), null);
+  assert.equal(METHODS['shell.listInstalledApps'].requires(manifest, {}), 'launcher');
+  assert.equal(METHODS['shell.listInstalledApps'].requires({ ...manifest, capabilities: { launcher: true } }, {}), null);
+  assert.equal(METHODS['shell.launchApp'].requires(manifest, { id: 'other' }), 'launcher');
+  assert.equal(METHODS['shell.launchApp'].requires({ ...manifest, capabilities: { launcher: true } }, { id: 'other' }), null);
+  assert.equal(METHODS['shell.getWidgets'].requires(manifest, {}), 'launcher');
+  assert.equal(METHODS['shell.getWidgets'].requires({ ...manifest, capabilities: { launcher: true } }, {}), null);
 });
+

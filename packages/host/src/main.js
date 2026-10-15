@@ -1,6 +1,4 @@
-// Appshell host entry. Usage in development:
-//   electron packages/host --product <product.json> [--apps <dir>] [--catalog=<url>] [--user-data <dir>] [<protocol>://<app-id>/<path>]
-import { app, BrowserWindow, ipcMain, net, protocol, session } from 'electron';
+import { app, BrowserWindow, globalShortcut, ipcMain, net, protocol, session } from 'electron';
 import { randomUUID } from 'node:crypto';
 import { appendFileSync, mkdirSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
@@ -108,6 +106,26 @@ const bridge = createBridge({
     const key = `${appId}:${nonce}`;
     closeWaiters.get(key)?.(allow);
     closeWaiters.delete(key);
+  },
+  onListApps() {
+    return [...apps.values()].map(({ manifest, protected: isProtected }) => ({
+      id: manifest.id,
+      title: manifest.title,
+      publisher: manifest.publisher,
+      protected: isProtected,
+      running: running.has(manifest.id),
+    }));
+  },
+  onLaunchApp(appId) {
+    return open(appId);
+  },
+  onGetWidgets() {
+    return [...apps.values()].flatMap(({ manifest }) =>
+      (manifest.widgets ?? []).flatMap((w) => {
+        const descriptor = widgets.get(manifest.id)?.[w.id];
+        return descriptor ? [{ appId: manifest.id, widgetId: w.id, title: w.title, descriptor }] : [];
+      })
+    );
   },
 });
 
@@ -328,4 +346,16 @@ app.whenReady().then(async () => {
   hostLog(`started ${product.name} with ${apps.size} app(s)`);
   manager.refresh().then(publish);
   links(process.argv).forEach(handleLink);
+
+  // D13: Guaranteed fallback emergency hotkey to restore default shell dashboard
+  globalShortcut.register('CommandOrControl+Shift+Escape', () => {
+    active = null;
+    layout();
+    publish();
+    if (win?.isMinimized()) win.restore();
+    win?.focus();
+  });
+
+  // Phase 2: Automatic periodic background catalog update checks
+  setInterval(() => manager.refresh().then(publish), 60 * 60 * 1000).unref();
 });

@@ -55,6 +55,11 @@ UI: `await window.appshell.call(method, params)`; failures reject with `Error("<
 | `backend.call` | `method`, `params` | `entry.backend` |
 | `identity.token` | | `capabilities.identity` |
 | `identity.publicKey` | | |
+| `shell.listInstalledApps` | | `capabilities.launcher` |
+| `shell.launchApp` | `id` ≤ 64 | `capabilities.launcher` |
+| `shell.getWidgets` | | `capabilities.launcher` |
+| `shell.setPreferences` | `preferences` (object) | `capabilities.launcher` |
+| `shell.getPreferences` | | `capabilities.launcher` |
 
 Limits: storage values ≤ 64 KB, ≤ 1 MB per app. Errors: `UNKNOWN_METHOD`, `INVALID_PARAMS`, `CAPABILITY_DENIED`, `BACKEND_UNAVAILABLE`, `BACKEND_TIMEOUT` (10 s), `BACKEND_ERROR`, `UNKNOWN_CALLER`, `INTERNAL`.
 
@@ -79,3 +84,14 @@ Descriptors (`widget.schema.json`) hold up to 8 blocks: `text`, `metric`, `list`
 ## Backend
 
 `entry.backend` runs on first `backend.call`, stops after 60 s idle, and stops for good after 3 crashes. Messages in: `{ id, method, params }` on `process.parentPort`. Out: `{ id, result }` or `{ id, error: { code, message } }`. `@appshell/sdk/backend` (`serve(handlers)`) implements this; copy it into the app folder.
+
+## Launcher (D13)
+
+Apps declaring `capabilities.launcher: true` can query installed applications, inspect widgets, and launch apps through the sandboxed bridge:
+- `shell.listInstalledApps`: returns an array of installed applications (`{ id, name, version, description, icon }`).
+- `shell.launchApp({ id })`: requests the host to open and bring an installed app into focus.
+- `shell.getWidgets`: returns installed widget descriptors.
+- `shell.setPreferences({ preferences })` / `shell.getPreferences()`: persists custom layout, dock, and dashboard preferences.
+
+Launcher apps run under standard sandboxing (`app://<id>/`, isolated session partition, zero Node access, zero host IPC). The host guarantees `CommandOrControl+Shift+Escape` to immediately exit any custom launcher view and restore the default host dashboard.
+

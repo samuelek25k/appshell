@@ -49,7 +49,7 @@ export const ERRORS = /** @type {const} */ ({
  *   entry: { ui?: string, backend?: string },
  *   display?: 'shell' | 'standalone',
  *   widgets?: { id: string, title: string }[],
- *   capabilities?: { network?: string[], notifications?: boolean, secrets?: string[], identity?: boolean }
+ *   capabilities?: { network?: string[], notifications?: boolean, secrets?: string[], identity?: boolean, launcher?: boolean }
  * }} Manifest
  */
 
@@ -65,6 +65,11 @@ export const METHODS = {
   'shell.hello': { params: () => true, requires: () => null },
   'shell.setTitle': { params: (p) => str(p?.title, 60), requires: () => null },
   'shell.closeResponse': { params: (p) => str(p?.nonce, 64) && typeof p?.allow === 'boolean', requires: () => null },
+  'shell.listInstalledApps': { params: () => true, requires: (m) => (m.capabilities?.launcher ? null : 'launcher') },
+  'shell.launchApp': { params: (p) => str(p?.id, 64), requires: (m) => (m.capabilities?.launcher ? null : 'launcher') },
+  'shell.getWidgets': { params: () => true, requires: (m) => (m.capabilities?.launcher ? null : 'launcher') },
+  'shell.setPreferences': { params: (p) => typeof p?.preferences === 'object' && p.preferences !== null, requires: (m) => (m.capabilities?.launcher ? null : 'launcher') },
+  'shell.getPreferences': { params: () => true, requires: (m) => (m.capabilities?.launcher ? null : 'launcher') },
   'widgets.update': {
     params: (p) => str(p?.id, 32) && typeof p?.descriptor === 'object' && p.descriptor !== null,
     requires: (m, p) => (m.widgets ?? []).some((w) => w.id === p.id) ? null : `widgets:${p.id}`,
