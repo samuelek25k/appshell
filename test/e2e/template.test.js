@@ -1,0 +1,42 @@
+// Phase 1: an app made by `appshell create` runs in the host, backend included.
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { execFileSync, spawn } from 'node:child_process';
+import { once } from 'node:events';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { evaluate, waitForPage } from './cdp.js';
+
+const root = fileURLToPath(new URL('../..', import.meta.url));
+const electron = /** @type {string} */ (createRequire(import.meta.url)('electron'));
+
+test('a new app from the template runs with its sandboxed backend', { timeout: 90_000 }, async (t) => {
+  const work = mkdtempSync(join(tmpdir(), 'appshell-template-'));
+  const app = join(work, 'hello');
+  execFileSync(process.execPath, [join(root, 'packages/cli/bin.js'), 'create', app, '--id', 'hello', '--title', 'Hello']);
+  writeFileSync(join(work, 'product.json'), JSON.stringify({
+    name: 'Template Test', protocol: 'appshelltemplate', dataDirectory: 'appshell-template-test',
+    package: { extension: '.tgz', displayName: 'App' }, apps: [{ path: app }],
+    policy: { capabilities: 'enforce', developerMode: true },
+  }));
+  const port = 9800 + Math.floor(Math.random() * 100);
+  const child = spawn(electron, [
+    join(root, 'packages/host'), '--product', join(work, 'product.json'), '--user-data', join(work, 'data'),
+    `--remote-debugging-port=${port}`, 'appshelltemplate://hello/', ...(process.getuid?.() === 0 ? ['--no-sandbox'] : []),
+  ], { stdio: 'ignore' });
+  t.after(async () => {
+    if (child.exitCode === null) { child.kill(); await once(child, 'exit'); }
+    rmSync(work, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
+  });
+
+  await waitForPage(port, 'app://hello');
+  let greeting = '';
+  for (let i = 0; i < 40 && !greeting.startsWith('Hello from the backend'); i++) {
+    await new Promise((r) => setTimeout(r, 250));
+    greeting = await evaluate(port, 'app://hello', "document.getElementById('greeting').textContent");
+  }
+  assert.equal(greeting, 'Hello from the backend. Visit 1.');
+});

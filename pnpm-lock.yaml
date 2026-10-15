@@ -33,6 +33,21 @@ importers:
         specifier: ^7.0.2
         version: 7.0.2
 
+  packages/cli:
+    dependencies:
+      '@appshell/contracts':
+        specifier: workspace:*
+        version: link:../contracts
+      '@appshell/distribution':
+        specifier: workspace:*
+        version: link:../distribution
+      '@appshell/host':
+        specifier: workspace:*
+        version: link:../host
+      '@appshell/sdk':
+        specifier: workspace:*
+        version: link:../sdk
+
   packages/contracts:
     dependencies:
       ajv:
