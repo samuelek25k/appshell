@@ -80,10 +80,12 @@ let win = null;
 /** @param {string} appId */
 const appLog = (appId) => (/** @type {string} */ level, /** @type {string} */ message) => services.log(appId, level, message);
 
+const identity = createIdentity(join(dataRoot, 'identity'), product.dataDirectory);
+
 const bridge = createBridge({
   policy: product.policy,
   services,
-  identity: createIdentity(join(dataRoot, 'identity'), product.dataDirectory),
+  identity,
   hostLog,
   backendFor(appId) {
     let backend = backends.get(appId);
@@ -115,6 +117,8 @@ function publish() {
     product: product.name,
     active,
     title: active ? running.get(active)?.title : product.name,
+    accounts: identity.listAccounts(),
+    activeAccount: identity.getActiveAccount(),
     apps: [...apps.values()].map(({ manifest, protected: isProtected }) => ({
       id: manifest.id, title: manifest.title, publisher: manifest.publisher, protected: isProtected, running: running.has(manifest.id),
     })),
@@ -277,6 +281,21 @@ ipcMain.handle('host:widgetAction', (event, appId, widgetId, actionId) => {
   const declared = descriptor?.blocks?.some((/** @type {any} */ b) => b.type === 'actions' && b.actions.some((/** @type {any} */ a) => a.id === actionId));
   if (!declared || !open(appId)) return;
   running.get(appId)?.view.webContents.send('appshell:event', 'widgets.action', { widget: widgetId, action: actionId });
+});
+ipcMain.handle('host:accounts:switch', (event, id) => {
+  if (!fromHost(event)) return;
+  identity.switchAccount(id);
+  publish();
+});
+ipcMain.handle('host:accounts:add', (event, data) => {
+  if (!fromHost(event)) return;
+  identity.addAccount(data);
+  publish();
+});
+ipcMain.handle('host:accounts:remove', (event, id) => {
+  if (!fromHost(event)) return;
+  identity.removeAccount(id);
+  publish();
 });
 
 app.on('second-instance', (_event, argv) => {

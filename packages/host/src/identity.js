@@ -29,15 +29,118 @@ export function createIdentity(dir, issuer) {
   const publicKey = createPublicKey(privateKey);
   const subject = readFileSync(subjectFile, 'utf8').trim();
   const kid = sign(null, Buffer.from('kid'), privateKey).subarray(0, 8).toString('hex');
+  const accountsFile = join(dir, 'accounts.json');
+
+  const defaultAvatarColors = {
+    google: '#ea4335',
+    microsoft: '#00a4ef',
+    local: '#6366f1',
+  };
+
+  /**
+   * @typedef {{
+   *   id: string,
+   *   name: string,
+   *   email: string,
+   *   provider: 'google' | 'microsoft' | 'local',
+   *   role: string,
+   *   avatarColor: string,
+   *   active: boolean,
+   *   createdAt: string
+   * }} Account
+   */
+
+  /** @param {Account[]} accs */
+  const saveAccounts = (accs) => writeFileSync(accountsFile, JSON.stringify(accs, null, 2), { mode: 0o600 });
+  /** @returns {Account[]} */
+  const loadAccounts = () => {
+    if (existsSync(accountsFile)) {
+      try { return JSON.parse(readFileSync(accountsFile, 'utf8')); } catch {}
+    }
+    /** @type {Account[]} */
+    const initial = [
+      {
+        id: subject,
+        name: 'Personal Account',
+        email: 'user@localhost',
+        provider: 'local',
+        role: 'Owner',
+        avatarColor: defaultAvatarColors.local,
+        active: true,
+        createdAt: new Date().toISOString(),
+      },
+    ];
+    saveAccounts(initial);
+    return initial;
+  };
+
+  /** @type {Account[]} */
+  let accounts = loadAccounts();
+  const getActive = () => accounts.find((/** @type {Account} */ a) => a.active) ?? accounts[0];
 
   return {
     /** JWK of the verification key, safe to share. */
     publicJwk: () => ({ ...publicKey.export({ format: 'jwk' }), kid, alg: 'EdDSA', use: 'sig' }),
 
+    /** List all configured accounts. */
+    listAccounts: () => [...accounts],
+
+    /** Get the currently active account. */
+    getActiveAccount: () => ({ ...getActive() }),
+
+    /** Switch the active account. @param {string} id */
+    switchAccount(id) {
+      if (!accounts.some((a) => a.id === id)) throw new Error(`account not found: ${id}`);
+      accounts = accounts.map((a) => ({ ...a, active: a.id === id }));
+      saveAccounts(accounts);
+      return { ...getActive() };
+    },
+
+    /** Add a new account with provider support (Google, Microsoft, Local). @param {{ name: string, email: string, role?: string, provider?: 'google' | 'microsoft' | 'local' }} data */
+    addAccount({ name, email, role = 'User', provider = 'local' }) {
+      const id = randomUUID();
+      const color = defaultAvatarColors[provider] ?? defaultAvatarColors.local;
+      const newAcc = {
+        id,
+        name: String(name),
+        email: String(email),
+        provider,
+        role: String(role),
+        avatarColor: color,
+        active: true,
+        createdAt: new Date().toISOString(),
+      };
+      accounts = accounts.map((a) => ({ ...a, active: false })).concat(newAcc);
+      saveAccounts(accounts);
+      return newAcc;
+    },
+
+    /** Remove an account. @param {string} id */
+    removeAccount(id) {
+      if (accounts.length <= 1) throw new Error('cannot remove last account');
+      const wasActive = accounts.find((a) => a.id === id)?.active;
+      accounts = accounts.filter((a) => a.id !== id);
+      if (wasActive) accounts[0].active = true;
+      saveAccounts(accounts);
+      return { ...getActive() };
+    },
+
     /** Compact JWS for one app: `aud` is always `app:<appId>`. @param {string} appId */
     mint(appId, now = Math.floor(Date.now() / 1000)) {
+      const current = getActive();
       const header = b64url({ alg: 'EdDSA', typ: 'JWT', kid });
-      const payload = b64url({ iss: issuer, sub: subject, aud: `app:${appId}`, iat: now, exp: now + TOKEN_TTL_SECONDS, jti: randomUUID() });
+      const payload = b64url({
+        iss: issuer,
+        sub: current.id,
+        name: current.name,
+        email: current.email,
+        role: current.role,
+        provider: current.provider ?? 'local',
+        aud: `app:${appId}`,
+        iat: now,
+        exp: now + TOKEN_TTL_SECONDS,
+        jti: randomUUID(),
+      });
       const signature = sign(null, Buffer.from(`${header}.${payload}`), privateKey);
       return { token: `${header}.${payload}.${b64url(signature)}`, expiresAt: now + TOKEN_TTL_SECONDS };
     },

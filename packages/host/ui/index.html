@@ -12,38 +12,160 @@
   <script src="host.js" defer></script>
 </head>
 <body>
+  <!-- Top Chrome Navigation Header (Translucent Control Bar) -->
   <header class="chrome">
-    <button id="back" title="Back" aria-label="Back">&#8592;</button>
-    <button id="home" title="Home" aria-label="Home">&#8962;</button>
-    <img src="mark.svg" alt="" width="20" height="20" class="logo">
-    <h1 id="title"></h1>
-    <button id="close" title="Close app" aria-label="Close app">&#10005;</button>
+    <div class="chrome-nav">
+      <button id="back" title="Back (Esc)" aria-label="Back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="icon"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <button id="home" title="Home (Cmd/Ctrl+H)" aria-label="Home">
+        <svg viewBox="0 0 24 24" fill="currentColor" class="icon"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/></svg>
+      </button>
+    </div>
+    <div class="chrome-brand">
+      <img src="mark.svg" alt="" width="22" height="22" class="logo">
+      <h1 id="title">Appshell</h1>
+    </div>
+    <div class="chrome-actions">
+      <!-- Android / iOS Style Multi-Account Pill (Google, Microsoft, Local) -->
+      <button id="account-btn" class="account-pill" title="Switch Account & Identity" aria-label="Accounts">
+        <span id="account-avatar" class="avatar-dot"></span>
+        <span id="account-name">Personal Account</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="chevron-icon"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+
+      <button id="close" title="Close app" aria-label="Close app">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="icon"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
   </header>
+
+  <!-- Main Dashboard Surface -->
   <main id="dashboard">
+    <!-- Spotlight Quick Search Bar -->
+    <div class="spotlight-bar">
+      <div class="spotlight-input-wrapper">
+        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="search" id="search-input" placeholder="Search apps, tools, and widgets… (Press /)" autocomplete="off">
+        <span id="search-clear" class="search-clear" hidden>✕</span>
+      </div>
+    </div>
+
+    <!-- Launcher & Identity Status Bar -->
+    <div class="launcher-status-bar">
+      <div class="launcher-mode" id="launcher-mode">
+        <span class="launcher-icon">⚡</span>
+        <span class="launcher-title">System Launcher</span>
+        <span class="launcher-badge">D13</span>
+      </div>
+      <div class="auth-status" id="auth-status">
+        <span class="auth-dot"></span>
+        <span id="auth-status-text" class="auth-text">Ed25519 Local Identity Active</span>
+      </div>
+    </div>
+
+    <!-- Android / iOS Style Multi-Account Switcher Sheet Dialog -->
+    <dialog id="account-dialog" class="account-dialog">
+      <div class="account-dialog-content">
+        <div class="account-dialog-header">
+          <div>
+            <h3>Accounts & Authentication</h3>
+            <p>Switch between accounts or sign in with Google or Microsoft.</p>
+          </div>
+          <button id="account-dialog-close" class="dialog-close-btn" aria-label="Close">✕</button>
+        </div>
+
+        <!-- Accounts List -->
+        <div class="accounts-list-container">
+          <h4>Configured Accounts</h4>
+          <ul id="accounts-list" class="accounts-list"></ul>
+        </div>
+
+        <!-- Add Account Section with Google, Microsoft, and Local options -->
+        <div class="add-account-section">
+          <h4>Add an Account</h4>
+          <div class="provider-buttons">
+            <button id="btn-add-google" class="provider-btn google-btn">
+              <span class="provider-badge google-tag">G</span>
+              <span>Google Account</span>
+            </button>
+            <button id="btn-add-microsoft" class="provider-btn ms-btn">
+              <span class="provider-badge ms-tag">MS</span>
+              <span>Microsoft Account</span>
+            </button>
+            <button id="btn-add-local" class="provider-btn local-btn">
+              <span class="provider-badge local-tag">+</span>
+              <span>Work / Local Account</span>
+            </button>
+          </div>
+
+          <!-- Add Account Inline Form -->
+          <form id="add-account-form" class="add-account-form" hidden>
+            <h5 id="add-form-title">Add Account</h5>
+            <div class="form-inputs">
+              <input type="text" id="acc-name" placeholder="Display Name (e.g. Alex Morgan)" required>
+              <input type="email" id="acc-email" placeholder="Email (e.g. alex@workspace.com)" required>
+              <input type="text" id="acc-role" placeholder="Role / Organization (optional)">
+            </div>
+            <div class="form-actions">
+              <button type="button" id="btn-cancel-add" class="btn-secondary">Cancel</button>
+              <button type="submit" id="btn-save-acc" class="btn-primary">Add Account</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </dialog>
+
+    <!-- Install Confirmation Sheet Modal -->
     <section id="install-confirm" class="confirm" role="dialog" aria-labelledby="install-title" hidden>
-      <h2 id="install-title">Install app?</h2>
-      <p id="install-detail"></p>
-      <p id="install-source" class="quiet"></p>
-      <div class="actions">
-        <button id="install-yes" class="primary">Install</button>
-        <button id="install-no">Cancel</button>
+      <div class="confirm-content">
+        <div class="confirm-badge">
+          <span class="badge-dot"></span>
+          <span>Verified Package</span>
+        </div>
+        <h2 id="install-title">Install app?</h2>
+        <p id="install-detail"></p>
+        <p id="install-source" class="quiet"></p>
+        <div class="actions">
+          <button id="install-yes" class="primary">Install</button>
+          <button id="install-no">Cancel</button>
+        </div>
       </div>
     </section>
-    <section>
-      <h2>Apps</h2>
+
+    <!-- Apps SpringBoard Shelf -->
+    <section class="shelf-section">
+      <div class="shelf-header">
+        <h2>Apps</h2>
+        <span id="apps-count" class="count-badge"></span>
+      </div>
       <ul id="apps" class="apps"></ul>
     </section>
-    <section>
-      <h2>Widgets</h2>
+
+    <!-- Widgets Bento Shelf -->
+    <section class="shelf-section">
+      <div class="shelf-header">
+        <h2>Widgets</h2>
+      </div>
       <div id="widgets" class="widgets"></div>
       <p id="no-widgets" class="empty">Widgets appear here once an app publishes them.</p>
     </section>
-    <section id="catalog-section">
-      <h2>App catalog <button id="refresh" class="link">Refresh</button></h2>
+
+    <!-- Catalog Shelf -->
+    <section id="catalog-section" class="shelf-section">
+      <div class="shelf-header">
+        <h2>App Store Catalog</h2>
+        <button id="refresh" class="link">↻ Refresh</button>
+      </div>
       <p id="manager-error" class="error" role="alert" hidden></p>
       <ul id="catalog" class="catalog"></ul>
       <p id="no-catalog" class="empty">No apps in the catalog.</p>
     </section>
+
+    <!-- iOS / Android Floating App Dock -->
+    <div class="dock-wrapper">
+      <div id="dock" class="dock" role="toolbar" aria-label="Quick Launch Dock"></div>
+    </div>
   </main>
 </body>
 </html>

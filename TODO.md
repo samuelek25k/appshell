@@ -6,6 +6,7 @@ Status on 2026-10-14. Update this file when work lands; delete items that are do
 
 - **Phase 0 (on `main`):** the platform contract, the isolated app runtime, the bridge, the shell, the SDK, the hostile-app gate on Windows, macOS and Linux, and the Windows installer pipeline.
 - **Phase 1 (on `main`):** catalog installs (D9–D11), developer CLI & template, app-scoped identity tokens (D8), store install links with confirmation, and the Appshell product page.
+- **Host UI/UX & Identity (Current):** Fluid iOS/Android springboard experience (squircle icons, spotlight search, bento widgets, floating app dock), native multi-account management (Google, Microsoft, Local account switching), and active account claims propagation in Ed25519 tokens. Launcher app concept documented under D13.
 
 ## Next steps
 
