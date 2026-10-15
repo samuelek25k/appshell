@@ -15,7 +15,7 @@
     }
   ],
   "policy": {
-    "capabilities": "warn",
+    "capabilities": "enforce",
     "developerMode": true,
     "allowedSources": ["https://github.com/samuelek25k/"],
     "channel": "stable"

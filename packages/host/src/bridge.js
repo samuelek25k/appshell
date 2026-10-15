@@ -5,7 +5,7 @@ import { fail } from './services.js';
 
 /**
  * @typedef {{
- *   policy: { capabilities: 'warn' | 'enforce', developerMode?: boolean },
+ *   policy: { capabilities?: 'warn' | 'enforce', developerMode?: boolean, blockedApps?: string[], requireReview?: boolean },
  *   services: ReturnType<typeof import('./services.js').createServices>,
  *   backendFor: (appId: string) => ReturnType<typeof import('./backend.js').createBackend>,
  *   identity: ReturnType<typeof import('./identity.js').createIdentity>,
@@ -32,7 +32,13 @@ export function createBridge(deps) {
     'shell.setTitle': (id, p) => deps.onTitle(id, p.title),
     'shell.closeResponse': (id, p) => deps.onCloseResponse(id, p.nonce, p.allow),
     'shell.listInstalledApps': () => deps.onListApps?.() ?? [],
-    'shell.launchApp': (_id, p) => deps.onLaunchApp?.(p.id) ?? false,
+    'shell.launchApp': (_id, p) => {
+      if (policy.blockedApps?.includes(p.id)) {
+        services.audit({ event: 'APP_LAUNCH_BLOCKED', target: p.id, details: { reason: 'policy.blockedApps' } });
+        throw fail(ERRORS.CAPABILITY_DENIED, `app ${p.id} is blocked by administrative policy`);
+      }
+      return deps.onLaunchApp?.(p.id) ?? false;
+    },
     'shell.getWidgets': () => deps.onGetWidgets?.() ?? [],
     'shell.setPreferences': (id, p) => services.storage.set(id, '__launcher_prefs__', p.preferences),
     'shell.getPreferences': async (id) => (await services.storage.get(id, '__launcher_prefs__')) ?? {},
@@ -56,7 +62,10 @@ export function createBridge(deps) {
     'notifications.show': (_id, p) => services.notify(p.title, p.body),
     'log.write': (id, p) => services.log(id, p.level, p.message),
     'backend.call': (id, p) => deps.backendFor(id).call(p.method, p.params),
-    'identity.token': (id) => deps.identity.mint(id),
+    'identity.token': (id) => {
+      services.audit({ event: 'TOKEN_ISSUED', target: id });
+      return deps.identity.mint(id);
+    },
     'identity.publicKey': () => deps.identity.publicJwk(),
   };
 
@@ -68,7 +77,8 @@ export function createBridge(deps) {
       if (!spec.params(params)) throw fail(ERRORS.INVALID_PARAMS, `invalid params for ${method}`);
       const missing = spec.requires(app.manifest, params);
       if (missing) {
-        if (policy.capabilities === 'enforce') throw fail(ERRORS.CAPABILITY_DENIED, `${method} needs capability ${missing}`);
+        services.audit({ event: 'CAPABILITY_DENIED', target: id, details: { method, missing } });
+        if ((policy.capabilities ?? 'enforce') === 'enforce') throw fail(ERRORS.CAPABILITY_DENIED, `${method} needs capability ${missing}`);
         deps.hostLog(`[warn] ${id} called ${method} without capability ${missing}`);
         services.log(id, 'warn', `undeclared capability ${missing} used by ${method}`);
       }

@@ -32,16 +32,25 @@
     "policy": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["capabilities"],
       "properties": {
-        "capabilities": { "enum": ["warn", "enforce"] },
+        "capabilities": { "enum": ["warn", "enforce"], "default": "enforce" },
         "developerMode": { "type": "boolean", "default": false },
         "allowedSources": {
           "description": "URL prefixes that catalog repositories and release downloads must start with. file:// sources need developerMode.",
           "type": "array",
           "items": { "type": "string", "pattern": "^https://" }
         },
-        "channel": { "enum": ["stable", "beta"], "default": "stable" }
+        "channel": { "enum": ["stable", "beta"], "default": "stable" },
+        "blockedApps": {
+          "description": "App IDs prohibited from installation or execution under administrator governance.",
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "requireReview": {
+          "description": "Require explicit administrator confirmation / review before new apps are trusted.",
+          "type": "boolean",
+          "default": false
+        }
       }
     }
   }

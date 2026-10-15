@@ -154,12 +154,20 @@ function publish() {
  * runs from files that are being replaced, and the app list is reloaded afterwards.
  * @param {string} appId
  * @param {() => unknown} action
+ * @param {string} [eventType]
  */
-async function manage(appId, action) {
+async function manage(appId, action, eventType = 'APP_MANAGED') {
   if (apps.get(appId)?.protected) { managerError = `${appId} is a core app`; publish(); return; }
+  if (product.policy.blockedApps?.includes(appId) && eventType === 'APP_INSTALLED') {
+    services.audit({ event: 'APP_INSTALL_BLOCKED', actor: identity.getActiveAccount()?.email, target: appId, details: { reason: 'policy.blockedApps' } });
+    managerError = `${appId} is blocked by administrative policy`;
+    publish();
+    return;
+  }
   stop(appId);
   try {
     await action();
+    services.audit({ event: eventType, actor: identity.getActiveAccount()?.email, target: appId });
     managerError = null;
   } catch (error) {
     managerError = `${appId}: ${error instanceof Error ? error.message : String(error)}`;
@@ -180,6 +188,12 @@ function layout() {
 
 /** @param {string} appId */
 function open(appId) {
+  if (product.policy.blockedApps?.includes(appId)) {
+    services.audit({ event: 'APP_LAUNCH_BLOCKED', actor: identity.getActiveAccount()?.email, target: appId, details: { reason: 'policy.blockedApps' } });
+    managerError = `${appId} is blocked by administrative policy`;
+    publish();
+    return false;
+  }
   const installed = apps.get(appId);
   if (!installed || !win) return false;
   if (!running.has(appId)) {
@@ -270,15 +284,15 @@ ipcMain.handle('host:refreshCatalog', async (event) => { if (fromHost(event)) { 
 ipcMain.handle('host:install', (event, id) => {
   if (!fromHost(event)) return;
   if (pendingInstall === id) pendingInstall = null;
-  return manage(id, () => manager.install(id));
+  return manage(id, () => manager.install(id), 'APP_INSTALLED');
 });
 ipcMain.handle('host:dismissInstall', (event) => { if (fromHost(event)) { pendingInstall = null; publish(); } });
-ipcMain.handle('host:rollback', (event, id) => fromHost(event) && manage(id, () => manager.rollback(id)));
+ipcMain.handle('host:rollback', (event, id) => fromHost(event) && manage(id, () => manager.rollback(id), 'APP_ROLLEDBACK'));
 ipcMain.handle('host:uninstall', (event, id) => fromHost(event) && manage(id, async () => {
   manager.uninstall(id);
   services.removeAppData(id);
   await session.fromPartition(`persist:app:${id}`).clearStorageData();
-}));
+}, 'APP_UNINSTALLED'));
 ipcMain.handle('host:open', (event, id) => fromHost(event) && open(id));
 ipcMain.handle('host:home', (event) => {
   if (!fromHost(event)) return;
@@ -303,16 +317,20 @@ ipcMain.handle('host:widgetAction', (event, appId, widgetId, actionId) => {
 ipcMain.handle('host:accounts:switch', (event, id) => {
   if (!fromHost(event)) return;
   identity.switchAccount(id);
+  const acc = identity.getActiveAccount();
+  services.audit({ event: 'ACCOUNT_SWITCHED', actor: acc?.email, details: { id: acc?.id, provider: acc?.provider } });
   publish();
 });
 ipcMain.handle('host:accounts:add', (event, data) => {
   if (!fromHost(event)) return;
   identity.addAccount(data);
+  services.audit({ event: 'ACCOUNT_ADDED', actor: data?.email, details: { provider: data?.provider } });
   publish();
 });
 ipcMain.handle('host:accounts:remove', (event, id) => {
   if (!fromHost(event)) return;
   identity.removeAccount(id);
+  services.audit({ event: 'ACCOUNT_REMOVED', details: { id } });
   publish();
 });
 

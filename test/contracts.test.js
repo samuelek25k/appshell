@@ -44,3 +44,94 @@ test('capability checks name what is missing', () => {
   assert.equal(METHODS['shell.getWidgets'].requires({ ...manifest, capabilities: { launcher: true } }, {}), null);
 });
 
+test('product schema validates governance policies and allows omitted capabilities', () => {
+  const baseProduct = {
+    name: 'TestProduct',
+    protocol: 'testapp',
+    dataDirectory: 'testapp',
+    package: { extension: '.testapp', displayName: 'Test App' },
+    apps: [{ path: 'test' }],
+    policy: {
+      blockedApps: ['malicious-app'],
+      requireReview: true,
+      allowedSources: ['https://github.com/example/'],
+      channel: 'stable',
+    },
+  };
+  const res = validate('product', baseProduct);
+  assert.equal(res.ok, true);
+});
+
+test('audit log records security and lifecycle events', async (t) => {
+  const { mkdtempSync, rmSync, readFileSync } = await import('node:fs');
+  const { tmpdir } = await import('node:os');
+  const { join } = await import('node:path');
+  const { createServices } = await import('../packages/host/src/services.js');
+
+  const dir = mkdtempSync(join(tmpdir(), 'appshell-audit-'));
+  t.after(() => rmSync(dir, { recursive: true, force: true }));
+
+  const services = createServices(dir);
+  services.audit({ event: 'APP_INSTALLED', actor: 'admin@corp.com', target: 'monitor', details: { version: '1.0.0' } });
+  services.audit({ event: 'CAPABILITY_DENIED', target: 'rogue-app', details: { method: 'secrets.get', missing: 'secrets:key' } });
+
+  const raw = readFileSync(join(dir, 'logs', 'audit.log'), 'utf8');
+  const lines = raw.trim().split('\n').map((l) => JSON.parse(l));
+  assert.equal(lines.length, 2);
+  assert.equal(lines[0].event, 'APP_INSTALLED');
+  assert.equal(lines[0].actor, 'admin@corp.com');
+  assert.equal(lines[1].event, 'CAPABILITY_DENIED');
+  assert.equal(lines[1].details.missing, 'secrets:key');
+  assert.ok(lines[0].t);
+});
+
+test('bridge enforces blockedApps and audits denial on launch', async (t) => {
+  const { mkdtempSync, rmSync, readFileSync } = await import('node:fs');
+  const { tmpdir } = await import('node:os');
+  const { join } = await import('node:path');
+  const { createServices } = await import('../packages/host/src/services.js');
+  const { createBridge } = await import('../packages/host/src/bridge.js');
+
+  const dir = mkdtempSync(join(tmpdir(), 'appshell-bridge-'));
+  t.after(() => rmSync(dir, { recursive: true, force: true }));
+
+  const services = createServices(dir);
+  let launched = false;
+  const bridge = createBridge({
+    policy: { capabilities: 'enforce', blockedApps: ['banned-app'] },
+    services,
+    backendFor: () => (/** @type {any} */ ({})),
+    identity: /** @type {any} */ ({ mint: () => ({ token: 'mock' }), publicJwk: () => ({}) }),
+    onTitle: () => {},
+    onWidget: () => {},
+    onCloseResponse: () => {},
+    hostLog: () => {},
+    onLaunchApp: (id) => { launched = true; return true; },
+  });
+
+  const launcherApp = {
+    manifest: {
+      id: 'launcher', version: '1.0.0', title: 'Launcher', publisher: 'Appshell',
+      engines: { appshell: '^0.1' }, entry: { ui: 'index.html' },
+      capabilities: { launcher: true },
+    },
+    dir,
+    protected: false,
+  };
+
+  // Launch allowed app
+  const okRes = await bridge(launcherApp, 'shell.launchApp', { id: 'allowed-app' });
+  assert.equal(okRes.ok, true);
+  assert.equal(launched, true);
+
+  // Launch blocked app
+  const blockedRes = await bridge(launcherApp, 'shell.launchApp', { id: 'banned-app' });
+  assert.equal(blockedRes.ok, false);
+  assert.equal(blockedRes.error.code, 'CAPABILITY_DENIED');
+
+  const auditLines = readFileSync(join(dir, 'logs', 'audit.log'), 'utf8').trim().split('\n').map((l) => JSON.parse(l));
+  const blockedAudit = auditLines.find((a) => a.event === 'APP_LAUNCH_BLOCKED');
+  assert.ok(blockedAudit);
+  assert.equal(blockedAudit.target, 'banned-app');
+});
+

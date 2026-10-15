@@ -95,3 +95,11 @@ Apps declaring `capabilities.launcher: true` can query installed applications, i
 
 Launcher apps run under standard sandboxing (`app://<id>/`, isolated session partition, zero Node access, zero host IPC). The host guarantees `CommandOrControl+Shift+Escape` to immediately exit any custom launcher view and restore the default host dashboard.
 
+## Governance & Audit
+
+Product policies govern app permissions, life cycle, and administrative control (`product.schema.json`):
+- `policy.capabilities`: defaults to `'enforce'` (rejections throw `CAPABILITY_DENIED`), or `'warn'`.
+- `policy.blockedApps`: array of prohibited app IDs blocked from installation and launch.
+- `policy.requireReview`: administrative workflow flag for organizational trust requirements.
+- **Audit Log (`logs/audit.log`)**: append-only JSONL log recording sensitive life cycle events (`APP_INSTALLED`, `APP_ROLLEDBACK`, `APP_UNINSTALLED`, `APP_LAUNCH_BLOCKED`, `APP_INSTALL_BLOCKED`, `CAPABILITY_DENIED`, `TOKEN_ISSUED`, `ACCOUNT_SWITCHED`, `ACCOUNT_ADDED`, `ACCOUNT_REMOVED`) with ISO timestamp, actor, target app, and details.
+

@@ -2,7 +2,25 @@
 // never from the app, so one app cannot reach another's data.
 import { mkdirSync, readFileSync, writeFileSync, appendFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
-import { safeStorage, Notification } from 'electron';
+import electron from 'electron';
+
+const safeStorage = typeof electron === 'object' && electron !== null && 'safeStorage' in electron
+  ? electron.safeStorage
+  : /** @type {any} */ ({
+    isEncryptionAvailable: () => false,
+    getSelectedStorageBackend: () => 'none',
+    encryptString: (/** @type {string} */ s) => Buffer.from(s),
+    decryptString: (/** @type {Buffer} */ b) => b.toString(),
+  });
+
+const Notification = typeof electron === 'object' && electron !== null && 'Notification' in electron
+  ? electron.Notification
+  : /** @type {any} */ (class {
+    /** @param {{ title: string, body?: string }} _opts */
+    constructor(_opts) {}
+    static isSupported() { return false; }
+    show() {}
+  });
 
 const MAX_VALUE_BYTES = 64 * 1024;
 const MAX_STORE_BYTES = 1024 * 1024;
@@ -80,6 +98,17 @@ export function createServices(root) {
       mkdirSync(join(root, 'logs'), { recursive: true });
       appendFileSync(join(root, 'logs', `${id}.log`), JSON.stringify({ t: new Date().toISOString(), level, message }) + '\n');
       return null;
+    },
+
+    /**
+     * Records an administrative, security, or lifecycle event to the audit log.
+     * @param {{ event: string, actor?: string, target?: string, details?: Record<string, any> }} entry
+     */
+    audit(entry) {
+      mkdirSync(join(root, 'logs'), { recursive: true });
+      const record = { t: new Date().toISOString(), ...entry };
+      appendFileSync(join(root, 'logs', 'audit.log'), JSON.stringify(record) + '\n');
+      return record;
     },
 
     /** @param {string} title @param {string | undefined} body */
