@@ -29,7 +29,7 @@ Status on 2026-10-14. Update this file when work lands; delete items that are do
 
 - [x] Show an app's declared capabilities in the install prompt before it goes live (two-step install).
 - [x] Turn on `policy.capabilities: enforce` by default for products.
-- [ ] Restrict backend network access; today only the UI is limited to declared hosts.
+- [x] Restrict backend network access; today only the UI is limited to declared hosts.
 - [ ] Package signing and publisher identity (D12).
 - [x] Admin policy management, review workflow and audit log (`policy.blockedApps`, `policy.requireReview`, `logs/audit.log`).
 - [x] Automatic update checks (periodic catalog check interval in host).

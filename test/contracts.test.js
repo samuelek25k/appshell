@@ -135,3 +135,47 @@ test('bridge enforces blockedApps and audits denial on launch', async (t) => {
   assert.equal(blockedAudit.target, 'banned-app');
 });
 
+test('backend network preload blocks undeclared network connections', async () => {
+  const { spawnSync } = await import('node:child_process');
+  const { fileURLToPath } = await import('node:url');
+  const { realpathSync } = await import('node:fs');
+
+  const preload = realpathSync(fileURLToPath(new URL('../packages/host/preload/backend.cjs', import.meta.url)));
+  const script = `
+    const net = require('node:net');
+    let netBlocked = false;
+    let fetchBlocked = false;
+    function checkDone() {
+      if (netBlocked && fetchBlocked) {
+        process.stdout.write('BLOCKED_ALL');
+        process.exit(0);
+      }
+    }
+    const s = net.connect({ host: 'evil.com', port: 80 });
+    s.on('error', (e) => {
+      if (e.message.includes('denied by Appshell capability policy')) netBlocked = true;
+      checkDone();
+    });
+    fetch('https://evil.com')
+      .then(() => process.exit(1))
+      .catch((e) => {
+        if (e.message.includes('denied by Appshell capability policy')) fetchBlocked = true;
+        checkDone();
+      });
+  `;
+
+  const child = spawnSync(process.execPath, [
+    '--permission',
+    `--allow-fs-read=${preload}`,
+    `--require=${preload}`,
+    '-e', script,
+  ], {
+    env: { ...process.env, APPSHELL_ALLOWED_HOSTS: 'api.example.com' },
+    encoding: 'utf8',
+  });
+
+  assert.equal(child.status, 0, child.stderr);
+  assert.equal(child.stdout, 'BLOCKED_ALL');
+});
+
+

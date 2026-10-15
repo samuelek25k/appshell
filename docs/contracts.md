@@ -83,7 +83,7 @@ Descriptors (`widget.schema.json`) hold up to 8 blocks: `text`, `metric`, `list`
 
 ## Backend
 
-`entry.backend` runs on first `backend.call`, stops after 60 s idle, and stops for good after 3 crashes. Messages in: `{ id, method, params }` on `process.parentPort`. Out: `{ id, result }` or `{ id, error: { code, message } }`. `@appshell/sdk/backend` (`serve(handlers)`) implements this; copy it into the app folder.
+`entry.backend` runs on first `backend.call`, stops after 60 s idle, and stops for good after 3 crashes. Messages in: `{ id, method, params }` on `process.parentPort`. Out: `{ id, result }` or `{ id, error: { code, message } }`. `@appshell/sdk/backend` (`serve(handlers)`) implements this; copy it into the app folder. Outbound network requests (`fetch`, `http`, `https`, `tls`, `net`) are restricted by preload to hosts declared in `capabilities.network`.
 
 ## Launcher (D13)
 

@@ -1,12 +1,15 @@
 // Supervises one sandboxed backend process per app: started on first call,
 // stopped when idle, restarted after a crash at most MAX_RESTARTS times.
 import { utilityProcess } from 'electron';
+import { realpathSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { fail } from './services.js';
 
 const CALL_TIMEOUT_MS = 10_000;
 const IDLE_MS = 60_000;
 const MAX_RESTARTS = 3;
+const BACKEND_PRELOAD = realpathSync(fileURLToPath(new URL('../preload/backend.cjs', import.meta.url)));
 
 /**
  * @param {import('./registry.js').InstalledApp} app
@@ -24,12 +27,14 @@ export function createBackend(app, log) {
   /** @type {Map<number, { resolve: (v: unknown) => void, reject: (e: Error) => void, timer: NodeJS.Timeout }>} */
   const pending = new Map();
 
+  const networkHosts = (app.manifest.capabilities?.network ?? []).join(',');
   const env = {
-    // Node permission model: read only the app folder; no writes, child processes or workers.
+    // Node permission model: read only the app folder and the preload guard; no writes, child processes or workers.
     // utilityProcess ignores permission flags in execArgv, so they go through NODE_OPTIONS.
     // NODE_OPTIONS treats backslash as an escape inside quotes, so Windows paths need doubling.
-    NODE_OPTIONS: `--permission --allow-fs-read="${app.dir.replaceAll('\\', '\\\\')}"`,
+    NODE_OPTIONS: `--permission --allow-fs-read="${app.dir.replaceAll('\\', '\\\\')}" --allow-fs-read="${BACKEND_PRELOAD.replaceAll('\\', '\\\\')}" --require="${BACKEND_PRELOAD.replaceAll('\\', '\\\\')}"`,
     APPSHELL_APP_ID: id,
+    APPSHELL_ALLOWED_HOSTS: networkHosts,
     ...(process.env.SystemRoot ? { SystemRoot: process.env.SystemRoot } : {}),
   };
 
