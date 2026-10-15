@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Appshell: one governed desktop shell for many independently delivered apps.">
+  <title>Appshell</title>
+  <link rel="stylesheet" href="site.css">
+</head>
+<body>
+  <header class="top">
+    <span class="brand">Appshell</span>
+    <nav>
+      <a href="#how">How it works</a>
+      <a href="#security">Security</a>
+      <a href="#build">Build an app</a>
+      <a class="pill" href="https://samuelek25k.github.io/appshell-apps/">App store</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <h1>One desktop shell. Many apps, delivered independently.</h1>
+      <p>Appshell is a desktop platform on Electron. Teams build apps in their own repositories and release them by tag. Users install them from a catalog into one governed shell, without reinstalling anything.</p>
+      <div class="cta">
+        <a class="button" href="https://samuelek25k.github.io/appshell-apps/">Browse the app store</a>
+        <a class="button quiet" href="https://github.com/samuelek25k/appshell/releases">Download for Windows</a>
+      </div>
+      <img class="shot" src="images/dashboard.png" alt="The Appshell dashboard: apps, widgets from each app, and the app catalog with an installed app" width="1200" height="800">
+    </section>
+
+    <section id="how">
+      <h2>How it works</h2>
+      <ol class="steps">
+        <li><h3>Build</h3><p><code>appshell create</code> scaffolds an app with a UI, a sandboxed backend and a dashboard widget. <code>appshell dev</code> runs it in a development shell.</p></li>
+        <li><h3>Release</h3><p>Tag <code>&lt;app&gt;-v1.2.0</code>. CI packages the app, publishes a release and records its version, commit and SHA-256 in the catalog.</p></li>
+        <li><h3>Install</h3><p>Users click Install in the store or the shell. The shell asks first, then checks the source, digest and manifest before the app goes live.</p></li>
+      </ol>
+    </section>
+
+    <section class="split">
+      <div>
+        <h2>Install from the store, confirm in the shell</h2>
+        <p>The store's Install button hands the app's id to the desktop app. The shell shows what will be installed and from where, and downloads nothing until the user agrees. Updates and one-step rollback are on the same screen.</p>
+      </div>
+      <img class="shot" src="images/install.png" alt="The shell asking whether to install Welcome 0.1.0, showing publisher, description and source" width="1200" height="800" loading="lazy">
+    </section>
+
+    <section id="security">
+      <h2>Secure by design</h2>
+      <ul class="cards">
+        <li><h3>Every app isolated</h3><p>Each app runs sandboxed on its own origin and storage, with no Node access. Its backend can read only its own folder.</p></li>
+        <li><h3>Verified packages</h3><p>Installs must match the catalog's SHA-256, come from an allowed source and contain only regular files.</p></li>
+        <li><h3>Declared capabilities</h3><p>Network hosts, notifications, secrets and identity are declared in the manifest and checked on every call.</p></li>
+        <li><h3>Identity, not credentials</h3><p>Apps get 5-minute tokens signed by the shell for that app alone. They never see the user's credentials.</p></li>
+        <li><h3>Widgets as data</h3><p>Apps describe widgets in JSON and the shell draws them, so no app code runs on the dashboard.</p></li>
+        <li><h3>Tested against a hostile app</h3><p>Every change runs an app that tries 21 ways to escape, on Windows, macOS and Linux.</p></li>
+      </ul>
+    </section>
+
+    <section id="build" class="split">
+      <div>
+        <h2>Build an app</h2>
+        <pre><code>pnpm appshell create ../my-app --id my-app
+pnpm appshell dev ../my-app
+pnpm appshell package ../my-app</code></pre>
+        <p>The app talks to the shell through a small SDK: storage, secrets, notifications, widgets, identity and its own backend.</p>
+      </div>
+      <img class="shot" src="images/app.png" alt="The Profile app open inside the shell" width="1200" height="800" loading="lazy">
+    </section>
+
+    <section>
+      <h2>Make it your product</h2>
+      <p>A product is one configuration file: its name, deep-link protocol, data folder, package format, pre-installed apps and policy. Appshell is the default product; each tenant can have its own.</p>
+      <pre><code>{
+  "name": "Appshell",
+  "protocol": "appshell",
+  "package": { "extension": ".appshell", "displayName": "Appshell App" },
+  "catalog": "https://…/index.json",
+  "policy": { "capabilities": "enforce", "allowedSources": ["https://github.com/your-org/"] }
+}</code></pre>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <p>Appshell · <a href="https://samuelek25k.github.io/appshell-apps/">App store</a> · <a href="https://github.com/samuelek25k/appshell-apps">Apps repository</a></p>
+  </footer>
+</body>
+</html>

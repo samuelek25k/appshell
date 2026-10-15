@@ -32,7 +32,7 @@ h2 { margin: 0 0 12px; font-size: 12px; font-weight: 600; text-transform: upperc
 .apps span { color: var(--quiet); font-size: 12px; }
 .apps .badge { float: right; color: var(--accent); }
 .widgets { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
-.widget { padding: 14px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); display: grid; gap: 8px; }
+.widget { padding: 14px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); display: grid; gap: 8px; align-content: start; }
 .widget h3 { margin: 0; font-size: 13px; font-weight: 600; }
 .widget .from { color: var(--quiet); font-size: 12px; }
 .metric b { font-size: 22px; font-weight: 600; }

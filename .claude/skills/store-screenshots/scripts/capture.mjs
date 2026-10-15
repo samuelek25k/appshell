@@ -2,7 +2,7 @@
 // Usage (from an appshell checkout, under a display or xvfb-run):
 //   node .claude/skills/store-screenshots/scripts/capture.mjs <app-dir> <out-dir>
 import { spawn } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
@@ -46,6 +46,12 @@ try {
   mkdirSync(outDir, { recursive: true });
   for (let i = 0; i < 60; i++) { try { await send(`app://${id}`, 'Runtime.evaluate', { expression: '1' }); break; } catch { await sleep(500); } }
   await sleep(2500); // let the app render and publish widgets
+  // Optional <app>/store/prepare.js runs in the app page first, to show realistic content.
+  const prepare = join(appDir, 'store', 'prepare.js');
+  if (existsSync(prepare)) {
+    await send(`app://${id}`, 'Runtime.evaluate', { expression: readFileSync(prepare, 'utf8'), awaitPromise: true });
+    await sleep(1000);
+  }
   await shot(`app://${id}`, 'screenshot-1.png');
   await send('file://', 'Runtime.evaluate', { expression: 'host.home()', awaitPromise: true });
   await sleep(800);
