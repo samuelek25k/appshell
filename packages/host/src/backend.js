@@ -7,7 +7,7 @@ import { fail } from './services.js';
 const CALL_TIMEOUT_MS = 10_000;
 const IDLE_MS = 60_000;
 const MAX_RESTARTS = 3;
-const rawPreload = realpathSync(fileURLToPath(new URL('../preload/backend.cjs', import.meta.url)));
+const rawPreload = (realpathSync.native ?? realpathSync)(fileURLToPath(new URL('../preload/backend.cjs', import.meta.url)));
 const BACKEND_PRELOAD = rawPreload.startsWith('\\\\?\\') ? rawPreload.slice(4) : rawPreload;
 
 /**
@@ -15,8 +15,10 @@ const BACKEND_PRELOAD = rawPreload.startsWith('\\\\?\\') ? rawPreload.slice(4) :
  * @param {(level: string, message: string) => void} log
  */
 export function createBackend(app, log) {
+  const rawAppDir = (realpathSync.native ?? realpathSync)(app.dir);
+  const appDir = rawAppDir.startsWith('\\\\?\\') ? rawAppDir.slice(4) : rawAppDir;
   const { id, entry } = app.manifest;
-  const file = resolve(app.dir, /** @type {string} */ (entry.backend));
+  const file = resolve(appDir, /** @type {string} */ (entry.backend));
   /** @type {Electron.UtilityProcess | null} */
   let child = null;
   let crashes = 0;
@@ -28,14 +30,14 @@ export function createBackend(app, log) {
 
   const networkHosts = (app.manifest.capabilities?.network ?? []).join(',');
   const env = {
-    NODE_OPTIONS: `--permission --allow-fs-read="${app.dir.replaceAll('\\', '\\\\')}" --allow-fs-read="${BACKEND_PRELOAD.replaceAll('\\', '\\\\')}" --require="${BACKEND_PRELOAD.replaceAll('\\', '\\\\')}"`,
+    NODE_OPTIONS: `--permission --allow-fs-read="${appDir.replaceAll('\\', '\\\\')}" --allow-fs-read="${BACKEND_PRELOAD.replaceAll('\\', '\\\\')}" --require="${BACKEND_PRELOAD.replaceAll('\\', '\\\\')}"`,
     APPSHELL_APP_ID: id,
     APPSHELL_ALLOWED_HOSTS: networkHosts,
     ...(process.env.SystemRoot ? { SystemRoot: process.env.SystemRoot } : {}),
   };
 
   function start() {
-    const proc = utilityProcess.fork(file, [], { serviceName: `app:${id}`, stdio: 'pipe', cwd: app.dir, env });
+    const proc = utilityProcess.fork(file, [], { serviceName: `app:${id}`, stdio: 'pipe', cwd: appDir, env });
     proc.stdout?.on('data', (d) => log('info', String(d).trimEnd()));
     proc.stderr?.on('data', (d) => log('error', String(d).trimEnd()));
     proc.on('message', (/** @type {any} */ msg) => {

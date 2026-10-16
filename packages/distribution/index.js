@@ -41,7 +41,7 @@ export const sha256 = (bytes) => createHash('sha256').update(bytes).digest('hex'
  * @returns {{ dir: string, manifest: Manifest }}
  */
 export function checkAppDir(where, hostVersion) {
-  const rawDir = realpathSync(where);
+  const rawDir = (realpathSync.native ?? realpathSync)(where);
   const dir = rawDir.startsWith('\\\\?\\') ? rawDir.slice(4) : rawDir;
   const manifest = JSON.parse(readFileSync(resolve(dir, 'manifest.json'), 'utf8'));
   const result = validate('manifest', manifest);

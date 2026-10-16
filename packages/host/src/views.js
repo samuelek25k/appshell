@@ -1,4 +1,5 @@
 import { WebContentsView, session } from 'electron';
+import { realpathSync } from 'node:fs';
 import { readFile, realpath } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { extname, resolve } from 'node:path';
@@ -38,6 +39,9 @@ function prepareSession(app, log) {
   if (prepared.has(id)) return ses;
   prepared.add(id);
 
+  const rawAppDir = (realpathSync.native ?? realpathSync)(app.dir);
+  const appDir = rawAppDir.startsWith('\\\\?\\') ? rawAppDir.slice(4) : rawAppDir;
+
   ses.protocol.handle('app', async (request) => {
     const url = new URL(request.url);
     if (url.host !== id) {
@@ -48,16 +52,15 @@ function prepareSession(app, log) {
     try {
       if (url.pathname === '/__appshell/sdk.js') file = SDK_FILE;
       else {
-        const baseDir = app.dir.startsWith('\\\\?\\') ? app.dir.slice(4) : app.dir;
-        const resolved = await realpath(resolve(baseDir, '.' + decodeURIComponent(url.pathname)));
+        const resolved = await realpath(resolve(appDir, '.' + decodeURIComponent(url.pathname)));
         file = resolved.startsWith('\\\\?\\') ? resolved.slice(4) : resolved;
       }
     } catch (err) {
       log('error', `protocol 404 resolving ${request.url}: ${err instanceof Error ? err.message : String(err)}`);
       return new Response('Not found', { status: 404 });
     }
-    if (file !== SDK_FILE && !isInside(app.dir, file)) {
-      log('error', `protocol 403 forbidden ${request.url}: file ${file} outside app.dir ${app.dir}`);
+    if (file !== SDK_FILE && !isInside(appDir, file)) {
+      log('error', `protocol 403 forbidden ${request.url}: file ${file} outside app.dir ${appDir}`);
       return new Response('Forbidden', { status: 403 });
     }
     try {
