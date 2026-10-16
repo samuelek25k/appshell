@@ -11,7 +11,7 @@ import { checkAppDir, pack } from '@appshell/distribution';
 
 const require = createRequire(import.meta.url);
 const HOST_DIR = dirname(dirname(require.resolve('@appshell/host')));
-const HOST_VERSION = JSON.parse(readFileSync(join(HOST_DIR, 'package.json'), 'utf8')).version;
+const ENGINE_VERSION = JSON.parse(readFileSync(join(HOST_DIR, 'package.json'), 'utf8')).appshell.engine;
 const TEMPLATE = fileURLToPath(new URL('./template', import.meta.url));
 
 const USAGE = `Usage:
@@ -65,7 +65,7 @@ const commands = {
     const [dir] = positionals;
     if (!dir) die(USAGE);
     const app = resolve(dir);
-    checkAppDir(app, HOST_VERSION);
+    checkAppDir(app, ENGINE_VERSION);
     const work = mkdtempSync(join(tmpdir(), 'appshell-dev-'));
     const product = join(work, 'product.json');
     writeFileSync(product, JSON.stringify({
@@ -82,9 +82,9 @@ const commands = {
   async package() {
     const [dir] = positionals;
     if (!dir) die(USAGE);
-    const { manifest } = checkAppDir(dir, HOST_VERSION);
+    const { manifest } = checkAppDir(dir, ENGINE_VERSION);
     const file = join(resolve(values.out ?? '.'), `${manifest.id}-${manifest.version}${values.ext}`);
-    const { sha256 } = await pack(dir, file, HOST_VERSION);
+    const { sha256 } = await pack(dir, file, ENGINE_VERSION);
     console.log(JSON.stringify({ id: manifest.id, version: manifest.version, file, sha256 }, null, 2));
   },
 
@@ -92,7 +92,7 @@ const commands = {
     const [action, indexFile] = positionals;
     const { app, repository, url, sha256, commit, channel } = values;
     if (action !== 'add' || !indexFile || !app || !repository || !url || !sha256 || !commit) die(USAGE);
-    const { manifest } = checkAppDir(/** @type {string} */ (app), HOST_VERSION);
+    const { manifest } = checkAppDir(/** @type {string} */ (app), ENGINE_VERSION);
     const catalog = existsSync(indexFile) ? JSON.parse(readFileSync(indexFile, 'utf8')) : { format: 1, apps: [] };
     let entry = catalog.apps.find((/** @type {{ id: string }} */ e) => e.id === manifest.id);
     if (!entry) catalog.apps.push(entry = { id: manifest.id, title: '', publisher: '', repository: '', releases: [] });

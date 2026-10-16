@@ -57,6 +57,7 @@ export function generateBuildConfig(productPath, cwd = process.cwd()) {
       oneClick: false,
       perMachine: false,
       allowToChangeInstallationDirectory: true,
+      artifactName: '${productName}-Setup.${ext}',
       ...(relIco ? { installerIcon: relIco, uninstallerIcon: relIco } : {}),
     },
     mac: {
@@ -70,11 +71,13 @@ export function generateBuildConfig(productPath, cwd = process.cwd()) {
       ...(relIcon ? { icon: relIcon } : {}),
     },
     dmg: {
+      artifactName: '${productName}-${arch}.${ext}',
       contents: [
         { x: 130, y: 220 },
         { x: 410, y: 220, type: 'link', path: '/Applications' },
       ],
     },
+    appImage: { artifactName: '${productName}.${ext}' },
     linux: {
       target: [
         { target: 'AppImage', arch: ['x64'] },

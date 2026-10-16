@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { validate, satisfiesEngine, METHODS } from '../packages/contracts/index.js';
 
 const manifest = {
@@ -47,4 +48,11 @@ test('product schema validates governance policies and allows omitted capabiliti
   assert.equal(res.ok, true);
   assert.equal(validate('product', { ...baseProduct, defaultLocale: 'fr-FR' }).ok, true);
   assert.equal(validate('product', { ...baseProduct, defaultLocale: 'invalid_locale' }).ok, false);
+});
+
+test('apps target the engine version, not the product version', () => {
+  const host = JSON.parse(readFileSync(new URL('../packages/host/package.json', import.meta.url), 'utf8'));
+  const template = JSON.parse(readFileSync(new URL('../packages/cli/template/manifest.json', import.meta.url), 'utf8'));
+  assert.match(host.appshell?.engine ?? '', /^\d+\.\d+\.\d+$/);
+  assert.equal(satisfiesEngine(template.engines.appshell, host.appshell.engine), true);
 });

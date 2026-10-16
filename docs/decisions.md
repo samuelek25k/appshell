@@ -26,6 +26,7 @@ Every architecture, tooling and dependency choice is recorded here. Agents add e
 | D20 | Strict update lifecycle, stale pruning & migration contract | Decided 2026-10-16 | Automated prune pass on startup and lifecycle events deletes stale .staging/ remnants, untracked app directories, and versions older than current and previous. Web session partition cache is flushed on update. Uninstallation unlinks app storage, session data, and app logs. Bridge exposes shell.getVersions so apps deterministically migrate storage schemas and prune deprecated keys. |
 | D21 | Host-mediated partitioned browser automation | Cut 2026-10-16 | Cut per Principle 1 (adversarial isolation) and Principle 2 (minimum liability). Embedded browser views allowed untrusted apps to bypass network allowlists via DOM evaluate/fetch, allowed-domain redirects leaked, user consent was absent, and test shims resided in production code. |
 | D22 | Installer signing and notarisation | Pending | Windows Authenticode signing and Apple macOS hardened runtime notarisation for distributable installer binaries. Separate from app package signing (D12); requires code-signing certificates and CI release secrets. |
+| D23 | Product version separate from engine version | Pending | Recommendation: the installer carries the product version (`version` in `packages/host/package.json`, set per release); apps target the engine version (`appshell.engine`), which changes only with the app contract, so a product release never strands installed apps. |
 
 
 ## Dependencies
