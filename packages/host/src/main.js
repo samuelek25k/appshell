@@ -4,7 +4,7 @@ import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } fr
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { CLOSE_VETO_TIMEOUT_MS, allowsIacReceive } from '@appshell/contracts';
-import { loadProduct, loadApps, HOST_VERSION } from './registry.js';
+import { loadProduct, loadApps, ENGINE_VERSION } from './registry.js';
 import { createManager } from './manager.js';
 import { createIdentity } from './identity.js';
 import { createServices, appendWithRotation } from './services.js';
@@ -111,7 +111,7 @@ const manager = createManager({
   policy: product.policy,
   catalogUrl: catalogFlag ?? product.catalog,
   root: join(dataRoot, 'installed'),
-  hostVersion: HOST_VERSION,
+  hostVersion: ENGINE_VERSION,
   fetch: /** @type {typeof globalThis.fetch} */ ((input, init) => net.fetch(/** @type {any} */ (input), init)),
 });
 let apps = loadApps(product, appsRoot, manager.installed(), hostLog);

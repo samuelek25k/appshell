@@ -10,7 +10,7 @@ One `product.json` per product (`product.schema.json`): name, deep-link protocol
 
 ## App
 
-A folder with `manifest.json` (`manifest.schema.json`). `engines.appshell` is a caret range (`^0.1`); for 0.x the minor version must match. Entries must stay inside the app folder. Backends should be `.cjs` or `.mjs` so their format never depends on a parent `package.json`.
+A folder with `manifest.json` (`manifest.schema.json`). `engines.appshell` is a caret range (`^0.1`) matched against the host's engine version (`appshell.engine` in `packages/host/package.json`), which changes only when this contract does; the product version is separate. For 0.x the minor version must match. Entries must stay inside the app folder. Backends should be `.cjs` or `.mjs` so their format never depends on a parent `package.json`.
 
 ## Isolation (proved by `test/e2e/hostile.test.js`)
 

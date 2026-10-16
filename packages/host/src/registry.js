@@ -7,7 +7,7 @@ import { checkAppDir, isInside } from '@appshell/distribution';
 /** @typedef {{ name: string, protocol: string, dataDirectory: string, package: { extension: string, displayName: string }, catalog?: string, defaultLocale?: string, supportedLocales?: string[], apps: { path: string, protected?: boolean }[], policy: { capabilities?: 'warn' | 'enforce', developerMode?: boolean, allowedSources?: string[], channel?: 'stable' | 'beta', blockedApps?: string[], requireReview?: boolean } }} Product */
 /** @typedef {{ manifest: Manifest, dir: string, protected: boolean }} InstalledApp */
 
-const HOST_VERSION = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')).version;
+const ENGINE_VERSION = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')).appshell.engine;
 
 /** @param {string} file */
 const readJson = (file) => JSON.parse(readFileSync(file, 'utf8'));
@@ -35,7 +35,7 @@ export function loadApps(product, appsRoot, installed, report) {
   const apps = new Map();
   const add = (/** @type {string} */ where, /** @type {boolean} */ isProtected) => {
     try {
-      const { dir, manifest } = checkAppDir(where, HOST_VERSION);
+      const { dir, manifest } = checkAppDir(where, ENGINE_VERSION);
       if (apps.has(manifest.id)) throw new Error(`duplicate app id ${manifest.id}`);
       apps.set(manifest.id, { manifest, dir, protected: isProtected });
     } catch (error) {
@@ -47,4 +47,4 @@ export function loadApps(product, appsRoot, installed, report) {
   return apps;
 }
 
-export { HOST_VERSION, isInside };
+export { ENGINE_VERSION, isInside };
