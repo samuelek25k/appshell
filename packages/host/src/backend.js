@@ -7,7 +7,8 @@ import { fail } from './services.js';
 const CALL_TIMEOUT_MS = 10_000;
 const IDLE_MS = 60_000;
 const MAX_RESTARTS = 3;
-const BACKEND_PRELOAD = realpathSync(fileURLToPath(new URL('../preload/backend.cjs', import.meta.url)));
+const rawPreload = realpathSync(fileURLToPath(new URL('../preload/backend.cjs', import.meta.url)));
+const BACKEND_PRELOAD = rawPreload.startsWith('\\\\?\\') ? rawPreload.slice(4) : rawPreload;
 
 /**
  * @param {import('./registry.js').InstalledApp} app

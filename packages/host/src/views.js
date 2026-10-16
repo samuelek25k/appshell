@@ -42,7 +42,8 @@ function prepareSession(app) {
     try {
       if (url.pathname === '/__appshell/sdk.js') file = SDK_FILE;
       else {
-        const resolved = await realpath(resolve(app.dir, '.' + decodeURIComponent(url.pathname)));
+        const baseDir = app.dir.startsWith('\\\\?\\') ? app.dir.slice(4) : app.dir;
+        const resolved = await realpath(resolve(baseDir, '.' + decodeURIComponent(url.pathname)));
         file = resolved.startsWith('\\\\?\\') ? resolved.slice(4) : resolved;
       }
     } catch {
