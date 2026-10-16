@@ -46,7 +46,7 @@ export const ERRORS = /** @type {const} */ ({
  *   display?: 'shell' | 'standalone',
  *   kind?: 'app' | 'launcher',
  *   widgets?: { id: string, title: string }[],
- *   capabilities?: { network?: string[], notifications?: boolean, secrets?: string[], identity?: boolean, launcher?: boolean, iac?: boolean | { send?: string[], receive?: string[], channels?: string[] } }
+ *   capabilities?: { network?: string[], notifications?: boolean, secrets?: string[], identity?: boolean, launcher?: boolean, userEndpoints?: boolean, iac?: boolean | { send?: string[], receive?: string[], channels?: string[] } }
  * }} Manifest
  */
 
@@ -148,6 +148,8 @@ export const METHODS = {
   'backend.call': { params: (p) => str(p?.method, 64), requires: (m) => (m.entry.backend ? null : 'backend') },
   'identity.token': { params: () => true, requires: (m) => (m.capabilities?.identity ? null : 'identity') },
   'identity.publicKey': { params: () => true, requires: () => null },
+  'network.requestEndpoint': { params: (p) => str(p?.url, 300), requires: (m) => (m.capabilities?.userEndpoints ? null : 'userEndpoints') },
+  'network.endpoints': { params: () => true, requires: (m) => (m.capabilities?.userEndpoints ? null : 'userEndpoints') },
   'launcher.apps': { params: () => true, requires: launcherCapability },
   'launcher.widgets': { params: () => true, requires: launcherCapability },
   'launcher.open': { params: (p) => str(p?.id, 64), requires: launcherCapability },
@@ -195,6 +197,35 @@ export function satisfiesEngine(range, version) {
   return rMajor === 0 ? vMinor === rMinor : vMinor >= rMinor;
 }
 
+/** @param {string} host */
+function isLocalHost(host) {
+  const h = host.toLowerCase();
+  if (h === 'localhost' || h.endsWith('.localhost') || h === '[::1]') return true;
+  if (/^\[f[cd][0-9a-f]{2}:/.test(h)) return true;
+  const m = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(h);
+  if (!m) return false;
+  const [a, b, c, d] = m.slice(1).map(Number);
+  if ([a, b, c, d].some((n) => n > 255)) return false;
+  return a === 127 || a === 10 || (a === 192 && b === 168) || (a === 172 && b >= 16 && b <= 31) || (a === 169 && b === 254);
+}
+
+/** @param {URL} u */
+const endpointKeyOf = (u) => `${u.protocol === 'https:' || u.protocol === 'wss:' ? 'https' : 'http'}://${u.host}`;
+
+/**
+ * @param {string} url
+ * @returns {string | null}
+ */
+export function parseEndpoint(url) {
+  let u;
+  try { u = new URL(url); } catch { return null; }
+  if (!['http:', 'https:', 'ws:', 'wss:'].includes(u.protocol)) return null;
+  if (u.username || u.password || !u.hostname) return null;
+  const secure = u.protocol === 'https:' || u.protocol === 'wss:';
+  if (!secure && !isLocalHost(u.hostname)) return null;
+  return endpointKeyOf(u);
+}
+
 /**
  * @param {string} host
  * @returns {boolean}
@@ -208,12 +239,14 @@ export function isLoopback(host) {
 /**
  * @param {Manifest} manifest
  * @param {string} url
+ * @param {string[]} [approved]
  */
-export function networkAllowed(manifest, url) {
+export function networkAllowed(manifest, url, approved = []) {
   let u;
   try { u = new URL(url); } catch { return false; }
   if (u.protocol === 'app:') return u.host === manifest.id;
   if (u.protocol === 'data:' || u.protocol === 'blob:') return true;
+  if (['http:', 'https:', 'ws:', 'wss:'].includes(u.protocol) && approved.includes(endpointKeyOf(u))) return true;
   const loopback = isLoopback(u.hostname);
   const allowedProtocols = loopback ? ['https:', 'wss:', 'http:', 'ws:'] : ['https:', 'wss:'];
   if (!allowedProtocols.includes(u.protocol)) return false;

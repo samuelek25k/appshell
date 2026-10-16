@@ -78,6 +78,17 @@ A product has several local accounts and at most one temporary Guest. Apps are s
 
 A PIN (4 to 64 characters, stored as a salted scrypt hash, 5 failures lock it for 30 seconds) only controls who may open the account in the host UI. It does not encrypt the account's data on disk. Proved by `test/accounts.test.js`.
 
+## User-approved addresses (D26)
+
+An app with `capabilities.userEndpoints: true` may ask for one extra address at runtime, for example a local model server whose port the user chooses.
+
+| Method | Result |
+| --- | --- |
+| `network.requestEndpoint` `{ url }` | `{ approved, address }`; the host shows its own native prompt naming the app and address |
+| `network.endpoints` | the addresses already approved for this app |
+
+`address` is `https://host[:port]` or `http://host[:port]`; paths are ignored and `ws`/`wss` follow `http`/`https`. Plain `http` and `ws` are accepted only for this computer (`localhost`, `127.0.0.0/8`, `::1`) and private networks (`10/8`, `172.16/12`, `192.168/16`, `169.254/16`, `fc00::/7`); anything else must be `https`. An approval covers exactly that scheme family, host and port, for that app and account. It is listed in Settings, where it can be removed and takes effect at once, and is deleted with the app. Every approval, denial and removal is audited. `policy.allowUserEndpoints: false` turns the feature off. These apps get a broad `connect-src` in their CSP; the host's request filter is what enforces the list. Backend processes are not extended: they keep only the hosts in `capabilities.network`. In developer mode `--approve-endpoints` approves without a prompt. Proved by `test/endpoints.test.js` and `test/e2e/endpoints.test.js`.
+
 ## Launchers (D25)
 
 An app with `"kind": "launcher"` and `capabilities.launcher: true` can be chosen per account (Settings, Home screen) to fill the home area in place of the built-in dashboard. A launcher is never opened as an ordinary app and never gets back or close controls. Calls, all needing the capability:

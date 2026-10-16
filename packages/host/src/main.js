@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, nativeTheme, net, protocol, session } from 'electron';
+import { app, BrowserWindow, dialog, ipcMain, nativeTheme, net, protocol, session } from 'electron';
 import { randomUUID } from 'node:crypto';
 import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
@@ -8,6 +8,7 @@ import { loadProduct, loadApps, ENGINE_VERSION } from './registry.js';
 import { createManager } from './manager.js';
 import { userInfo } from 'node:os';
 import { createAccounts } from './accounts.js';
+import { createEndpoints, forgetApp } from './endpoints.js';
 import { createLauncherPreferences, homeLauncher } from './launcher.js';
 import { createIdentity } from './identity.js';
 import { createServices, appendWithRotation } from './services.js';
@@ -124,6 +125,41 @@ const manager = createManager({
 });
 let apps = loadApps(product, appsRoot, manager.installed(), hostLog);
 const services = createServices(() => accounts.root(accounts.active()), dataRoot);
+const endpointStore = createEndpoints(() => accounts.root(accounts.active()));
+const autoApproveEndpoints = process.argv.includes('--approve-endpoints');
+if (autoApproveEndpoints && !product.policy.developerMode) throw new Error('--approve-endpoints needs policy.developerMode');
+/** @type {Set<string>} */
+const endpointPrompts = new Set();
+const approvedFor = (/** @type {string} */ appId) => () => endpointStore.list(appId);
+
+/**
+ * @param {string} appId
+ * @param {string} key
+ */
+async function requestEndpoint(appId, key) {
+  if (endpointStore.list(appId).includes(key)) return true;
+  if (endpointPrompts.has(appId)) return false;
+  const title = apps.get(appId)?.manifest.title ?? appId;
+  endpointPrompts.add(appId);
+  try {
+    let allow = autoApproveEndpoints;
+    if (!allow && win) {
+      const answer = await dialog.showMessageBox(win, {
+        type: 'question', buttons: ['Allow', 'Deny'], defaultId: 1, cancelId: 1, noLink: true,
+        title: 'Network access', message: `Allow ${title} to connect to ${key}?`,
+        detail: 'The app can then send and receive data from this address while you use this account. You can remove it later in Settings.',
+      });
+      allow = answer.response === 0;
+    }
+    if (allow) endpointStore.add(appId, key);
+    services.audit({ event: allow ? 'ENDPOINT_APPROVED' : 'ENDPOINT_DENIED', actor: accounts.active().id, target: appId, details: { address: key } });
+    publish();
+    return allow;
+  } finally {
+    endpointPrompts.delete(appId);
+  }
+}
+
 const launcherPrefs = createLauncherPreferences(() => accounts.root(accounts.active()));
 /** @type {Set<string>} */
 const failedLaunchers = new Set();
@@ -183,6 +219,7 @@ const bridge = createBridge({
   hostLog,
   locale: () => currentLocale,
   getTheme: () => ({ source: nativeTheme.themeSource, dark: nativeTheme.shouldUseDarkColors }),
+  endpoints: { request: requestEndpoint, list: (appId) => endpointStore.list(appId) },
   launcher: {
     apps: () => [...apps.values()]
       .filter(({ manifest }) => manifest.kind !== 'launcher' && !product.policy.blockedApps?.includes(manifest.id))
@@ -337,6 +374,7 @@ function publish() {
       categories: (/** @type {any} */ (manifest)).categories ?? [],
     })),
     widgets: widgetList(),
+    endpoints: Object.entries(endpointStore.all()).flatMap(([appId, list]) => (apps.has(appId) ? list.map((address) => ({ appId, title: apps.get(appId)?.manifest.title ?? appId, address })) : [])),
     launcher: {
       active: homeId(),
       options: [...apps.values()].filter(({ manifest }) => manifest.kind === 'launcher').map(({ manifest }) => ({ id: manifest.id, title: manifest.title })),
@@ -396,7 +434,7 @@ function ensureHome() {
   const id = homeId();
   if (!id || !unlocked || homeSuspended || !win || running.has(id)) return;
   const installed = /** @type {import('./registry.js').InstalledApp} */ (apps.get(id));
-  const view = createAppView(installed, appLog(id), accounts.partition(id));
+  const view = createAppView(installed, appLog(id), accounts.partition(id), approvedFor(id));
   const fail = (/** @type {string} */ reason) => {
     hostLog(`launcher ${id} failed: ${reason}`);
     failedLaunchers.add(id);
@@ -428,7 +466,7 @@ function open(appId) {
     return false;
   }
   if (!running.has(appId)) {
-    const view = createAppView(installed, appLog(appId), accounts.partition(appId));
+    const view = createAppView(installed, appLog(appId), accounts.partition(appId), approvedFor(appId));
     running.set(appId, { view, title: installed.manifest.title });
     win.contentView.addChildView(view);
   }
@@ -525,6 +563,7 @@ ipcMain.handle('host:uninstall', (event, id) => fromHost(event) && manage(id, as
   manager.uninstall(id);
   services.removeAppData(id, accounts.roots());
   services.removeAppLogs(id, accounts.roots());
+  forgetApp(accounts.roots(), id);
   for (const name of accounts.partitions(id)) await session.fromPartition(name).clearStorageData();
 }, 'APP_UNINSTALLED'));
 ipcMain.handle('host:open', (event, id) => fromHost(event) && open(id));
@@ -596,6 +635,12 @@ ipcMain.handle('host:accounts:remove', async (event, id, pin) => {
     accounts.remove(target, pin === undefined ? undefined : String(pin));
   });
   if (!accountError) for (const name of names) await session.fromPartition(name).clearStorageData();
+});
+ipcMain.handle('host:endpoints:remove', (event, appId, address) => {
+  if (!fromHost(event)) return;
+  endpointStore.remove(String(appId), String(address));
+  services.audit({ event: 'ENDPOINT_REMOVED', actor: accounts.active().id, target: String(appId), details: { address: String(address) } });
+  publish();
 });
 ipcMain.handle('host:overlay', (event, open) => {
   if (!fromHost(event)) return;

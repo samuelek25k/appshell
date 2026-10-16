@@ -1,9 +1,9 @@
-import { METHODS, ERRORS, SHELL_PROTOCOL, validate } from '@appshell/contracts';
+import { METHODS, ERRORS, SHELL_PROTOCOL, parseEndpoint, validate } from '@appshell/contracts';
 import { fail } from './services.js';
 
 /**
  * @typedef {{
- *   policy: { capabilities?: 'warn' | 'enforce', developerMode?: boolean, blockedApps?: string[], requireReview?: boolean },
+ *   policy: { capabilities?: 'warn' | 'enforce', developerMode?: boolean, blockedApps?: string[], requireReview?: boolean, allowUserEndpoints?: boolean },
  *   services: ReturnType<typeof import('./services.js').createServices>,
  *   backendFor: (appId: string) => ReturnType<typeof import('./backend.js').createBackend>,
  *   identity: ReturnType<typeof import('./identity.js').createIdentity>,
@@ -19,6 +19,7 @@ import { fail } from './services.js';
  *   onIacSubscribe?: (appId: string, channel: string) => boolean,
  *   onIacUnsubscribe?: (appId: string, channel: string) => boolean,
  *   canReceiveIac?: (targetId: string, fromId: string) => boolean,
+ *   endpoints?: { request: (appId: string, key: string) => Promise<boolean>, list: (appId: string) => string[] },
  *   launcher?: { apps: () => object[], widgets: () => object[], open: (id: string) => boolean, setTheme: (theme: { source?: 'system' | 'light' | 'dark', colors?: Record<string, string> }) => void },
  *   getTheme?: () => { source: 'system' | 'light' | 'dark', dark: boolean },
  *   getVersions?: (appId: string) => { current: string, previous: string | null, installedAt: string },
@@ -73,6 +74,13 @@ export function createBridge(deps) {
       if (deps.getVersions) return deps.getVersions(id);
       return { current: app.manifest.version, previous: null, installedAt: new Date().toISOString() };
     },
+    'network.requestEndpoint': async (id, p) => {
+      if (policy.allowUserEndpoints === false) throw fail(ERRORS.CAPABILITY_DENIED, 'user-approved addresses are disabled by administrative policy');
+      const key = parseEndpoint(p.url);
+      if (!key) throw fail(ERRORS.INVALID_PARAMS, 'address must be https, or http on this computer or a private network');
+      return { approved: (await deps.endpoints?.request(id, key)) === true, address: key };
+    },
+    'network.endpoints': (id) => deps.endpoints?.list(id) ?? [],
     'launcher.apps': (id) => {
       services.audit({ event: 'LAUNCHER_LISTED', target: id });
       return deps.launcher?.apps() ?? [];

@@ -1,0 +1,6 @@
+{
+  "id": "reach", "version": "1.0.0", "title": "Reach", "publisher": "Test",
+  "engines": { "appshell": "^0.1" },
+  "entry": { "ui": "index.html" },
+  "capabilities": { "userEndpoints": true }
+}
