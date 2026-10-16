@@ -56,17 +56,16 @@ UI: `await window.appshell.call(method, params)`; failures reject with `Error("<
 | `identity.token` | | `capabilities.identity` |
 | `identity.publicKey` | | |
 | `shell.getLocale` | | |
-| `shell.listInstalledApps` | | `capabilities.launcher` |
-| `shell.launchApp` | `id` ≤ 64 | `capabilities.launcher` |
-| `shell.getWidgets` | | `capabilities.launcher` |
-| `shell.setPreferences` | `preferences` (object) | `capabilities.launcher` |
-| `shell.getPreferences` | | `capabilities.launcher` |
+| `iac.send` | `to` ≤ 64, `action` ≤ 64, `payload`, `launchIfNeeded` (optional) | `capabilities.iac` (permitting `to`) |
+| `iac.publish` | `channel` (`[A-Za-z0-9_.-]{1,64}`), `data` | `capabilities.iac` (permitting `channel`) |
+| `iac.subscribe` | `channel` (`[A-Za-z0-9_.-]{1,64}`) | `capabilities.iac` (permitting `channel`) |
+| `iac.unsubscribe` | `channel` (`[A-Za-z0-9_.-]{1,64}`) | `capabilities.iac` (permitting `channel`) |
 
 Limits: storage values ≤ 64 KB, ≤ 1 MB per app. Errors: `UNKNOWN_METHOD`, `INVALID_PARAMS`, `CAPABILITY_DENIED`, `BACKEND_UNAVAILABLE`, `BACKEND_TIMEOUT` (10 s), `BACKEND_ERROR`, `UNKNOWN_CALLER`, `INTERNAL`.
 
 ## Identity
 
-`identity.token` returns `{ token, expiresAt }`: a compact JWS (EdDSA) with `iss` (product data folder), `sub` (active account id), `name`, `email`, `role`, `provider` (`google` | `microsoft` | `local`), `aud` (`app:<caller id>`, never chosen by the caller), `iat`, `exp` (5 minutes), `jti`. Verify with `identity.publicKey` (JWK); `verifyToken` in `packages/host/src/identity.js` is a reference. The signing key and configured accounts stay in the host's data folder (file mode 0600).
+`identity.token` returns `{ token, expiresAt }`: a compact JWS (EdDSA) with `iss` (product data folder), `sub` (an installation-scoped persistent subject ID), `aud` (`app:<caller id>`, never chosen by the caller), `iat`, `exp` (5 minutes), `jti`. Verify with `identity.publicKey` (JWK); `verifyToken` in `packages/host/src/identity.js` is a reference. The signing key and subject stay in the host's data folder (file mode 0600).
 
 ## Events (host to app, `appshell.on(name, fn)`)
 
@@ -75,8 +74,9 @@ Limits: storage values ≤ 64 KB, ≤ 1 MB per app. Errors: `UNKNOWN_METHOD`, `I
 | `shell.closeRequested` | `{ nonce }` | `shell.closeResponse` within 600 ms, else the app closes |
 | `shell.deepLink` | `{ path }` | from `<protocol>://<app-id>/<path>`; one link per launch (Windows exits when given two), later launches hand theirs to the running host |
 | `widgets.action` | `{ widget, action }` | sent after the host brings the app to the front |
-| `shell.localeChanged` | `{ locale, direction, timeZone, languages }` | sent when user updates locale in host settings |
 | `storage.changed` | `{ key, value }` | sent when app storage key is mutated |
+| `iac.message` | `{ from, action, payload, timestamp }` | sent when targeted IAC message arrives |
+| `iac.broadcast` | `{ channel, from, data, timestamp }` | sent when topic broadcast arrives |
 
 Back goes back in the app's history, or home when there is none. Home hides the app and keeps it running.
 
@@ -86,44 +86,29 @@ Descriptors (`widget.schema.json`) hold up to 8 blocks: `text`, `metric`, `list`
 
 ## Backend
 
-`entry.backend` runs on first `backend.call`, stops after 60 s idle, and stops for good after 3 crashes. Messages in: `{ id, method, params }` on `process.parentPort`. Out: `{ id, result }` or `{ id, error: { code, message } }`. `@appshell/sdk/backend` (`serve(handlers)`) implements this; copy it into the app folder. Outbound network requests (`fetch`, `http`, `https`, `tls`, `net`) are restricted by preload to hosts declared in `capabilities.network`.
-
-## Launcher (D13)
-
-Apps declaring `capabilities.launcher: true` can query installed applications, inspect widgets, and launch apps through the sandboxed bridge:
-- `shell.listInstalledApps`: returns an array of installed applications (`{ id, name, version, description, icon }`).
-- `shell.launchApp({ id })`: requests the host to open and bring an installed app into focus.
-- `shell.getWidgets`: returns installed widget descriptors.
-- `shell.setPreferences({ preferences })` / `shell.getPreferences()`: persists custom layout, dock, and dashboard preferences.
-
-Launcher apps run under standard sandboxing (`app://<id>/`, isolated session partition, zero Node access, zero host IPC). The host guarantees `CommandOrControl+Shift+Escape` to immediately exit any custom launcher view and restore the default host dashboard.
+`entry.backend` runs on first `backend.call`, stops after 60 s idle, and stops for good after 3 crashes. Messages in: `{ id, method, params }` on `process.parentPort`. Out: `{ id, result }` or `{ id, error: { code, message } }`. `@appshell/sdk/backend` (`serve(handlers)`) implements this; copy it into the app folder. Outbound network requests (`fetch`, `http`, `https`, `tls`, `net`, `dgram`, `dns`) are restricted by preload to hosts declared in `capabilities.network`.
 
 ## Governance & Audit
 
 Product policies govern app permissions, life cycle, and administrative control (`product.schema.json`):
 - `policy.capabilities`: defaults to `'enforce'` (rejections throw `CAPABILITY_DENIED`), or `'warn'`.
-- `policy.blockedApps`: array of prohibited app IDs blocked from installation and launch.
-- `policy.requireReview`: administrative workflow flag for organizational trust requirements.
-- **Audit Log (`logs/audit.log`)**: append-only JSONL log recording sensitive life cycle events (`APP_INSTALLED`, `APP_ROLLEDBACK`, `APP_UNINSTALLED`, `APP_LAUNCH_BLOCKED`, `APP_INSTALL_BLOCKED`, `CAPABILITY_DENIED`, `TOKEN_ISSUED`, `ACCOUNT_SWITCHED`, `ACCOUNT_ADDED`, `ACCOUNT_REMOVED`) with ISO timestamp, actor, target app, and details.
+- `policy.blockedApps`: array of prohibited app IDs blocked from installation, launch, and IAC messaging.
+- **Audit Log (`logs/audit.log`)**: append-only JSONL log recording sensitive life cycle events (`APP_STARTED`, `APP_INSTALLED`, `APP_ROLLEDBACK`, `APP_UNINSTALLED`, `APP_LAUNCH_BLOCKED`, `APP_INSTALL_BLOCKED`, `CAPABILITY_DENIED`, `TOKEN_ISSUED`, `IAC_MESSAGE_SENT`, `IAC_PUBLISHED`, `IAC_DENIED`) with ISO timestamp, actor, target app, and details. Capped with log rotation at 2 MB.
 
 ## Localization & Internationalization (D15)
 
-The host provides locale-aware environment detection and runtime updates:
+The host provides locale-aware environment detection:
 - `shell.getLocale`: returns `{ locale, languages, direction, timeZone }`. Apps query this on launch to initialize translations and RTL layouts (`'ltr' | 'rtl'`).
-- `shell.localeChanged`: pushed to running apps whenever the user switches the system or shell display language.
-- `product.schema.json` supports `defaultLocale` and `supportedLocales`.
+- `product.schema.json` supports `defaultLocale` under policy.
 
-## Secure Storage at Rest (D16)
+## Inter-App Communication (IAC) (D17)
 
-Apps declaring `capabilities.secureStorage: true` receive automatic cryptographic protection for `storage.json`:
-- Stored data is encrypted at rest using authenticated AES-256-GCM.
-- Per-app cryptographic keys are derived via HKDF-SHA256 from a machine-local host master secret file (`storage.key`, mode 0600).
-- Transparent decryption is handled at the bridge boundary so apps read and write without managing cryptographic material. Unencrypted plaintext never touches disk.
+Host-mediated messaging and topic pub/sub broadcasting:
+- **Zero Cross-Origin Access**: Apps never communicate directly and never receive references to another app's DOM, origin (`app://<id>/`), or `WebContents`. All events flow through the host as an authenticated broker.
+- **Permission Scoping**: Both sender and receiver must declare `capabilities.iac` in `manifest.json`. May be boolean (`true` for open communication among opted-in apps) or an object scoped by allowlists: `{ send?: string[], receive?: string[], channels?: string[] }`.
+- **Targeted Messaging (`iac.send`)**: Sends targeted actions/payloads from App A to App B (`iac.send({ to, action, payload, launchIfNeeded })`). Returns `{ delivered, targetRunning }`. Target app receives `iac.message`.
+- **Topic Pub/Sub (`iac.publish` / `iac.subscribe` / `iac.unsubscribe`)**: Apps subscribe to named channels and receive `iac.broadcast` events when another app publishes to that channel.
+- **Security & Audit**: The host verifies and stamps the caller's origin (`from: caller.id`). Unsolicited messages to apps that do not permit the sender are rejected with `CAPABILITY_DENIED`. Apps in `policy.blockedApps` cannot send or receive messages. Events are recorded in `logs/audit.log` (`IAC_MESSAGE_SENT`, `IAC_PUBLISHED`, `IAC_DENIED`).
 
-## Design Tokens
-
-The host serves native design tokens to all app views at `/__appshell/tokens.css`:
-- Exposes standard CSS variables for typography, fluid spacing, elevation, border radii, and system color palettes (`--appshell-color-bg`, `--appshell-color-ink`, `--appshell-color-brand`, `--appshell-radius-squircle`).
-- Allows apps to visually harmonize with iOS and Android host surfaces while maintaining strictly decoupled CSS.
 
 

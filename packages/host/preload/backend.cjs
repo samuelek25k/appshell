@@ -6,7 +6,7 @@ delete process.env.APPSHELL_ALLOWED_HOSTS;
 const allowedHosts = new Set(
   rawAllowed
     .split(',')
-    .map((h) => h.trim().toLowerCase())
+    .map((h) => h.trim().toLowerCase().split(':')[0])
     .filter(Boolean)
 );
 
@@ -15,7 +15,48 @@ function isAllowed(host) {
   const clean = String(host).split(':')[0].toLowerCase();
   return allowedHosts.has(clean);
 }
+try {
+  const dns = require('node:dns');
+  const origLookup = dns.lookup;
+  dns.lookup = function (hostname, options, callback) {
+    const cb = typeof options === 'function' ? options : callback;
+    if (hostname && !isAllowed(hostname)) {
+      const err = new Error(`DNS lookup for ${hostname} denied by Appshell capability policy`);
+      if (typeof cb === 'function') return process.nextTick(() => cb(err));
+      throw err;
+    }
+    return origLookup.apply(this, arguments);
+  };
+  if (dns.promises) {
+    const origPromisesLookup = dns.promises.lookup;
+    dns.promises.lookup = function (hostname, options) {
+      if (hostname && !isAllowed(hostname)) {
+        return Promise.reject(new Error(`DNS lookup for ${hostname} denied by Appshell capability policy`));
+      }
+      return origPromisesLookup.apply(this, arguments);
+    };
+  }
+} catch {}
 
+try {
+  const dgram = require('node:dgram');
+  const origDgramSend = dgram.Socket.prototype.send;
+  dgram.Socket.prototype.send = function (...args) {
+    let host = null;
+    let cb = null;
+    for (let i = args.length - 1; i >= 0; i--) {
+      if (typeof args[i] === 'function') cb = args[i];
+      else if (typeof args[i] === 'string' && !host) host = args[i];
+    }
+    if (host && !isAllowed(host)) {
+      const err = new Error(`Network access to ${host} denied by Appshell capability policy`);
+      if (cb) process.nextTick(() => cb(err));
+      else process.nextTick(() => this.emit('error', err));
+      return;
+    }
+    return origDgramSend.apply(this, args);
+  };
+} catch {}
 const origConnect = net.Socket.prototype.connect;
 function guardedConnect(...args) {
   let host = null;

@@ -1,600 +1,169 @@
-
-const DEFAULT_PREVIEW_STATE = {
-  product: 'Appshell',
-  active: null,
-  title: 'Appshell',
-  accounts: [
-    { id: '1', name: 'Alex Morgan', email: 'alex.morgan@workspace.com', provider: 'google', role: 'Staff Engineer', avatarColor: '#ea4335', active: true },
-    { id: '2', name: 'Dev Account', email: 'dev@microsoft.com', provider: 'microsoft', role: 'Enterprise Admin', avatarColor: '#00a4ef', active: false },
-    { id: '3', name: 'Local Workspace', email: 'sam@localhost', provider: 'local', role: 'Owner', avatarColor: '#6366f1', active: false },
-  ],
-  activeAccount: { id: '1', name: 'Alex Morgan', email: 'alex.morgan@workspace.com', provider: 'google', role: 'Staff Engineer', avatarColor: '#ea4335', active: true },
-  apps: [
-    { id: 'welcome', title: 'Welcome', publisher: 'Appshell', protected: true, running: true },
-    { id: 'profile', title: 'Profile', publisher: 'Appshell', protected: true, running: false },
-    { id: 'quick-notes', title: 'Quick Notes', publisher: 'Appshell', protected: false, running: true },
-    { id: 'world-clock', title: 'World Clock', publisher: 'Appshell', protected: false, running: false },
-    { id: 'clipboard-manager', title: 'Clipboard', publisher: 'Appshell', protected: false, running: true },
-    { id: 'pomodoro', title: 'Pomodoro', publisher: 'Appshell', protected: false, running: false },
-    { id: 'color-picker', title: 'Color Studio', publisher: 'Appshell', protected: false, running: false },
-    { id: 'markdown-preview', title: 'Markdown Pro', publisher: 'Appshell', protected: false, running: false },
-    { id: 'json-tools', title: 'JSON Inspector', publisher: 'Appshell', protected: false, running: false },
-    { id: 'outlook-calendar', title: 'Calendar Sync', publisher: 'Appshell', protected: false, running: false },
-  ],
-  widgets: [
-    {
-      appId: 'quick-notes',
-      widgetId: 'notes',
-      title: 'Recent Notes',
-      descriptor: {
-        blocks: [
-          { type: 'text', text: '• Ship iOS / Android fluid springboard UI\n• Native Google & MS multi-account manager\n• Verified Ed25519 token claims' },
-          { type: 'actions', actions: [{ id: 'new', label: '+ Quick Note' }] }
-        ]
-      }
-    },
-    {
-      appId: 'world-clock',
-      widgetId: 'clock',
-      title: 'World Clocks',
-      descriptor: {
-        blocks: [
-          {
-            type: 'list',
-            items: [
-              { label: 'San Francisco (PT)', value: '03:54 AM' },
-              { label: 'London (BST)', value: '11:54 AM' },
-              { label: 'Tokyo (JST)', value: '07:54 PM' }
-            ]
-          }
-        ]
-      }
-    },
-    {
-      appId: 'clipboard-manager',
-      widgetId: 'clip',
-      title: 'Clipboard History',
-      descriptor: {
-        blocks: [
-          { type: 'text', text: 'git commit -m "feat: modernize shell UI with fluid launcher experience"' },
-          { type: 'actions', actions: [{ id: 'copy', label: 'Copy Last' }] }
-        ]
-      }
-    }
-  ],
-  manager: {
-    enabled: true,
-    error: null,
-    actionError: null,
-    pendingInstall: null,
-    rows: [
-      { id: 'pomodoro', title: 'Pomodoro Focus', publisher: 'Appshell', latest: '0.1.0', installed: null, description: 'Stay in deep focus with structured 25-minute intervals.' },
-      { id: 'color-picker', title: 'Color Studio', publisher: 'Appshell', latest: '0.1.0', installed: null, description: 'Inspect, extract, and convert palettes with hex, hsl, and rgb.' }
-    ]
-  }
-};
+import { renderAppItem, renderDockItem, renderDrawerItem, renderWidgetItem, renderCatalogItem, el } from './components.js';
 
 const fallbackApi = {
-  open(/** @type {string} */ id) { console.log('open', id); },
+  open(/** @type {string} */ id) {},
   home() {},
   back() {},
   close() {},
   refreshCatalog() {},
-  install(/** @type {string} */ id) { console.log('install', id); },
+  install(/** @type {string} */ id) {},
   rollback(/** @type {string} */ id) {},
   dismissInstall() {},
   uninstall(/** @type {string} */ id) {},
   widgetAction(/** @type {string} */ appId, /** @type {string} */ widgetId, /** @type {string} */ actionId) {},
-  switchAccount(/** @type {string} */ id) {
-    const acc = DEFAULT_PREVIEW_STATE.accounts.find((a) => a.id === id);
-    if (acc) {
-      DEFAULT_PREVIEW_STATE.activeAccount = acc;
-      render(DEFAULT_PREVIEW_STATE);
-    }
-  },
-  addAccount(/** @type {any} */ data) {
-    const newAcc = {
-      id: String(Date.now()),
-      name: data.name,
-      email: data.email,
-      role: data.role ?? 'User',
-      provider: data.provider ?? 'local',
-      avatarColor: data.provider === 'google' ? '#ea4335' : data.provider === 'microsoft' ? '#00a4ef' : '#6366f1',
-      active: true,
-    };
-    DEFAULT_PREVIEW_STATE.accounts.push(newAcc);
-    DEFAULT_PREVIEW_STATE.activeAccount = newAcc;
-    render(DEFAULT_PREVIEW_STATE);
-  },
-  removeAccount(/** @type {string} */ id) {
-    DEFAULT_PREVIEW_STATE.accounts = DEFAULT_PREVIEW_STATE.accounts.filter((a) => a.id !== id);
-    if (DEFAULT_PREVIEW_STATE.activeAccount.id === id) {
-      DEFAULT_PREVIEW_STATE.activeAccount = DEFAULT_PREVIEW_STATE.accounts[0];
-    }
-    render(DEFAULT_PREVIEW_STATE);
-  },
-  onState(/** @type {(s: any) => void} */ fn) {
-    fn(DEFAULT_PREVIEW_STATE);
-  },
+  onState(/** @type {(s: any) => void} */ fn) {},
 };
 
 const api = /** @type {any} */ (window).host ?? fallbackApi;
 const $ = (/** @type {string} */ id) => /** @type {HTMLElement} */ (document.getElementById(id));
 
-/**
- * @param {string} tag
- * @param {Record<string, string>} [attrs]
- * @param {(Node | string)[]} [children]
- */
-function el(tag, attrs = {}, children = []) {
-  const node = document.createElement(tag);
-  for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v);
-  for (const child of children) node.append(child);
-  return node;
-}
-
-/**
- * @type {Record<string, { bg: string, svg: string }>}
- */
-const APP_THEMES = {
-  welcome: {
-    bg: 'linear-gradient(135deg, #38bdf8 0%, #6366f1 100%)',
-    svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-svg"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>',
-  },
-  profile: {
-    bg: 'linear-gradient(135deg, #a855f7 0%, #ec4899 100%)',
-    svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-svg"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
-  },
-  'clipboard-manager': {
-    bg: 'linear-gradient(135deg, #34d399 0%, #0d9488 100%)',
-    svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-svg"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>',
-  },
-  'color-picker': {
-    bg: 'linear-gradient(135deg, #f43f5e 0%, #8b5cf6 50%, #06b6d4 100%)',
-    svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-svg"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>',
-  },
-  'json-tools': {
-    bg: 'linear-gradient(135deg, #38bdf8 0%, #2563eb 100%)',
-    svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-svg"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>',
-  },
-  'markdown-preview': {
-    bg: 'linear-gradient(135deg, #818cf8 0%, #4338ca 100%)',
-    svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-svg"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>',
-  },
-  'outlook-calendar': {
-    bg: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
-    svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-svg"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
-  },
-  pomodoro: {
-    bg: 'linear-gradient(135deg, #f43f5e 0%, #f59e0b 100%)',
-    svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-svg"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
-  },
-  'quick-notes': {
-    bg: 'linear-gradient(135deg, #fbbf24 0%, #ea580c 100%)',
-    svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-svg"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>',
-  },
-  'world-clock': {
-    bg: 'linear-gradient(135deg, #06b6d4 0%, #10b981 100%)',
-    svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-svg"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>',
-  },
-};
-
-/** @param {string} str */
-function hashColor(str) {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
-  const h = Math.abs(hash % 360);
-  return `linear-gradient(135deg, hsl(${h}, 85%, 60%) 0%, hsl(${(h + 40) % 360}, 80%, 45%) 100%)`;
-}
-
-/**
- * @param {any} app
- * @param {'normal' | 'small' | 'dock'} [size]
- */
-function createSquircle(app, size = 'normal') {
-  const theme = APP_THEMES[app.id] ?? {
-    bg: hashColor(app.id || app.title),
-    svg: `<span class="initials">${(app.title || 'A').slice(0, 2).toUpperCase()}</span>`,
-  };
-
-  const className = size === 'small' ? 'cat-icon' : size === 'dock' ? 'dock-squircle' : 'app-squircle';
-  const squircle = el('div', {
-    class: className,
-    style: `background: ${theme.bg}`,
-  });
-  squircle.innerHTML = theme.svg;
-
-  if (app.running && size === 'normal') {
-    squircle.appendChild(el('span', { class: 'running-dot', title: 'Running' }));
-  }
-
-  return squircle;
-}
-
-/** @param {string} appId @param {string} widgetId @param {any} block */
-function renderBlock(appId, widgetId, block) {
-  switch (block.type) {
-    case 'text': return el('p', {}, [String(block.text)]);
-    case 'metric':
-      return el('div', { class: 'metric', 'data-tone': block.tone ?? 'neutral' }, [
-        el('span', {}, [String(block.label)]),
-        el('br'),
-        el('b', {}, [String(block.value)]),
-        block.unit ? ` ${block.unit}` : '',
-      ]);
-    case 'list':
-      return el('ul', {}, block.items.map((/** @type {any} */ i) =>
-        el('li', {}, [
-          el('span', {}, [String(i.label)]),
-          el('span', {}, [String(i.value ?? '')]),
-        ])
-      ));
-    case 'actions':
-      return el('div', { class: 'actions' }, block.actions.map((/** @type {any} */ a) => {
-        const button = el('button', {}, [String(a.label)]);
-        button.addEventListener('click', () => api.widgetAction(appId, widgetId, a.id));
-        return button;
-      }));
-    default: return el('span');
-  }
-}
-
 /** @type {any} */
-let lastState = null;
+let currentState = null;
 let searchQuery = '';
+let drawerCategory = 'all';
+let drawerQuery = '';
 
 /** @param {any} state */
 function render(state) {
-  lastState = state;
-  document.title = state.product;
-  $('title').textContent = state.title ?? state.product;
-  document.body.classList.toggle('app-open', Boolean(state.active));
-  /** @type {HTMLButtonElement} */ ($('back')).disabled = !state.active;
-  /** @type {HTMLButtonElement} */ ($('close')).disabled = !state.active;
+  currentState = state;
+  const isHome = state.active === null;
+  const title = $('title');
+  if (title) title.textContent = state.title || state.product;
 
-  const q = searchQuery.toLowerCase().trim();
-  const filteredApps = state.apps.filter((/** @type {any} */ a) =>
-    !q || a.title.toLowerCase().includes(q) || a.publisher.toLowerCase().includes(q) || a.id.toLowerCase().includes(q)
+  const dashboard = $('dashboard');
+  if (dashboard) dashboard.hidden = !isHome;
+
+  const back = $('back');
+  if (back) back.hidden = isHome;
+  const home = $('home');
+  if (home) home.hidden = isHome;
+  const close = $('close');
+  if (close) close.hidden = isHome;
+
+  if (isHome) {
+    renderApps(state, searchQuery);
+    renderWidgets(state, searchQuery);
+    renderCatalog(state);
+    renderDock(state);
+    renderDrawer(state, drawerCategory, drawerQuery);
+    renderConfirm(state);
+  }
+}
+
+/**
+ * @param {any} state
+ * @param {string} query
+ */
+function renderApps(state, query) {
+  const ul = $('apps');
+  const countBadge = $('apps-count');
+  if (!ul) return;
+
+  const q = query.trim().toLowerCase();
+  const filtered = (state.apps ?? []).filter((/** @type {any} */ a) =>
+    !q || a.title.toLowerCase().includes(q) || a.id.toLowerCase().includes(q)
   );
 
-  $('apps-count').textContent = `${state.apps.length}`;
+  if (countBadge) countBadge.textContent = String(filtered.length);
+  ul.replaceChildren(...filtered.map((/** @type {any} */ a) => renderAppItem(a)));
+}
 
-  $('apps').replaceChildren(...filteredApps.map((/** @type {any} */ a) => {
-    const tile = el('button', { class: 'app-tile', 'data-id': a.id, 'aria-label': `Launch ${a.title}` }, [
-      createSquircle(a, 'normal'),
-      el('div', { class: 'app-label' }, [
-        el('strong', {}, [a.title]),
-        a.protected ? el('span', { class: 'core-tag' }, ['Core']) : el('span', {}, [a.publisher]),
-      ]),
-    ]);
-    tile.addEventListener('click', () => api.open(a.id));
-    return el('li', {}, [tile]);
-  }));
+/**
+ * @param {any} state
+ * @param {string} query
+ */
+function renderWidgets(state, query) {
+  const container = $('widgets');
+  const empty = $('no-widgets');
+  if (!container) return;
 
-  const filteredWidgets = state.widgets.filter((/** @type {any} */ w) =>
+  const q = query.trim().toLowerCase();
+  const widgets = (state.widgets ?? []).filter((/** @type {any} */ w) =>
     !q || w.title.toLowerCase().includes(q) || w.appId.toLowerCase().includes(q)
   );
 
-  $('widgets').replaceChildren(...filteredWidgets.map((/** @type {any} */ w) => {
-    const from = state.apps.find((/** @type {any} */ a) => a.id === w.appId)?.title ?? w.appId;
-    return el('article', { class: 'widget' }, [
-      el('div', { class: 'widget-header' }, [
-        el('h3', {}, [w.title]),
-        from === w.title ? '' : el('span', { class: 'from' }, [from]),
-      ]),
-      ...w.descriptor.blocks.map((/** @type {any} */ b) => renderBlock(w.appId, w.widgetId, b)),
-    ]);
-  }));
-  $('no-widgets').hidden = filteredWidgets.length > 0;
-
-  renderAccounts(state);
-  renderDock(state);
-  renderCatalog(state.manager);
-  renderDrawer(state);
-  renderLauncherChoices(state);
+  if (empty) empty.hidden = widgets.length > 0;
+  container.replaceChildren(...widgets.map((/** @type {any} */ w) => renderWidgetItem(w)));
 }
 
-/** @type {Record<string, string>} */
-const PROVIDER_COLORS = {
-  google: '#ea4335',
-  microsoft: '#00a4ef',
-  local: '#6366f1',
-};
-
-/** @type {Record<string, string>} */
-const PROVIDER_LABELS = {
-  google: 'Google',
-  microsoft: 'Microsoft',
-  local: 'Local',
-};
-
 /** @param {any} state */
-function renderAccounts(state) {
-  const active = state.activeAccount;
-  const accounts = state.accounts ?? [];
+function renderCatalog(state) {
+  const ul = $('catalog');
+  const empty = $('no-catalog');
+  const err = $('manager-error');
+  if (!ul) return;
 
-  if (active) {
-    const accName = $('account-name');
-    if (accName) accName.textContent = active.name;
-
-    const accAvatar = $('account-avatar');
-    if (accAvatar) {
-      const color = PROVIDER_COLORS[active.provider] ?? active.avatarColor ?? '#6366f1';
-      accAvatar.style.background = color;
-      accAvatar.style.boxShadow = `0 0 6px ${color}`;
-    }
-
-    const authText = $('auth-status-text');
-    if (authText) {
-      const p = PROVIDER_LABELS[active.provider] ?? 'Local';
-      authText.textContent = `${p} (${active.email}) · Ed25519 Token Active`;
-    }
+  const m = state.manager ?? {};
+  if (err) {
+    err.hidden = !m.actionError;
+    err.textContent = m.actionError ?? '';
   }
 
-  const list = $('accounts-list');
-  if (!list) return;
-
-  list.replaceChildren(...accounts.map((/** @type {any} */ acc) => {
-    const isActive = active && acc.id === active.id;
-    const color = PROVIDER_COLORS[acc.provider] ?? acc.avatarColor ?? '#6366f1';
-    const tag = acc.provider === 'google' ? 'G' : acc.provider === 'microsoft' ? 'MS' : (acc.name || 'U').slice(0, 1).toUpperCase();
-
-    const avatar = el('div', { class: 'acc-avatar', style: `background: ${color}` }, [tag]);
-    const info = el('div', { class: 'acc-info' }, [
-      el('strong', {}, [acc.name]),
-      el('span', {}, [`${acc.email}${acc.role ? ` · ${acc.role}` : ''} (${PROVIDER_LABELS[acc.provider] ?? 'Local'})`]),
-    ]);
-    const left = el('div', { class: 'account-item-left' }, [avatar, info]);
-
-    const actions = el('div', { class: 'acc-actions' });
-    if (isActive) {
-      actions.appendChild(el('span', { class: 'active-check' }, ['Active']));
-    } else {
-      const switchBtn = el('button', { class: 'btn-secondary', style: 'padding: 4px 10px;' }, ['Switch']);
-      switchBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        api.switchAccount(acc.id);
-      });
-      actions.appendChild(switchBtn);
-
-      if (accounts.length > 1) {
-        const removeBtn = el('button', { class: 'btn-remove-acc', title: 'Remove account', 'aria-label': `Remove ${acc.name}` }, ['✕']);
-        removeBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          api.removeAccount(acc.id);
-        });
-        actions.appendChild(removeBtn);
-      }
-    }
-
-    const item = el('li', { class: `account-item${isActive ? ' active' : ''}` }, [left, actions]);
-    if (!isActive) {
-      item.addEventListener('click', () => api.switchAccount(acc.id));
-    }
-    return item;
-  }));
+  const rows = m.rows ?? [];
+  if (empty) empty.hidden = rows.length > 0;
+  ul.replaceChildren(...rows.map((/** @type {any} */ r) => renderCatalogItem(r)));
 }
 
 /** @param {any} state */
 function renderDock(state) {
   const dock = $('dock');
   if (!dock) return;
+  const apps = state.apps ?? [];
+  dock.replaceChildren(...apps.slice(0, 6).map((/** @type {any} */ a) => renderDockItem(a)));
+}
 
-  const pinnedIds = ['profile', 'welcome', 'quick-notes', 'world-clock', 'clipboard-manager'];
-  /** @type {any[]} */
-  const dockApps = [];
-  for (const id of pinnedIds) {
-    const app = state.apps.find((/** @type {any} */ a) => a.id === id);
-    if (app && !dockApps.some((a) => a.id === app.id)) dockApps.push(app);
+/**
+ * @param {any} state
+ * @param {string} cat
+ * @param {string} query
+ */
+function renderDrawer(state, cat, query) {
+  const grid = $('drawer-apps');
+  if (!grid) return;
+
+  const q = query.trim().toLowerCase();
+  const filtered = (state.apps ?? []).filter((/** @type {any} */ a) => {
+    const matchCat = cat === 'all' || (a.categories && a.categories.includes(cat));
+    const matchQuery = !q || a.title.toLowerCase().includes(q) || a.id.toLowerCase().includes(q);
+    return matchCat && matchQuery;
+  });
+
+  grid.replaceChildren(...filtered.map((/** @type {any} */ a) => renderDrawerItem(a)));
+}
+
+/** @param {any} state */
+function renderConfirm(state) {
+  const panel = $('install-confirm');
+  if (!panel) return;
+  const pkg = state.manager?.pendingInstall;
+  panel.hidden = !pkg;
+  if (!pkg) return;
+
+  const title = $('install-title');
+  const detail = $('install-detail');
+  const source = $('install-source');
+  const capsList = $('install-caps-list');
+
+  if (title) title.textContent = `Install ${pkg.title}?`;
+  if (detail) detail.textContent = `Version ${pkg.version} by ${pkg.publisher}`;
+  if (source) source.textContent = pkg.source;
+
+  if (capsList) {
+    const caps = pkg.manifest?.capabilities ?? {};
+    const pills = [];
+    if (caps.network) pills.push(`Network: ${caps.network.join(', ')}`);
+    if (caps.secrets) pills.push(`Secrets: ${caps.secrets.join(', ')}`);
+    if (caps.notifications) pills.push('Notifications');
+    if (caps.identity) pills.push('Identity');
+    if (caps.iac) pills.push('Inter-App Messaging');
+    capsList.replaceChildren(...pills.map((c) => el('span', { class: 'cap-pill' }, [c])));
   }
-  for (const app of state.apps) {
-    if (app.running && !dockApps.some((a) => a.id === app.id)) dockApps.push(app);
-  }
-  if (dockApps.length === 0) {
-    dockApps.push(...state.apps.slice(0, 5));
-  }
-
-  dock.replaceChildren(...dockApps.map((a) => {
-    const item = el('button', {
-      class: 'dock-item',
-      title: a.title,
-      'aria-label': `Launch ${a.title}`,
-    }, [
-      createSquircle(a, 'dock'),
-    ]);
-    if (appIsRunning(a)) {
-      item.appendChild(el('span', { class: 'dock-dot', title: 'Running' }));
-    }
-    item.addEventListener('click', () => api.open(a.id));
-    return item;
-  }));
-}
-
-/** @param {any} a */
-function appIsRunning(a) {
-  return Boolean(a.running);
-}
-
-/** @param {{ rows: any[], error: string | null, enabled: boolean, actionError: string | null, pendingInstall: string | null }} manager */
-function renderCatalog(manager) {
-  $('catalog-section').hidden = !manager.enabled && manager.rows.length === 0;
-  const pending = manager.rows.find((r) => r.id === manager.pendingInstall);
-  $('install-confirm').hidden = !pending;
-  if (pending) {
-    $('install-title').textContent = `Install ${pending.title}?`;
-    $('install-detail').textContent = `${pending.title} ${pending.latest} by ${pending.publisher}${pending.description ? ` — ${pending.description}` : ''}`;
-    $('install-source').textContent = `Verified source: ${pending.repository || 'https://github.com/samuelek25k/appshell-apps'}`;
-    const capsEl = $('install-caps-list');
-    if (capsEl) {
-      capsEl.replaceChildren(
-        el('span', { class: 'cap-pill cap-pill-good' }, ['✓ Sandbox Isolated']),
-        el('span', { class: 'cap-pill' }, ['🔒 Private Storage']),
-        el('span', { class: 'cap-pill' }, ['🛡 Ed25519 Token Signed']),
-        el('span', { class: 'cap-pill' }, ['⚡ Zero Host Node Access'])
-      );
-    }
-    $('install-yes').onclick = () => api.install(pending.id);
-    $('install-no').onclick = () => api.dismissInstall();
-  }
-
-  const error = manager.actionError ?? (manager.error ? `Catalog unavailable: ${manager.error}` : null);
-  $('manager-error').textContent = error ?? '';
-  $('manager-error').hidden = !error;
-
-  /** @type {(label: string, run: () => Promise<unknown>, primary?: boolean) => HTMLElement} */
-  const action = (label, run, primary = false) => {
-    const button = /** @type {HTMLButtonElement} */ (el('button', primary ? { class: 'primary' } : {}, [label]));
-    button.addEventListener('click', async () => {
-      for (const b of document.querySelectorAll('.catalog button')) /** @type {HTMLButtonElement} */ (b).disabled = true;
-      await run();
-    });
-    return button;
-  };
-
-  const q = searchQuery.toLowerCase().trim();
-  const rows = manager.rows.filter((r) =>
-    !q || r.title.toLowerCase().includes(q) || r.publisher.toLowerCase().includes(q) || (r.description && r.description.toLowerCase().includes(q))
-  );
-
-  $('catalog').replaceChildren(...rows.map((r) => {
-    const status = r.installed
-      ? `${r.installed} installed${r.latest && r.latest !== r.installed ? ` · ${r.latest} available` : ''}`
-      : r.latest ? `${r.latest} available` : 'No release in this channel';
-
-    return el('li', {}, [
-      createSquircle(r, 'small'),
-      el('div', { class: 'info' }, [
-        el('strong', {}, [r.title]),
-        el('span', {}, [`${r.publisher} · ${status}`]),
-        r.description ? el('span', { class: 'desc' }, [r.description]) : '',
-      ]),
-      el('div', { class: 'catalog-actions' }, [
-        !r.installed && r.latest ? action('Get', () => api.install(r.id), true) : '',
-        r.installed && r.latest && r.latest !== r.installed ? action(`Update to ${r.latest}`, () => api.install(r.id), true) : '',
-        r.previous ? action(`Roll back`, () => api.rollback(r.id)) : '',
-        r.installed ? action('Remove', () => api.uninstall(r.id)) : '',
-      ]),
-    ]);
-  }));
-  $('no-catalog').hidden = rows.length > 0;
-}
-
-const searchInput = /** @type {HTMLInputElement} */ ($('search-input'));
-const searchClear = $('search-clear');
-if (searchInput) {
-  searchInput.addEventListener('input', (e) => {
-    searchQuery = /** @type {HTMLInputElement} */ (e.target).value;
-    if (searchClear) searchClear.hidden = !searchQuery;
-    if (lastState) render(lastState);
-  });
-}
-if (searchClear) {
-  searchClear.addEventListener('click', () => {
-    searchQuery = '';
-    if (searchInput) searchInput.value = '';
-    searchClear.hidden = true;
-    if (lastState) render(lastState);
-  });
-}
-
-window.addEventListener('keydown', (e) => {
-  if (e.key === '/' && document.activeElement !== searchInput) {
-    e.preventDefault();
-    searchInput?.focus();
-  } else if (e.key === 'Escape') {
-    if (appDrawer && !appDrawer.hidden) {
-      toggleDrawer(false);
-    } else if (searchQuery) {
-      searchQuery = '';
-      if (searchInput) searchInput.value = '';
-      if (searchClear) searchClear.hidden = true;
-      if (lastState) render(lastState);
-    } else if (lastState?.active) {
-      api.back();
-    }
-  }
-});
-
-$('back').addEventListener('click', () => api.back());
-$('home').addEventListener('click', () => api.home());
-$('close').addEventListener('click', () => api.close());
-$('refresh').addEventListener('click', () => api.refreshCatalog());
-
-const accountBtn = $('account-btn');
-const accountDialog = /** @type {HTMLDialogElement} */ ($('account-dialog'));
-const accountDialogClose = $('account-dialog-close');
-const addAccountForm = /** @type {HTMLFormElement} */ ($('add-account-form'));
-const addFormTitle = $('add-form-title');
-const accNameInput = /** @type {HTMLInputElement} */ ($('acc-name'));
-const accEmailInput = /** @type {HTMLInputElement} */ ($('acc-email'));
-const accRoleInput = /** @type {HTMLInputElement} */ ($('acc-role'));
-const btnCancelAdd = $('btn-cancel-add');
-
-/** @type {'google' | 'microsoft' | 'local'} */
-let selectedProvider = 'local';
-
-if (accountBtn && accountDialog) {
-  accountBtn.addEventListener('click', () => {
-    accountDialog.showModal();
-  });
-}
-if (accountDialogClose && accountDialog) {
-  accountDialogClose.addEventListener('click', () => {
-    accountDialog.close();
-  });
-}
-if (accountDialog) {
-  accountDialog.addEventListener('click', (e) => {
-    if (e.target === accountDialog) accountDialog.close();
-  });
-}
-
-/** @param {'google' | 'microsoft' | 'local'} provider @param {string} label */
-function showAddAccount(provider, label) {
-  selectedProvider = provider;
-  if (addFormTitle) addFormTitle.textContent = `Add ${label} Account`;
-  if (addAccountForm) addAccountForm.hidden = false;
-  accNameInput?.focus();
-}
-
-$('btn-add-google')?.addEventListener('click', () => showAddAccount('google', 'Google'));
-$('btn-add-microsoft')?.addEventListener('click', () => showAddAccount('microsoft', 'Microsoft'));
-$('btn-add-local')?.addEventListener('click', () => showAddAccount('local', 'Work / Local'));
-
-if (btnCancelAdd && addAccountForm) {
-  btnCancelAdd.addEventListener('click', () => {
-    addAccountForm.hidden = true;
-    addAccountForm.reset();
-  });
-}
-
-if (addAccountForm) {
-  addAccountForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const name = accNameInput?.value.trim();
-    const email = accEmailInput?.value.trim();
-    const role = accRoleInput?.value.trim();
-    if (!name || !email) return;
-
-    try {
-      await api.addAccount({
-        name,
-        email,
-        role: role || (selectedProvider === 'google' ? 'Google Workspace' : selectedProvider === 'microsoft' ? 'Microsoft 365' : 'Local User'),
-        provider: selectedProvider,
-      });
-      addAccountForm.hidden = true;
-      addAccountForm.reset();
-    } catch (err) {
-      console.error('Failed to add account:', err);
-    }
-  });
 }
 
 function updateClock() {
-  const now = new Date();
   const timeEl = $('glance-time');
   const dateEl = $('glance-date');
+  const now = new Date();
   if (timeEl) {
     timeEl.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
   }
@@ -602,212 +171,146 @@ function updateClock() {
     dateEl.textContent = now.toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' });
   }
 }
-setInterval(updateClock, 1000);
-updateClock();
 
-let drawerCategory = 'all';
-let drawerSearch = '';
+function wireEvents() {
+  $('back')?.addEventListener('click', () => api.back());
+  $('home')?.addEventListener('click', () => api.home());
+  $('close')?.addEventListener('click', () => api.close());
+  $('refresh')?.addEventListener('click', () => api.refreshCatalog());
 
-/** @type {Record<string, string>} */
-const APP_CATEGORIES = {
-  welcome: 'system',
-  profile: 'system',
-  'quick-notes': 'productivity',
-  'world-clock': 'utilities',
-  'clipboard-manager': 'utilities',
-  pomodoro: 'productivity',
-  'color-picker': 'utilities',
-  'markdown-preview': 'dev',
-  'json-tools': 'dev',
-  'outlook-calendar': 'productivity',
-};
-
-/** @param {any} state */
-function renderDrawer(state) {
-  const container = $('drawer-apps');
-  if (!container) return;
-
-  const q = drawerSearch.toLowerCase().trim();
-  const filtered = state.apps.filter((/** @type {any} */ a) => {
-    const cat = APP_CATEGORIES[a.id] ?? 'utilities';
-    if (drawerCategory !== 'all' && cat !== drawerCategory) return false;
-    if (q && !a.title.toLowerCase().includes(q) && !a.id.toLowerCase().includes(q)) return false;
-    return true;
-  });
-
-  container.replaceChildren(...filtered.map((/** @type {any} */ a) => {
-    const btn = el('button', { class: 'app-tile drawer-tile', 'data-id': a.id, 'aria-label': `Launch ${a.title}` }, [
-      createSquircle(a, 'normal'),
-      el('div', { class: 'app-label' }, [
-        el('strong', {}, [a.title]),
-        el('span', {}, [a.publisher || 'Appshell']),
-      ]),
-    ]);
-    btn.addEventListener('click', () => {
-      const drawer = $('app-drawer');
-      if (drawer) drawer.hidden = true;
-      api.open(a.id);
-    });
-    return el('li', {}, [btn]);
-  }));
-}
-
-const appDrawer = $('app-drawer');
-const btnOpenDrawer = $('btn-open-drawer');
-const drawerCloseBtn = $('drawer-close-btn');
-const drawerHandle = $('drawer-handle');
-const gesturePill = $('gesture-pill');
-const drawerSearchInput = /** @type {HTMLInputElement} */ ($('drawer-search-input'));
-
-/** @param {boolean} [open] */
-function toggleDrawer(open) {
-  if (!appDrawer) return;
-  const isHidden = typeof open === 'boolean' ? !open : !appDrawer.hidden;
-  appDrawer.hidden = isHidden;
-  if (!isHidden) {
-    drawerSearch = '';
-    if (drawerSearchInput) {
-      drawerSearchInput.value = '';
-      drawerSearchInput.focus();
+  $('apps')?.addEventListener('click', (e) => {
+    const target = /** @type {HTMLElement} */ (e.target);
+    const btn = target.closest('button[data-id]');
+    if (btn) {
+      const id = btn.getAttribute('data-id');
+      if (id) api.open(id);
     }
-    if (lastState) renderDrawer(lastState);
-  }
-}
-
-btnOpenDrawer?.addEventListener('click', () => toggleDrawer(true));
-drawerCloseBtn?.addEventListener('click', () => toggleDrawer(false));
-drawerHandle?.addEventListener('click', () => toggleDrawer(false));
-gesturePill?.addEventListener('click', () => toggleDrawer());
-
-if (drawerSearchInput) {
-  drawerSearchInput.addEventListener('input', (e) => {
-    drawerSearch = /** @type {HTMLInputElement} */ (e.target).value;
-    if (lastState) renderDrawer(lastState);
   });
-}
 
-document.querySelectorAll('.cat-pill').forEach((pill) => {
-  pill.addEventListener('click', () => {
-    document.querySelectorAll('.cat-pill').forEach((p) => p.classList.remove('active'));
-    pill.classList.add('active');
-    drawerCategory = pill.getAttribute('data-cat') || 'all';
-    if (lastState) renderDrawer(lastState);
+  $('dock')?.addEventListener('click', (e) => {
+    const target = /** @type {HTMLElement} */ (e.target);
+    const btn = target.closest('button[data-id]');
+    if (btn) {
+      const id = btn.getAttribute('data-id');
+      if (id) api.open(id);
+    }
   });
-});
 
-const launcherDialog = /** @type {HTMLDialogElement} */ ($('launcher-settings-dialog'));
-const btnHomeSettings = $('btn-home-settings');
-const launcherDialogClose = $('launcher-dialog-close');
-
-btnHomeSettings?.addEventListener('click', () => {
-  launcherDialog?.showModal();
-});
-launcherDialogClose?.addEventListener('click', () => {
-  launcherDialog?.close();
-});
-if (launcherDialog) {
-  launcherDialog.addEventListener('click', (e) => {
-    if (e.target === launcherDialog) launcherDialog.close();
+  $('drawer-apps')?.addEventListener('click', (e) => {
+    const target = /** @type {HTMLElement} */ (e.target);
+    const btn = target.closest('button[data-id]');
+    if (btn) {
+      const id = btn.getAttribute('data-id');
+      if (id) {
+        api.open(id);
+        const drawer = $('app-drawer');
+        if (drawer) drawer.hidden = true;
+      }
+    }
   });
-}
 
-/** @param {string} wp */
-function applyWallpaper(wp) {
-  const dash = $('dashboard');
-  if (!dash) return;
-  dash.classList.remove('wp-obsidian', 'wp-aurora', 'wp-cyber', 'wp-violet', 'wp-sunset');
-  dash.classList.add(`wp-${wp}`);
-  document.querySelectorAll('.swatch-btn').forEach((b) => {
-    b.classList.toggle('active', b.getAttribute('data-wp') === wp);
+  $('widgets')?.addEventListener('click', (e) => {
+    const target = /** @type {HTMLElement} */ (e.target);
+    const btn = target.closest('button[data-action="widget"]');
+    if (btn) {
+      const appId = btn.getAttribute('data-app-id');
+      const widgetId = btn.getAttribute('data-widget-id');
+      const actionId = btn.getAttribute('data-action-id');
+      if (appId && widgetId && actionId) api.widgetAction(appId, widgetId, actionId);
+    }
   });
-  try { localStorage.setItem('appshell_wallpaper', wp); } catch {}
-}
 
-document.querySelectorAll('.swatch-btn').forEach((btn) => {
-  btn.addEventListener('click', () => {
-    const wp = btn.getAttribute('data-wp') || 'obsidian';
-    applyWallpaper(wp);
+  $('catalog')?.addEventListener('click', (e) => {
+    const target = /** @type {HTMLElement} */ (e.target);
+    const btn = target.closest('button[data-action]');
+    if (btn) {
+      const action = btn.getAttribute('data-action');
+      const id = btn.getAttribute('data-id');
+      if (!id) return;
+      if (action === 'install') api.install(id);
+      else if (action === 'rollback') api.rollback(id);
+      else if (action === 'uninstall') api.uninstall(id);
+    }
   });
-});
 
-/** @param {string} shape */
-function applyIconShape(shape) {
-  document.body.classList.remove('shape-squircle', 'shape-circle', 'shape-rounded', 'shape-teardrop');
-  document.body.classList.add(`shape-${shape}`);
-  document.querySelectorAll('.shape-btn').forEach((b) => {
-    b.classList.toggle('active', b.getAttribute('data-shape') === shape);
+  $('search-input')?.addEventListener('input', (e) => {
+    const input = /** @type {HTMLInputElement} */ (e.target);
+    searchQuery = input.value;
+    const clearBtn = $('search-clear');
+    if (clearBtn) clearBtn.hidden = !searchQuery;
+    if (currentState) {
+      renderApps(currentState, searchQuery);
+      renderWidgets(currentState, searchQuery);
+    }
   });
-  try { localStorage.setItem('appshell_icon_shape', shape); } catch {}
-}
 
-document.querySelectorAll('.shape-btn').forEach((btn) => {
-  btn.addEventListener('click', () => {
-    const shape = btn.getAttribute('data-shape') || 'squircle';
-    applyIconShape(shape);
+  $('search-clear')?.addEventListener('click', () => {
+    const input = /** @type {HTMLInputElement} */ ($('search-input'));
+    if (input) input.value = '';
+    searchQuery = '';
+    const clearBtn = $('search-clear');
+    if (clearBtn) clearBtn.hidden = true;
+    if (currentState) {
+      renderApps(currentState, '');
+      renderWidgets(currentState, '');
+    }
   });
-});
 
-/** @param {string} density */
-function applyDensity(density) {
-  const dash = $('dashboard');
-  if (!dash) return;
-  dash.classList.remove('density-compact', 'density-standard', 'density-spacious');
-  dash.classList.add(`density-${density}`);
-  document.querySelectorAll('.density-btn').forEach((b) => {
-    b.classList.toggle('active', b.getAttribute('data-density') === density);
+  const toggleDrawer = () => {
+    const drawer = $('app-drawer');
+    if (!drawer) return;
+    drawer.hidden = !drawer.hidden;
+    if (!drawer.hidden) {
+      $('drawer-search-input')?.focus();
+      if (currentState) renderDrawer(currentState, drawerCategory, drawerQuery);
+    }
+  };
+
+  $('btn-open-drawer')?.addEventListener('click', toggleDrawer);
+  $('gesture-pill')?.addEventListener('click', toggleDrawer);
+  $('drawer-close-btn')?.addEventListener('click', toggleDrawer);
+  $('drawer-handle')?.addEventListener('click', toggleDrawer);
+
+  $('drawer-search-input')?.addEventListener('input', (e) => {
+    const input = /** @type {HTMLInputElement} */ (e.target);
+    drawerQuery = input.value;
+    if (currentState) renderDrawer(currentState, drawerCategory, drawerQuery);
   });
-  try { localStorage.setItem('appshell_density', density); } catch {}
-}
 
-document.querySelectorAll('.density-btn').forEach((btn) => {
-  btn.addEventListener('click', () => {
-    const density = btn.getAttribute('data-density') || 'standard';
-    applyDensity(density);
-  });
-});
-
-/** @param {any} state */
-function renderLauncherChoices(state) {
-  const container = $('launcher-apps-list');
-  if (!container) return;
-  const currentDefault = (() => {
-    try { return localStorage.getItem('appshell_default_launcher') || 'default'; } catch { return 'default'; }
-  })();
-
-  const launcherApps = [
-    { id: 'default', title: 'Appshell Native Springboard', subtitle: 'Built-in At-a-Glance & Bento Shelf Home Experience' },
-    ...state.apps.filter((/** @type {any} */ a) => a.capabilities?.launcher || a.id.includes('launcher')).map((/** @type {any} */ a) => ({
-      id: a.id,
-      title: a.title,
-      subtitle: `${a.publisher} · Custom Launcher Experience`,
-    }))
-  ];
-
-  container.replaceChildren(...launcherApps.map((item) => {
-    const active = item.id === currentDefault;
-    const choice = el('div', { class: `launcher-choice-item${active ? ' active' : ''}` }, [
-      el('div', { class: 'choice-info' }, [
-        el('strong', {}, [item.title]),
-        el('br'),
-        el('small', { class: 'quiet' }, [item.subtitle]),
-      ]),
-      el('span', { class: 'badge' }, [active ? '✓ Default' : 'Select']),
-    ]);
-    choice.addEventListener('click', () => {
-      try { localStorage.setItem('appshell_default_launcher', item.id); } catch {}
-      renderLauncherChoices(state);
+  document.querySelectorAll('.cat-pill').forEach((pill) => {
+    pill.addEventListener('click', () => {
+      document.querySelectorAll('.cat-pill').forEach((p) => p.classList.remove('active'));
+      pill.classList.add('active');
+      drawerCategory = pill.getAttribute('data-cat') || 'all';
+      if (currentState) renderDrawer(currentState, drawerCategory, drawerQuery);
     });
-    return choice;
-  }));
+  });
+
+  $('install-yes')?.addEventListener('click', () => {
+    if (currentState?.manager?.pendingInstall?.id) {
+      api.install(currentState.manager.pendingInstall.id);
+    }
+  });
+  $('install-no')?.addEventListener('click', () => api.dismissInstall());
+
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      const drawer = $('app-drawer');
+      if (drawer && !drawer.hidden) {
+        drawer.hidden = true;
+        return;
+      }
+      if (currentState && currentState.active !== null) {
+        api.back();
+      }
+    } else if (e.key === '/' && document.activeElement?.tagName !== 'INPUT') {
+      e.preventDefault();
+      $('search-input')?.focus();
+    }
+  });
 }
 
-try {
-  const savedWp = localStorage.getItem('appshell_wallpaper');
-  if (savedWp) applyWallpaper(savedWp);
-  const savedShape = localStorage.getItem('appshell_icon_shape');
-  if (savedShape) applyIconShape(savedShape);
-  const savedDensity = localStorage.getItem('appshell_density');
-  if (savedDensity) applyDensity(savedDensity);
-} catch {}
-
+updateClock();
+setInterval(updateClock, 1000);
+wireEvents();
 api.onState(render);

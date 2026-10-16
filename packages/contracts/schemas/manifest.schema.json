@@ -47,8 +47,20 @@
         "notifications": { "type": "boolean" },
         "secrets": { "type": "array", "items": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" } },
         "identity": { "type": "boolean" },
-        "launcher": { "type": "boolean" },
-        "secureStorage": { "type": "boolean" }
+        "iac": {
+          "oneOf": [
+            { "type": "boolean" },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "send": { "type": "array", "items": { "type": "string", "maxLength": 64 } },
+                "receive": { "type": "array", "items": { "type": "string", "maxLength": 64 } },
+                "channels": { "type": "array", "items": { "type": "string", "maxLength": 64 } }
+              }
+            }
+          ]
+        }
       }
     }
   }

@@ -13,9 +13,11 @@ import { fail } from './services.js';
  *   hostLog: (message: string) => void,
  *   locale?: string,
  *   onStorageChanged?: (appId: string, key: string, value: unknown) => void,
- *   onListApps?: () => { id: string, title: string, publisher: string, running: boolean }[],
- *   onLaunchApp?: (appId: string) => boolean,
- *   onGetWidgets?: () => object[],
+ *   onIacSend?: (fromId: string, toId: string, action: string, payload: unknown, launchIfNeeded?: boolean) => Promise<{ delivered: boolean, targetRunning: boolean }>,
+ *   onIacPublish?: (fromId: string, channel: string, data: unknown) => { subscribersCount: number },
+ *   onIacSubscribe?: (appId: string, channel: string) => boolean,
+ *   onIacUnsubscribe?: (appId: string, channel: string) => boolean,
+ *   canReceiveIac?: (targetId: string, fromId: string) => boolean,
  * }} BridgeDeps
  */
 
@@ -41,31 +43,20 @@ export function createBridge(deps) {
         timeZone: typeof Intl === 'object' ? Intl.DateTimeFormat().resolvedOptions().timeZone : 'UTC',
       };
     },
-    'shell.listInstalledApps': () => deps.onListApps?.() ?? [],
-    'shell.launchApp': (_id, p) => {
-      if (policy.blockedApps?.includes(p.id)) {
-        services.audit({ event: 'APP_LAUNCH_BLOCKED', target: p.id, details: { reason: 'policy.blockedApps' } });
-        throw fail(ERRORS.CAPABILITY_DENIED, `app ${p.id} is blocked by administrative policy`);
-      }
-      return deps.onLaunchApp?.(p.id) ?? false;
-    },
-    'shell.getWidgets': () => deps.onGetWidgets?.() ?? [],
-    'shell.setPreferences': (id, p) => services.storage.set(id, '__launcher_prefs__', p.preferences),
-    'shell.getPreferences': async (id) => (await services.storage.get(id, '__launcher_prefs__')) ?? {},
     'widgets.update': (id, p) => {
       const result = validate('widget', p.descriptor);
       if (!result.ok) throw fail(ERRORS.INVALID_PARAMS, result.errors.join('; '));
       deps.onWidget(id, p.id, p.descriptor);
       return null;
     },
-    'storage.get': (id, p, app) => services.storage.get(id, p.key, app.manifest.capabilities?.secureStorage === true),
-    'storage.set': (id, p, app) => {
-      const res = services.storage.set(id, p.key, p.value, app.manifest.capabilities?.secureStorage === true);
+    'storage.get': (id, p) => services.storage.get(id, p.key),
+    'storage.set': (id, p) => {
+      const res = services.storage.set(id, p.key, p.value);
       deps.onStorageChanged?.(id, p.key, p.value);
       return res;
     },
-    'storage.remove': (id, p, app) => {
-      const res = services.storage.remove(id, p.key, app.manifest.capabilities?.secureStorage === true);
+    'storage.remove': (id, p) => {
+      const res = services.storage.remove(id, p.key);
       deps.onStorageChanged?.(id, p.key, undefined);
       return res;
     },
@@ -85,6 +76,32 @@ export function createBridge(deps) {
       return deps.identity.mint(id);
     },
     'identity.publicKey': () => deps.identity.publicJwk(),
+    'iac.send': async (id, p) => {
+      if (policy.blockedApps?.includes(p.to)) {
+        services.audit({ event: 'IAC_DENIED', target: id, details: { to: p.to, action: p.action, reason: 'target blocked by policy' } });
+        throw fail(ERRORS.CAPABILITY_DENIED, `target app ${p.to} is blocked by administrative policy`);
+      }
+      if (deps.canReceiveIac && !deps.canReceiveIac(p.to, id)) {
+        services.audit({ event: 'IAC_DENIED', target: id, details: { to: p.to, action: p.action, reason: 'target does not allow receiving from sender' } });
+        throw fail(ERRORS.CAPABILITY_DENIED, `target app ${p.to} does not accept inter-app messages from ${id}`);
+      }
+      const res = await (deps.onIacSend?.(id, p.to, p.action, p.payload, p.launchIfNeeded) ?? Promise.resolve({ delivered: false, targetRunning: false }));
+      services.audit({ event: 'IAC_MESSAGE_SENT', target: id, details: { to: p.to, action: p.action, delivered: res.delivered } });
+      return res;
+    },
+    'iac.publish': (id, p) => {
+      const res = deps.onIacPublish?.(id, p.channel, p.data) ?? { subscribersCount: 0 };
+      services.audit({ event: 'IAC_PUBLISHED', target: id, details: { channel: p.channel, subscribersCount: res.subscribersCount } });
+      return res;
+    },
+    'iac.subscribe': (id, p) => {
+      const ok = deps.onIacSubscribe?.(id, p.channel) ?? true;
+      return { channel: p.channel, subscribed: ok };
+    },
+    'iac.unsubscribe': (id, p) => {
+      const ok = deps.onIacUnsubscribe?.(id, p.channel) ?? true;
+      return { channel: p.channel, unsubscribed: ok };
+    },
   };
 
   return async (app, method, params) => {

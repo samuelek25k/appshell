@@ -8,7 +8,6 @@ import { isInside } from './registry.js';
 
 const SDK_FILE = createRequire(import.meta.url).resolve('@appshell/sdk');
 const APP_PRELOAD = fileURLToPath(new URL('../preload/app.cjs', import.meta.url));
-const TOKENS_FILE = fileURLToPath(new URL('../ui/tokens.css', import.meta.url));
 
 /** @type {Record<string, string>} */
 const TYPES = {
@@ -42,12 +41,11 @@ function prepareSession(app) {
     let file;
     try {
       if (url.pathname === '/__appshell/sdk.js') file = SDK_FILE;
-      else if (url.pathname === '/__appshell/tokens.css') file = TOKENS_FILE;
       else file = await realpath(resolve(app.dir, '.' + decodeURIComponent(url.pathname)));
     } catch {
       return new Response('Not found', { status: 404 });
     }
-    if (file !== SDK_FILE && file !== TOKENS_FILE && !isInside(app.dir, file)) return new Response('Forbidden', { status: 403 });
+    if (file !== SDK_FILE && !isInside(app.dir, file)) return new Response('Forbidden', { status: 403 });
     try {
       return new Response(await readFile(file), {
         headers: {

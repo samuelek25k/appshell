@@ -6,17 +6,12 @@ Status on 2026-10-14. Update this file when work lands; delete items that are do
 
 - **Phase 0 (on `main`):** the platform contract, the isolated app runtime, the bridge, the shell, the SDK, the hostile-app gate on Windows, macOS and Linux, and the Windows installer pipeline.
 - **Phase 1 (on `main`):** catalog installs (D9–D11), developer CLI & template, app-scoped identity tokens (D8), store install links with confirmation, and the Appshell product page.
-- **Phase 2 & Desktop Home Screen Experience (Completed):**
-  - **Android Home Screen Experience (D13):** At-a-Glance smart header (live clock, date, status), slide-up App Drawer with category filters and search, dynamic wallpaper engines (Obsidian, Aurora, Cyber, Violet, Sunset), adaptive icon shapes (Squircle, Circle, Rounded, Teardrop), grid density controls (4x4, 5x5, 3x4), and third-party launcher selection with emergency fallback `CommandOrControl+Shift+Escape`.
-  - **Multi-Account & Identity Claims (D14):** Native multi-account management (Google, Microsoft, Local), active account claims in scoped Ed25519 tokens.
-  - **Localization & Internationalization (D15):** Platform locale detection, LTR/RTL text direction, `shell.getLocale` and `shell.localeChanged`.
-  - **Secure Storage at Rest (D16):** Authenticated AES-256-GCM encryption for apps with `capabilities.secureStorage`, per-app HKDF key derivation, zero plaintext on disk.
-  - **Platform Design Tokens:** Standard `--appshell-*` tokens served at `/__appshell/tokens.css`.
-  - **Trust & Governance:** Backend network enforcement, `policy.blockedApps`, `logs/audit.log`, periodic catalog update checks.
+- **Phase 2 & Hardening (Completed):**
+  - **Inter-App Communication (IAC) (D17):** Host-mediated messaging and pub/sub topic broadcasting with declarative permissions, strict isolation, and audit logging.
+  - **Android-Inspired Home Screen Experience:** Clean, responsive At-a-Glance smart header, app drawer with categories and search, adaptive icon squircle styling with zero CSP violations.
+  - **Localization & Internationalization (D15):** Platform locale detection, LTR/RTL text direction, and `shell.getLocale`.
+  - **Platform Hardening & Low-Maintenance Architecture:** Fixed backend network preload (UDP, DNS, port stripping), capped audit logs with rotation, built-in Node 22 test coverage (`pnpm test:coverage`), dependency audit (`pnpm audit`), pinned GitHub Actions, and community health assets (`LICENSE`, `SECURITY.md`, `CONTRIBUTING.md`, `CODEOWNERS`, Renovate).
 
-## Next steps
-
-1. appshell-apps #4: rich store, Quick Notes and World Clock. Publish catalog releases from appshell-apps.
 
 ## Needs the repo owner
 

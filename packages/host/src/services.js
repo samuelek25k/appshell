@@ -38,103 +38,40 @@ export const fail = (code, message) => Object.assign(new Error(message), { code 
 export function createServices(root) {
   const storeFile = (/** @type {string} */ id) => join(appDir(root, id), 'storage.json');
   const secretFile = (/** @type {string} */ id) => join(appDir(root, id), 'secrets.json');
-  const masterKeyFile = join(root, 'storage.key');
-
-  /** @type {Buffer | null} */
-  let masterKeyCache = null;
-  const getMasterKey = () => {
-    if (masterKeyCache) return masterKeyCache;
-    try {
-      if (existsSync(masterKeyFile)) {
-        masterKeyCache = readFileSync(masterKeyFile);
-      } else {
-        masterKeyCache = randomBytes(32);
-        writeFileSync(masterKeyFile, masterKeyCache, { mode: 0o600 });
-      }
-    } catch {
-      masterKeyCache = randomBytes(32);
-    }
-    return masterKeyCache;
-  };
-
   /** @param {string} id */
-  const getAppKey = (id) =>
-    Buffer.from(hkdfSync('sha256', getMasterKey(), Buffer.from(id), Buffer.from('appshell-storage-v1'), 32));
-
-  /** @param {string} data @param {Buffer} key */
-  const encryptStorage = (data, key) => {
-    const iv = randomBytes(12);
-    const cipher = createCipheriv('aes-256-gcm', key, iv);
-    const enc = Buffer.concat([cipher.update(data, 'utf8'), cipher.final()]);
-    const tag = cipher.getAuthTag();
-    return JSON.stringify({
-      __appshell_encrypted__: true,
-      iv: iv.toString('base64'),
-      tag: tag.toString('base64'),
-      ciphertext: enc.toString('base64'),
-    });
-  };
-
-  /** @param {string} raw @param {Buffer} key */
-  const decryptStorage = (raw, key) => {
+  const readStore = (id) => {
     try {
-      const parsed = JSON.parse(raw);
-      if (parsed && parsed.__appshell_encrypted__) {
-        const decipher = createDecipheriv('aes-256-gcm', key, Buffer.from(parsed.iv, 'base64'));
-        decipher.setAuthTag(Buffer.from(parsed.tag, 'base64'));
-        const dec = Buffer.concat([decipher.update(Buffer.from(parsed.ciphertext, 'base64')), decipher.final()]);
-        return Object.assign(Object.create(null), JSON.parse(dec.toString('utf8')));
-      }
-      return Object.assign(Object.create(null), parsed);
+      return Object.assign(Object.create(null), JSON.parse(readFileSync(storeFile(id), 'utf8')));
     } catch {
       return Object.create(null);
     }
   };
 
-  /** @param {string} id @param {boolean} [secure] */
-  const readStore = (id, secure = false) => {
-    const file = storeFile(id);
-    try {
-      const content = readFileSync(file, 'utf8');
-      if (secure || content.includes('__appshell_encrypted__')) {
-        return decryptStorage(content, getAppKey(id));
-      }
-      return Object.assign(Object.create(null), JSON.parse(content));
-    } catch {
-      return Object.create(null);
-    }
-  };
-
-  /** @param {string} id @param {Record<string, any>} store @param {boolean} [secure] */
-  const writeStore = (id, store, secure = false) => {
+  /** @param {string} id @param {Record<string, unknown>} store */
+  const writeStore = (id, store) => {
     const next = JSON.stringify(store);
     if (next.length > MAX_STORE_BYTES) throw fail('INVALID_PARAMS', 'app storage is limited to 1 MB');
-    const file = storeFile(id);
-    if (secure) {
-      writeFileSync(file, encryptStorage(next, getAppKey(id)), { mode: 0o600 });
-    } else {
-      writeFileSync(file, next);
-    }
+    writeFileSync(storeFile(id), next);
   };
 
   return {
     storage: {
-      /** @param {string} id @param {string} key @param {boolean} [secure] */
-      get: (id, key, secure = false) => readStore(id, secure)[key] ?? null,
-      /** @param {string} id @param {string} key @param {unknown} value @param {boolean} [secure] */
-      set(id, key, value, secure = false) {
+      /** @param {string} id @param {string} key */
+      get: (id, key) => readStore(id)[key] ?? null,
+      /** @param {string} id @param {string} key @param {unknown} value */
+      set(id, key, value) {
         const encoded = JSON.stringify(value);
         if (encoded === undefined || encoded.length > MAX_VALUE_BYTES) throw fail('INVALID_PARAMS', 'value must be JSON up to 64 KB');
-        const store = readStore(id, secure);
+        const store = readStore(id);
         store[key] = value;
-        writeStore(id, store, secure);
+        writeStore(id, store);
         return null;
       },
-      /** @param {string} id @param {string} key @param {boolean} [secure] */
-      remove(id, key, secure = false) {
-        const store = readStore(id, secure);
+      /** @param {string} id @param {string} key */
+      remove(id, key) {
+        const store = readStore(id);
         delete store[key];
-        writeStore(id, store, secure);
+        writeStore(id, store);
         return null;
       },
     },

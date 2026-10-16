@@ -26,3 +26,21 @@ test('no product names, protocols, folders or package formats in packages/', () 
   });
   assert.deepEqual(hits, []);
 });
+
+test('no product-specific app names or personal data in packages/', () => {
+  const forbidden = [
+    'pomodoro',
+    'quick-notes',
+    'world-clock',
+    'clipboard-manager',
+    'color-picker',
+    'markdown-preview',
+    'alex morgan',
+    'alex.morgan',
+  ];
+  const hits = files(join(root, 'packages')).flatMap((file) => {
+    const text = readFileSync(file, 'utf8').toLowerCase();
+    return forbidden.filter((term) => text.includes(term)).map((term) => `${file.slice(root.length)}: ${term}`);
+  });
+  assert.deepEqual(hits, []);
+});

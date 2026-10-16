@@ -45,12 +45,56 @@ export const ERRORS = /** @type {const} */ ({
  *   entry: { ui?: string, backend?: string },
  *   display?: 'shell' | 'standalone',
  *   widgets?: { id: string, title: string }[],
- *   capabilities?: { network?: string[], notifications?: boolean, secrets?: string[], identity?: boolean, launcher?: boolean, secureStorage?: boolean }
+ *   capabilities?: { network?: string[], notifications?: boolean, secrets?: string[], identity?: boolean, iac?: boolean | { send?: string[], receive?: string[], channels?: string[] } }
  * }} Manifest
  */
 
 const str = (/** @type {unknown} */ v, max = 1000) => typeof v === 'string' && v.length > 0 && v.length <= max;
 const key = (/** @type {unknown} */ v) => typeof v === 'string' && /^[A-Za-z0-9_.-]{1,64}$/.test(v);
+
+/**
+ * @param {Manifest} m
+ * @param {string} targetId
+ */
+function checkIacSend(m, targetId) {
+  const iac = m.capabilities?.iac;
+  if (!iac) return 'iac';
+  if (iac === true) return null;
+  if (typeof iac === 'object') {
+    if (!iac.send || iac.send.includes('*') || iac.send.includes(targetId)) return null;
+    return `iac:send:${targetId}`;
+  }
+  return 'iac';
+}
+
+/**
+ * @param {Manifest} m
+ * @param {string} channel
+ */
+function checkIacChannel(m, channel) {
+  const iac = m.capabilities?.iac;
+  if (!iac) return 'iac';
+  if (iac === true) return null;
+  if (typeof iac === 'object') {
+    if (!iac.channels || iac.channels.includes('*') || iac.channels.includes(channel)) return null;
+    return `iac:channel:${channel}`;
+  }
+  return 'iac';
+}
+
+/**
+ * @param {Manifest} m
+ * @param {string} senderId
+ */
+export function allowsIacReceive(m, senderId) {
+  const iac = m.capabilities?.iac;
+  if (!iac) return false;
+  if (iac === true) return true;
+  if (typeof iac === 'object') {
+    return !iac.receive || iac.receive.includes('*') || iac.receive.includes(senderId);
+  }
+  return false;
+}
 
 /**
  * @type {Record<string, { params: (p: any) => boolean, requires: (m: Manifest, p: any) => string | null }>}
@@ -60,11 +104,6 @@ export const METHODS = {
   'shell.setTitle': { params: (p) => str(p?.title, 60), requires: () => null },
   'shell.closeResponse': { params: (p) => str(p?.nonce, 64) && typeof p?.allow === 'boolean', requires: () => null },
   'shell.getLocale': { params: () => true, requires: () => null },
-  'shell.listInstalledApps': { params: () => true, requires: (m) => (m.capabilities?.launcher ? null : 'launcher') },
-  'shell.launchApp': { params: (p) => str(p?.id, 64), requires: (m) => (m.capabilities?.launcher ? null : 'launcher') },
-  'shell.getWidgets': { params: () => true, requires: (m) => (m.capabilities?.launcher ? null : 'launcher') },
-  'shell.setPreferences': { params: (p) => typeof p?.preferences === 'object' && p.preferences !== null, requires: (m) => (m.capabilities?.launcher ? null : 'launcher') },
-  'shell.getPreferences': { params: () => true, requires: (m) => (m.capabilities?.launcher ? null : 'launcher') },
   'widgets.update': {
     params: (p) => str(p?.id, 32) && typeof p?.descriptor === 'object' && p.descriptor !== null,
     requires: (m, p) => (m.widgets ?? []).some((w) => w.id === p.id) ? null : `widgets:${p.id}`,
@@ -91,9 +130,33 @@ export const METHODS = {
   'backend.call': { params: (p) => str(p?.method, 64), requires: (m) => (m.entry.backend ? null : 'backend') },
   'identity.token': { params: () => true, requires: (m) => (m.capabilities?.identity ? null : 'identity') },
   'identity.publicKey': { params: () => true, requires: () => null },
+  'iac.send': {
+    params: (p) => str(p?.to, 64) && str(p?.action, 64) && (p?.payload === undefined || typeof p.payload === 'object' || typeof p.payload === 'string' || typeof p.payload === 'number' || typeof p.payload === 'boolean') && (p?.launchIfNeeded === undefined || typeof p.launchIfNeeded === 'boolean'),
+    requires: (m, p) => checkIacSend(m, p.to),
+  },
+  'iac.publish': {
+    params: (p) => key(p?.channel) && p?.data !== undefined,
+    requires: (m, p) => checkIacChannel(m, p.channel),
+  },
+  'iac.subscribe': {
+    params: (p) => key(p?.channel),
+    requires: (m, p) => checkIacChannel(m, p.channel),
+  },
+  'iac.unsubscribe': {
+    params: (p) => key(p?.channel),
+    requires: (m, p) => checkIacChannel(m, p.channel),
+  },
 };
 
-export const EVENTS = /** @type {const} */ (['shell.closeRequested', 'shell.deepLink', 'widgets.action', 'shell.localeChanged', 'storage.changed']);
+export const EVENTS = /** @type {const} */ ([
+  'shell.closeRequested',
+  'shell.deepLink',
+  'widgets.action',
+  'shell.localeChanged',
+  'storage.changed',
+  'iac.message',
+  'iac.broadcast',
+]);
 
 /**
  * @param {string} range

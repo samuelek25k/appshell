@@ -1,9 +1,9 @@
-import { app, BrowserWindow, globalShortcut, ipcMain, net, protocol, session } from 'electron';
+import { app, BrowserWindow, ipcMain, net, protocol, session } from 'electron';
 import { randomUUID } from 'node:crypto';
 import { appendFileSync, mkdirSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { CLOSE_VETO_TIMEOUT_MS } from '@appshell/contracts';
+import { CLOSE_VETO_TIMEOUT_MS, allowsIacReceive } from '@appshell/contracts';
 import { loadProduct, loadApps, HOST_VERSION } from './registry.js';
 import { createManager } from './manager.js';
 import { createIdentity } from './identity.js';
@@ -79,6 +79,9 @@ const appLog = (appId) => (/** @type {string} */ level, /** @type {string} */ me
 
 const identity = createIdentity(join(dataRoot, 'identity'), product.dataDirectory);
 
+/** @type {Map<string, Set<string>>} */
+const channelSubscriptions = new Map();
+
 const bridge = createBridge({
   policy: product.policy,
   services,
@@ -110,25 +113,68 @@ const bridge = createBridge({
     closeWaiters.get(key)?.(allow);
     closeWaiters.delete(key);
   },
-  onListApps() {
-    return [...apps.values()].map(({ manifest, protected: isProtected }) => ({
-      id: manifest.id,
-      title: manifest.title,
-      publisher: manifest.publisher,
-      protected: isProtected,
-      running: running.has(manifest.id),
-    }));
+  canReceiveIac(targetId, fromId) {
+    const target = apps.get(targetId);
+    if (!target) return false;
+    return allowsIacReceive(target.manifest, fromId);
   },
-  onLaunchApp(appId) {
-    return open(appId);
+  async onIacSend(fromId, toId, action, payload, launchIfNeeded) {
+    let entry = running.get(toId);
+    if (!entry && launchIfNeeded) {
+      if (open(toId)) {
+        entry = running.get(toId);
+      }
+    }
+    if (!entry) {
+      return { delivered: false, targetRunning: false };
+    }
+    const timestamp = Date.now();
+    entry.view.webContents.send('appshell:event', 'iac.message', {
+      from: fromId,
+      action,
+      payload,
+      timestamp,
+    });
+    return { delivered: true, targetRunning: true };
   },
-  onGetWidgets() {
-    return [...apps.values()].flatMap(({ manifest }) =>
-      (manifest.widgets ?? []).flatMap((w) => {
-        const descriptor = widgets.get(manifest.id)?.[w.id];
-        return descriptor ? [{ appId: manifest.id, widgetId: w.id, title: w.title, descriptor }] : [];
-      })
-    );
+  onIacPublish(fromId, channel, data) {
+    const subscribers = channelSubscriptions.get(channel);
+    if (!subscribers || subscribers.size === 0) return { subscribersCount: 0 };
+    let count = 0;
+    const timestamp = Date.now();
+    for (const subId of subscribers) {
+      if (subId === fromId) continue;
+      const target = apps.get(subId);
+      if (!target || !allowsIacReceive(target.manifest, fromId)) continue;
+      const entry = running.get(subId);
+      if (entry) {
+        entry.view.webContents.send('appshell:event', 'iac.broadcast', {
+          channel,
+          from: fromId,
+          data,
+          timestamp,
+        });
+        count++;
+      }
+    }
+    return { subscribersCount: count };
+  },
+  onIacSubscribe(appId, channel) {
+    let set = channelSubscriptions.get(channel);
+    if (!set) {
+      set = new Set();
+      channelSubscriptions.set(channel, set);
+    }
+    set.add(appId);
+    return true;
+  },
+  onIacUnsubscribe(appId, channel) {
+    const set = channelSubscriptions.get(channel);
+    if (set) {
+      set.delete(appId);
+      if (set.size === 0) channelSubscriptions.delete(channel);
+    }
+    return true;
   },
 });
 
@@ -138,10 +184,14 @@ function publish() {
     product: product.name,
     active,
     title: active ? running.get(active)?.title : product.name,
-    accounts: identity.listAccounts(),
-    activeAccount: identity.getActiveAccount(),
     apps: [...apps.values()].map(({ manifest, protected: isProtected }) => ({
-      id: manifest.id, title: manifest.title, publisher: manifest.publisher, protected: isProtected, running: running.has(manifest.id),
+      id: manifest.id,
+      title: manifest.title,
+      publisher: manifest.publisher,
+      protected: isProtected,
+      running: running.has(manifest.id),
+      capabilities: manifest.capabilities ?? {},
+      categories: (/** @type {any} */ (manifest)).categories ?? [],
     })),
     widgets: [...apps.values()].flatMap(({ manifest }) =>
       (manifest.widgets ?? []).flatMap((w) => {
@@ -160,7 +210,7 @@ function publish() {
 async function manage(appId, action, eventType = 'APP_MANAGED') {
   if (apps.get(appId)?.protected) { managerError = `${appId} is a core app`; publish(); return; }
   if (product.policy.blockedApps?.includes(appId) && eventType === 'APP_INSTALLED') {
-    services.audit({ event: 'APP_INSTALL_BLOCKED', actor: identity.getActiveAccount()?.email, target: appId, details: { reason: 'policy.blockedApps' } });
+    services.audit({ event: 'APP_INSTALL_BLOCKED', actor: identity.getSubject(), target: appId, details: { reason: 'policy.blockedApps' } });
     managerError = `${appId} is blocked by administrative policy`;
     publish();
     return;
@@ -168,7 +218,7 @@ async function manage(appId, action, eventType = 'APP_MANAGED') {
   stop(appId);
   try {
     await action();
-    services.audit({ event: eventType, actor: identity.getActiveAccount()?.email, target: appId });
+    services.audit({ event: eventType, actor: identity.getSubject(), target: appId });
     managerError = null;
   } catch (error) {
     managerError = `${appId}: ${error instanceof Error ? error.message : String(error)}`;
@@ -190,7 +240,7 @@ function layout() {
 /** @param {string} appId */
 function open(appId) {
   if (product.policy.blockedApps?.includes(appId)) {
-    services.audit({ event: 'APP_LAUNCH_BLOCKED', actor: identity.getActiveAccount()?.email, target: appId, details: { reason: 'policy.blockedApps' } });
+    services.audit({ event: 'APP_LAUNCH_BLOCKED', actor: identity.getSubject(), target: appId, details: { reason: 'policy.blockedApps' } });
     managerError = `${appId} is blocked by administrative policy`;
     publish();
     return false;
@@ -219,6 +269,10 @@ function stop(appId) {
   widgets.delete(appId);
   backends.get(appId)?.stop();
   backends.delete(appId);
+  for (const [ch, set] of channelSubscriptions.entries()) {
+    set.delete(appId);
+    if (set.size === 0) channelSubscriptions.delete(ch);
+  }
   if (active === appId) active = null;
   layout();
   publish();
@@ -312,26 +366,6 @@ ipcMain.handle('host:widgetAction', (event, appId, widgetId, actionId) => {
   if (!declared || !open(appId)) return;
   running.get(appId)?.view.webContents.send('appshell:event', 'widgets.action', { widget: widgetId, action: actionId });
 });
-ipcMain.handle('host:accounts:switch', (event, id) => {
-  if (!fromHost(event)) return;
-  identity.switchAccount(id);
-  const acc = identity.getActiveAccount();
-  services.audit({ event: 'ACCOUNT_SWITCHED', actor: acc?.email, details: { id: acc?.id, provider: acc?.provider } });
-  publish();
-});
-ipcMain.handle('host:accounts:add', (event, data) => {
-  if (!fromHost(event)) return;
-  identity.addAccount(data);
-  services.audit({ event: 'ACCOUNT_ADDED', actor: data?.email, details: { provider: data?.provider } });
-  publish();
-});
-ipcMain.handle('host:accounts:remove', (event, id) => {
-  if (!fromHost(event)) return;
-  identity.removeAccount(id);
-  services.audit({ event: 'ACCOUNT_REMOVED', details: { id } });
-  publish();
-});
-
 app.on('second-instance', (_event, argv) => {
   links(argv).forEach(handleLink);
   if (win?.isMinimized()) win.restore();
@@ -362,14 +396,6 @@ app.whenReady().then(async () => {
   hostLog(`started ${product.name} with ${apps.size} app(s)`);
   manager.refresh().then(publish);
   links(process.argv).forEach(handleLink);
-
-  globalShortcut.register('CommandOrControl+Shift+Escape', () => {
-    active = null;
-    layout();
-    publish();
-    if (win?.isMinimized()) win.restore();
-    win?.focus();
-  });
 
   setInterval(() => manager.refresh().then(publish), 60 * 60 * 1000).unref();
 });

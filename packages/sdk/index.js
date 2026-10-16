@@ -46,3 +46,44 @@ export const identity = {
 export const backend = {
   call: (/** @type {string} */ method, /** @type {object} */ params = {}) => call('backend.call', { method, params }),
 };
+
+export const iac = {
+  /**
+   * @param {string} to
+   * @param {string} action
+   * @param {unknown} [payload]
+   * @param {{ launchIfNeeded?: boolean }} [options]
+   * @returns {Promise<{ delivered: boolean, targetRunning: boolean }>}
+   */
+  send: (to, action, payload, options = {}) =>
+    call('iac.send', { to, action, payload, launchIfNeeded: options.launchIfNeeded }),
+
+  /**
+   * @param {string} channel
+   * @param {unknown} data
+   * @returns {Promise<{ subscribersCount: number }>}
+   */
+  publish: (channel, data) => call('iac.publish', { channel, data }),
+
+  /**
+   * @param {string} channel
+   * @returns {Promise<{ channel: string, subscribed: boolean }>}
+   */
+  subscribe: (channel) => call('iac.subscribe', { channel }),
+
+  /**
+   * @param {string} channel
+   * @returns {Promise<{ channel: string, unsubscribed: boolean }>}
+   */
+  unsubscribe: (channel) => call('iac.unsubscribe', { channel }),
+
+  /**
+   * @param {(msg: { from: string, action: string, payload: unknown, timestamp: number }) => void} fn
+   */
+  onMessage: (fn) => bridge.on('iac.message', fn),
+
+  /**
+   * @param {(msg: { channel: string, from: string, data: unknown, timestamp: number }) => void} fn
+   */
+  onBroadcast: (fn) => bridge.on('iac.broadcast', fn),
+};
