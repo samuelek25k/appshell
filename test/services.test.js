@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync, readFileSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { createServices } from '../packages/host/src/services.js';
+import { createServices, appendWithRotation } from '../packages/host/src/services.js';
 
 /**
  * @param {any} t
@@ -67,5 +67,10 @@ test('audit and app logs rotate at 2 MB and removeAppLogs unlinks both', (t) => 
   services.removeAppLogs('test-app');
   assert.equal(existsSync(join(logsDir, 'test-app.log')), false);
   assert.equal(existsSync(join(logsDir, 'test-app.1.log')), false);
+
+  writeFileSync(join(logsDir, 'host.log'), 'z'.repeat(2 * 1024 * 1024));
+  appendWithRotation(join(logsDir, 'host.log'), 'host rotated message\n');
+  assert.equal(existsSync(join(logsDir, 'host.1.log')), true);
+  assert.equal(existsSync(join(logsDir, 'host.log')), true);
 });
 

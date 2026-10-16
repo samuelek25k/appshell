@@ -41,6 +41,25 @@ test('bridge supports shell.getLocale and reports system locale information', as
     assert.ok(Array.isArray(data.languages));
     assert.ok(typeof data.timeZone === 'string');
   }
+
+  let dynLocale = 'en-US';
+  const dynBridge = createBridge({
+    policy: {},
+    services: createServices(dir),
+    locale: () => dynLocale,
+    identity: /** @type {any} */ ({}),
+    hostLog: () => {},
+    backendFor: /** @type {any} */ (() => {}),
+    onTitle: () => {},
+    onWidget: () => {},
+    onCloseResponse: () => {},
+  });
+  const dynRes1 = await dynBridge(app, 'shell.getLocale', {});
+  assert.equal(/** @type {any} */ (dynRes1).result.locale, 'en-US');
+  dynLocale = 'fa-IR';
+  const dynRes2 = await dynBridge(app, 'shell.getLocale', {});
+  assert.equal(/** @type {any} */ (dynRes2).result.locale, 'fa-IR');
+  assert.equal(/** @type {any} */ (dynRes2).result.direction, 'rtl');
 });
 
 test('bridge supports shell.getTheme and reports active theme settings', async (t) => {

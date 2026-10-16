@@ -152,6 +152,7 @@ export const METHODS = {
 export const EVENTS = /** @type {const} */ ([
   'shell.closeRequested',
   'shell.deepLink',
+  'shell.themeChanged',
   'widgets.action',
   'shell.localeChanged',
   'storage.changed',

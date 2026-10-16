@@ -11,7 +11,7 @@ import { fail } from './services.js';
  *   onWidget: (appId: string, widgetId: string, descriptor: object) => void,
  *   onCloseResponse: (appId: string, nonce: string, allow: boolean) => void,
  *   hostLog: (message: string) => void,
- *   locale?: string,
+ *   locale?: string | (() => string),
  *   onStorageChanged?: (appId: string, key: string, value: unknown) => void,
  *   onIacSend?: (fromId: string, toId: string, action: string, payload: unknown, launchIfNeeded?: boolean) => Promise<{ delivered: boolean, targetRunning: boolean }>,
  *   onIacPublish?: (fromId: string, channel: string, data: unknown) => { subscribersCount: number },
@@ -53,7 +53,8 @@ export function createBridge(deps) {
     'shell.setTitle': (id, p) => deps.onTitle(id, p.title),
     'shell.closeResponse': (id, p) => deps.onCloseResponse(id, p.nonce, p.allow),
     'shell.getLocale': () => {
-      const loc = deps.locale ?? (typeof Intl === 'object' ? Intl.DateTimeFormat().resolvedOptions().locale : 'en-US');
+      const rawLoc = typeof deps.locale === 'function' ? deps.locale() : deps.locale;
+      const loc = rawLoc ?? (typeof Intl === 'object' ? Intl.DateTimeFormat().resolvedOptions().locale : 'en-US');
       const isRtl = loc.startsWith('ar') || loc.startsWith('he') || loc.startsWith('fa') || loc.startsWith('ur');
       return {
         locale: loc,

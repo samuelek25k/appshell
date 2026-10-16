@@ -45,4 +45,6 @@ test('product schema validates governance policies and allows omitted capabiliti
   };
   const res = validate('product', baseProduct);
   assert.equal(res.ok, true);
+  assert.equal(validate('product', { ...baseProduct, defaultLocale: 'fr-FR' }).ok, true);
+  assert.equal(validate('product', { ...baseProduct, defaultLocale: 'invalid_locale' }).ok, false);
 });

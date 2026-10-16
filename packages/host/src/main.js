@@ -7,7 +7,7 @@ import { CLOSE_VETO_TIMEOUT_MS, allowsIacReceive } from '@appshell/contracts';
 import { loadProduct, loadApps, HOST_VERSION } from './registry.js';
 import { createManager } from './manager.js';
 import { createIdentity } from './identity.js';
-import { createServices } from './services.js';
+import { createServices, appendWithRotation } from './services.js';
 import { createBackend } from './backend.js';
 import { createBridge } from './bridge.js';
 import { createAppView } from './views.js';
@@ -88,8 +88,9 @@ function setTheme(theme) {
 
 /** @param {string} message */
 const hostLog = (message) => {
-  mkdirSync(join(dataRoot, 'logs'), { recursive: true });
-  appendFileSync(join(dataRoot, 'logs', 'host.log'), `${new Date().toISOString()} ${message}\n`);
+  const dir = join(dataRoot, 'logs');
+  mkdirSync(dir, { recursive: true });
+  appendWithRotation(join(dir, 'host.log'), `${new Date().toISOString()} ${message}\n`);
 };
 
 protocol.registerSchemesAsPrivileged([
@@ -136,12 +137,29 @@ const identity = createIdentity(join(dataRoot, 'identity'), product.dataDirector
 /** @type {Map<string, Set<string>>} */
 const channelSubscriptions = new Map();
 
+let currentLocale = product.defaultLocale ?? 'en-US';
+
+/** @param {string} loc */
+function setLocale(loc) {
+  currentLocale = loc;
+  const isRtl = loc.startsWith('ar') || loc.startsWith('he') || loc.startsWith('fa') || loc.startsWith('ur');
+  const payload = {
+    locale: loc,
+    languages: [loc, 'en'],
+    direction: isRtl ? 'rtl' : 'ltr',
+    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+  };
+  for (const { view } of running.values()) {
+    view.webContents.send('appshell:event', 'shell.localeChanged', payload);
+  }
+}
+
 const bridge = createBridge({
   policy: product.policy,
   services,
   identity,
   hostLog,
-  locale: product.defaultLocale ?? 'en-US',
+  locale: () => currentLocale,
   getTheme: () => ({ source: nativeTheme.themeSource, dark: nativeTheme.shouldUseDarkColors }),
   getVersions: (appId) => {
     const prov = manager.provenance(appId);
@@ -439,6 +457,11 @@ ipcMain.handle('host:close', (event) => fromHost(event) && active && requestClos
 ipcMain.handle('host:setTheme', (event, theme) => {
   if (fromHost(event) && ['system', 'light', 'dark'].includes(theme)) {
     setTheme(/** @type {'system' | 'light' | 'dark'} */ (theme));
+  }
+});
+ipcMain.handle('host:setLocale', (event, loc) => {
+  if (fromHost(event) && typeof loc === 'string') {
+    setLocale(loc);
   }
 });
 ipcMain.handle('host:widgetAction', (event, appId, widgetId, actionId) => {

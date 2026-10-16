@@ -26,7 +26,7 @@ const MAX_STORE_BYTES = 1024 * 1024;
 const MAX_LOG_BYTES = 2 * 1024 * 1024;
 
 /** @param {string} file @param {string} line */
-function appendWithRotation(file, line) {
+export function appendWithRotation(file, line) {
   try {
     if (existsSync(file) && statSync(file).size >= MAX_LOG_BYTES) {
       const rotated = file.replace(/\.log$/, '.1.log');

@@ -19,6 +19,11 @@
       }
     },
     "catalog": { "description": "URL of the catalog index.json", "type": "string", "pattern": "^https://" },
+    "defaultLocale": {
+      "description": "Default BCP 47 locale tag for the product, e.g. en-US.",
+      "type": "string",
+      "pattern": "^[a-z]{2,3}(-[A-Z][a-z]{3})?(-[A-Z]{2}|-\\d{3})?$"
+    },
     "apps": {
       "description": "Pre-installed app folders, relative to the apps root (--apps flag, default <product folder>/apps). Protected apps cannot be removed by users.",
       "type": "array",
@@ -45,11 +50,6 @@
           "description": "App IDs prohibited from installation or execution under administrator governance.",
           "type": "array",
           "items": { "type": "string" }
-        },
-        "defaultLocale": {
-          "description": "Default BCP 47 locale tag for the product, e.g. en-US.",
-          "type": "string",
-          "pattern": "^[a-z]{2,3}(-[A-Z][a-z]{3})?(-[A-Z]{2}|-\\d{3})?$"
         }
       }
     }

@@ -33,10 +33,12 @@ export function generateBuildConfig(productPath, cwd = process.cwd()) {
     appId: `dev.appshell.${product.dataDirectory}`,
     productName: product.name,
     directories: { app: 'packages/host', output: 'dist' },
-    extraMetadata: { name: product.dataDirectory },
-    extraResources: [{ from: productDir, to: 'product', filter: ['**/*', '!**/.git{,/**}', '!**/node_modules{,/**}'] }],
+    extraResources: [{
+      from: productDir,
+      to: 'product',
+      filter: ['product.json', 'assets{,/**}', ...(product.apps || []).flatMap((/** @type {any} */ a) => [`apps/${a.path}{,/**}`, `${a.path}{,/**}`])],
+    }],
     protocols: [{ name: product.name, schemes: [product.protocol] }],
-    fileAssociations: [{ ext: product.package.extension.slice(1), name: product.package.displayName }],
     ...(relIcon ? { icon: relIcon } : {}),
     win: {
       target: [{ target: 'nsis', arch: ['x64'] }],

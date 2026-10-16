@@ -77,6 +77,7 @@ Limits: storage values ≤ 64 KB, ≤ 1 MB per app. Errors: `UNKNOWN_METHOD`, `I
 | `shell.closeRequested` | `{ nonce }` | `shell.closeResponse` within 600 ms, else the app closes |
 | `shell.deepLink` | `{ path }` | from `<protocol>://<app-id>/<path>`; one link per launch (Windows exits when given two), later launches hand theirs to the running host |
 | `shell.themeChanged` | `{ source, dark }` | sent when theme preference or system mode changes |
+| `shell.localeChanged` | `{ locale, languages, direction, timeZone }` | sent when system locale or language changes |
 | `widgets.action` | `{ widget, action }` | sent after the host brings the app to the front |
 | `storage.changed` | `{ key, value }` | sent when app storage key is mutated |
 | `iac.message` | `{ from, action, payload, timestamp }` | sent when targeted IAC message arrives |
