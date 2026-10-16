@@ -1,3 +1,15 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+
+/** @param {string} userData */
+export function accountRoot(userData) {
+  try {
+    const state = JSON.parse(readFileSync(join(userData, 'accounts.json'), 'utf8'));
+    return join(userData, 'accounts', state.accounts.find((/** @type {{ id: string }} */ a) => a.id === state.activeId).dir);
+  } catch {
+    return join(userData, 'accounts', 'pending');
+  }
+}
 
 /**
  * @param {number} port

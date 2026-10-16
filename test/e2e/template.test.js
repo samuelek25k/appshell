@@ -7,7 +7,7 @@ import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { evaluate, waitForPage } from './cdp.js';
+import { accountRoot, evaluate, waitForPage } from './cdp.js';
 
 const root = fileURLToPath(new URL('../..', import.meta.url));
 const electron = /** @type {string} */ (createRequire(import.meta.url)('electron'));
@@ -46,6 +46,6 @@ test('a new app from the template runs with its sandboxed backend', { timeout: 9
   }
   let pageHtml = '';
   try { pageHtml = await evaluate(port, 'app://hello', 'document.body.innerHTML'); } catch {}
-  const readLog = (/** @type {string} */ name) => { try { return readFileSync(join(work, 'data', 'logs', name), 'utf8'); } catch { return '<none>'; } };
+  const readLog = (/** @type {string} */ name) => { try { return readFileSync(join(name === 'host.log' ? join(work, 'data') : accountRoot(join(work, 'data')), 'logs', name), 'utf8'); } catch { return '<none>'; } };
   assert.equal(greeting, 'Hello from the backend. Visit 1.', `Greeting mismatch.\nPage HTML: ${pageHtml}\nEval error: ${evalError}\nHost log:\n${readLog('host.log')}\nHello log:\n${readLog('hello.log')}\nChild stderr:\n${childStderr}`);
 });

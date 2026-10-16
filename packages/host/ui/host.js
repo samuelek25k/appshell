@@ -11,6 +11,10 @@ const fallbackApi = {
   widgetAction(/** @type {string} */ appId, /** @type {string} */ widgetId, /** @type {string} */ actionId) {},
   setTheme(/** @type {string} */ _theme) {},
   setLocale(/** @type {string} */ _loc) {},
+  switchAccount(/** @type {string} */ _id, /** @type {string | undefined} */ _pin) {},
+  startGuest() {},
+  addAccount(/** @type {string} */ _name, /** @type {string | undefined} */ _pin) {},
+  removeAccount(/** @type {string} */ _id, /** @type {string | undefined} */ _pin) {},
   onState(/** @type {(s: any) => void} */ fn) {},
 };
 
@@ -19,6 +23,8 @@ const $ = (/** @type {string} */ id) => /** @type {HTMLElement} */ (document.get
 
 /** @type {any} */
 let currentState = null;
+/** @type {{ mode: 'pin' | 'add' | 'remove', id?: string, name?: string, locked?: boolean, unlock?: boolean } | null} */
+let accountDialog = null;
 let searchQuery = '';
 
 /**
@@ -195,7 +201,8 @@ function render(state) {
 
   const back = /** @type {HTMLButtonElement | null} */ ($('back'));
   const close = /** @type {HTMLButtonElement | null} */ ($('close'));
-  if (back) back.disabled = isHome;
+  if (back) back.hidden = isHome;
+  if (close) close.hidden = isHome;
   const themeSource = state.theme?.source ?? 'system';
   document.documentElement.setAttribute('data-theme', themeSource);
 
@@ -225,6 +232,7 @@ function render(state) {
     localeSelect.value = state.locale;
   }
 
+  renderAccounts(state);
   renderApps(state);
   renderWidgets(state);
   renderCatalog(state);
@@ -277,6 +285,73 @@ function renderCatalog(state) {
 }
 
 /** @param {any} state */
+function renderAccounts(state) {
+  const info = state.accounts;
+  if (!info) return;
+  const current = info.list.find((/** @type {any} */ a) => a.id === info.activeId);
+  $('account-initial').textContent = (current?.name ?? '?').slice(0, 1).toUpperCase();
+  $('account-name').textContent = current?.name ?? '';
+  const menu = $('account-menu');
+  const rows = info.list.map((/** @type {any} */ a) => {
+    const label = [el('span', {}, [document.createTextNode(a.name)])];
+    if (a.type === 'guest') label.push(el('span', { class: 'account-tag' }, [document.createTextNode('Guest')]));
+    else if (a.locked) label.push(el('span', { class: 'account-tag' }, [document.createTextNode('PIN')]));
+    const pick = el('button', { type: 'button', role: 'menuitem', 'data-account-action': 'switch', 'data-id': a.id, ...(a.id === info.activeId ? { 'aria-current': 'true' } : {}) }, label);
+    const parts = [pick];
+    if (a.type === 'local' && a.id !== info.activeId) parts.push(el('button', { type: 'button', class: 'account-remove', 'data-account-action': 'remove', 'data-id': a.id, 'aria-label': `Remove ${a.name}` }, [document.createTextNode('Remove')]));
+    return el('div', { class: 'account-row' }, parts);
+  });
+  const extra = [el('hr'), el('button', { type: 'button', role: 'menuitem', 'data-account-action': 'add' }, [document.createTextNode('Add local account')])];
+  if (info.allowGuest && !info.list.some((/** @type {any} */ a) => a.type === 'guest')) {
+    extra.push(el('button', { type: 'button', role: 'menuitem', 'data-account-action': 'guest' }, [document.createTextNode('Use as guest')]));
+  }
+  menu.replaceChildren(...rows, ...extra);
+  if (info.locked && !accountDialog && menu.hidden) {
+    accountDialog = { mode: 'pin', id: info.activeId, name: current?.name, unlock: true };
+  }
+  renderAccountDialog();
+}
+
+function renderAccountDialog() {
+  const panel = $('account-dialog');
+  panel.hidden = !accountDialog;
+  if (!accountDialog) return;
+  const { mode, name, locked, unlock } = accountDialog;
+  $('account-title').textContent = mode === 'add' ? 'Add local account' : mode === 'remove' ? `Remove ${name}?` : unlock ? `Unlock ${name}` : `Switch to ${name}`;
+  $('account-detail').textContent = mode === 'add'
+    ? 'A local account keeps its own app data on this computer. The PIN only controls who can open it here; it does not encrypt your data.'
+    : mode === 'remove' ? 'Its app data on this computer is deleted.' : 'Enter the PIN for this account.';
+  $('account-name-input').hidden = mode !== 'add';
+  const pin = /** @type {HTMLInputElement} */ ($('account-pin-input'));
+  pin.hidden = mode === 'remove' && !locked;
+  pin.placeholder = mode === 'add' ? 'PIN (optional)' : 'PIN';
+  $('account-submit').textContent = mode === 'add' ? 'Add account' : mode === 'remove' ? 'Remove' : 'Continue';
+  $('account-cancel').textContent = unlock ? 'Choose another account' : 'Cancel';
+}
+
+function closeAccountDialog() {
+  accountDialog = null;
+  /** @type {HTMLFormElement} */ ($('account-form')).reset();
+  $('account-error').textContent = '';
+  renderAccountDialog();
+}
+
+/** @param {Event} event */
+async function submitAccountDialog(event) {
+  event.preventDefault();
+  if (!accountDialog) return;
+  const { mode, id } = accountDialog;
+  const name = /** @type {HTMLInputElement} */ ($('account-name-input')).value;
+  const pin = /** @type {HTMLInputElement} */ ($('account-pin-input')).value || undefined;
+  if (mode === 'add') await api.addAccount(name, pin);
+  else if (mode === 'remove') await api.removeAccount(id, pin);
+  else await api.switchAccount(id, pin);
+  const error = currentState?.accounts?.error;
+  if (error) $('account-error').textContent = error;
+  else closeAccountDialog();
+}
+
+/** @param {any} state */
 function renderConfirm(state) {
   const panel = $('install-confirm');
   if (!panel) return;
@@ -298,6 +373,42 @@ function renderConfirm(state) {
 }
 
 function wireEvents() {
+  $('settings-btn')?.addEventListener('click', () => { $('settings-dialog').hidden = false; });
+  $('settings-close')?.addEventListener('click', () => { $('settings-dialog').hidden = true; });
+  $('settings-dialog')?.addEventListener('click', (e) => { if (e.target === $('settings-dialog')) $('settings-dialog').hidden = true; });
+  const menu = $('account-menu');
+  const toggleMenu = (/** @type {boolean} */ open) => {
+    menu.hidden = !open;
+    $('account-btn').setAttribute('aria-expanded', String(open));
+  };
+  $('account-btn')?.addEventListener('click', () => toggleMenu(menu.hidden === true));
+  document.addEventListener('click', (e) => {
+    if (!menu.hidden && !(/** @type {HTMLElement} */ (e.target)).closest('.account')) toggleMenu(false);
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') toggleMenu(false);
+  });
+  menu.addEventListener('click', (e) => {
+    const btn = (/** @type {HTMLElement} */ (e.target)).closest('button[data-account-action]');
+    if (!btn) return;
+    const action = btn.getAttribute('data-account-action');
+    const id = btn.getAttribute('data-id') ?? undefined;
+    const target = (currentState?.accounts?.list ?? []).find((/** @type {any} */ a) => a.id === id);
+    toggleMenu(false);
+    if (action === 'guest') api.startGuest();
+    else if (action === 'add') accountDialog = { mode: 'add' };
+    else if (action === 'remove') accountDialog = { mode: 'remove', id, name: target?.name, locked: target?.locked };
+    else if (target?.locked || id === currentState?.accounts?.activeId) {
+      if (id !== currentState?.accounts?.activeId || currentState?.accounts?.locked) accountDialog = { mode: 'pin', id, name: target?.name };
+    } else if (id) api.switchAccount(id);
+    renderAccountDialog();
+  });
+  $('account-form').addEventListener('submit', submitAccountDialog);
+  $('account-cancel').addEventListener('click', () => {
+    const wasUnlock = accountDialog?.unlock;
+    closeAccountDialog();
+    if (wasUnlock) toggleMenu(true);
+  });
   $('back')?.addEventListener('click', () => api.back());
   $('home')?.addEventListener('click', () => api.home());
   $('close')?.addEventListener('click', () => api.close());

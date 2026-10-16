@@ -14,9 +14,10 @@ contextBridge.exposeInMainWorld('host', {
   widgetAction: (appId, widgetId, actionId) => ipcRenderer.invoke('host:widgetAction', String(appId), String(widgetId), String(actionId)),
   setTheme: (theme) => ipcRenderer.invoke('host:setTheme', String(theme)),
   setLocale: (locale) => ipcRenderer.invoke('host:setLocale', String(locale)),
-  switchAccount: (id) => ipcRenderer.invoke('host:accounts:switch', String(id)),
-  addAccount: (data) => ipcRenderer.invoke('host:accounts:add', data),
-  removeAccount: (id) => ipcRenderer.invoke('host:accounts:remove', String(id)),
+  switchAccount: (id, pin) => ipcRenderer.invoke('host:accounts:switch', String(id), pin === undefined ? undefined : String(pin)),
+  startGuest: () => ipcRenderer.invoke('host:accounts:guest'),
+  addAccount: (name, pin) => ipcRenderer.invoke('host:accounts:add', String(name), pin === undefined || pin === '' ? undefined : String(pin)),
+  removeAccount: (id, pin) => ipcRenderer.invoke('host:accounts:remove', String(id), pin === undefined ? undefined : String(pin)),
   onState(fn) {
     ipcRenderer.on('host:state', (_event, state) => fn(state));
     ipcRenderer.invoke('host:ready');

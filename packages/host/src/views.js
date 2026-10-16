@@ -32,12 +32,13 @@ const prepared = new Set();
 /**
  * @param {import('./registry.js').InstalledApp} app
  * @param {(level: string, message: string) => void} log
+ * @param {string} partition
  */
-function prepareSession(app, log) {
+function prepareSession(app, log, partition) {
   const { id } = app.manifest;
-  const ses = session.fromPartition(`persist:app:${id}`);
-  if (prepared.has(id)) return ses;
-  prepared.add(id);
+  const ses = session.fromPartition(partition);
+  if (prepared.has(partition)) return ses;
+  prepared.add(partition);
 
   const rawAppDir = (realpathSync.native ?? realpathSync)(app.dir);
   const appDir = rawAppDir.startsWith('\\\\?\\') ? rawAppDir.slice(4) : rawAppDir;
@@ -86,12 +87,13 @@ function prepareSession(app, log) {
 /**
  * @param {import('./registry.js').InstalledApp} app
  * @param {(level: string, message: string) => void} log
+ * @param {string} partition
  */
-export function createAppView(app, log) {
+export function createAppView(app, log, partition) {
   const { id, entry } = app.manifest;
   const view = new WebContentsView({
     webPreferences: {
-      session: prepareSession(app, log),
+      session: prepareSession(app, log, partition),
       preload: APP_PRELOAD,
       sandbox: true,
       contextIsolation: true,

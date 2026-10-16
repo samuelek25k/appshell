@@ -7,6 +7,7 @@ import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { accountRoot } from './cdp.js';
 
 const root = fileURLToPath(new URL('../..', import.meta.url));
 const electron = /** @type {string} */ (createRequire(import.meta.url)('electron'));
@@ -33,12 +34,12 @@ test('hostile app cannot escape its sandbox', { timeout: 90_000 }, async (t) => 
     rmSync(userData, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
   });
 
-  for (let waited = 0; !readJson(join(userData, 'apps', 'victim', 'storage.json')).ready && waited < 30_000; waited += 250) {
+  for (let waited = 0; !readJson(join(accountRoot(userData), 'apps', 'victim', 'storage.json')).ready && waited < 30_000; waited += 250) {
     await new Promise((r) => setTimeout(r, 250));
   }
   await once(launch('appshelltest://hostile/'), 'exit');
 
-  const reportFile = join(userData, 'apps', 'hostile', 'storage.json');
+  const reportFile = join(accountRoot(userData), 'apps', 'hostile', 'storage.json');
   let report;
   for (let waited = 0; !report && waited < 60_000; waited += 500) {
     await new Promise((r) => setTimeout(r, 500));
@@ -46,7 +47,7 @@ test('hostile app cannot escape its sandbox', { timeout: 90_000 }, async (t) => 
     if (child.exitCode !== null) break;
   }
   if (process.env.APPSHELL_E2E_REPORT) {
-    const tail = (/** @type {string} */ f) => { try { return readFileSync(join(userData, 'logs', f), 'utf8').slice(-700); } catch { return null; } };
+    const tail = (/** @type {string} */ f) => { try { return readFileSync(join(f === 'host.log' ? userData : accountRoot(userData), 'logs', f), 'utf8').slice(-700); } catch { return null; } };
     writeFileSync(process.env.APPSHELL_E2E_REPORT, JSON.stringify(report ?? {
       exitCode: child.exitCode, stderr: stderr.split('\n').filter((l) => !l.includes('dbus')).join('\n').slice(-1800), host: tail('host.log'), hostile: tail('hostile.log'), victim: tail('victim.log'),
     }));
@@ -60,6 +61,6 @@ test('hostile app cannot escape its sandbox', { timeout: 90_000 }, async (t) => 
     assert.equal(report.rendererSandboxed, 'blocked');
   }
 
-  const victim = readJson(join(userData, 'apps', 'victim', 'storage.json'));
+  const victim = readJson(join(accountRoot(userData), 'apps', 'victim', 'storage.json'));
   assert.equal(victim.token, 'victim-token', 'victim data was changed or never written');
 });
