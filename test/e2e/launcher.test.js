@@ -2,12 +2,12 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { once } from 'node:events';
-import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, rmSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { accountRoot, evaluate, waitForPage } from './cdp.js';
+import { accountRoot, evaluate, readJsonFile, waitForPage } from './cdp.js';
 
 const root = fileURLToPath(new URL('../..', import.meta.url));
 const electron = /** @type {string} */ (createRequire(import.meta.url)('electron'));
@@ -37,8 +37,8 @@ test('a launcher replaces the home screen, sets the theme within limits and fall
 
   await ui("host.setLauncher('tiles')");
   const report = join(accountRoot(userData), 'apps', 'tiles', 'storage.json');
-  await until(() => existsSync(report));
-  const stored = JSON.parse(readFileSync(report, 'utf8'));
+  await until(() => readJsonFile(report)?.report !== undefined);
+  const stored = readJsonFile(report);
   assert.deepEqual(stored.report.apps, ['victim']);
   assert.match(stored.report.rejected, /INVALID_PARAMS/);
   assert.equal(stored.report.opened, false, 'a launcher cannot open itself');
