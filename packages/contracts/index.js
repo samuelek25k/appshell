@@ -44,8 +44,9 @@ export const ERRORS = /** @type {const} */ ({
  *   engines: { appshell: string },
  *   entry: { ui?: string, backend?: string },
  *   display?: 'shell' | 'standalone',
+ *   kind?: 'app' | 'launcher',
  *   widgets?: { id: string, title: string }[],
- *   capabilities?: { network?: string[], notifications?: boolean, secrets?: string[], identity?: boolean, iac?: boolean | { send?: string[], receive?: string[], channels?: string[] } }
+ *   capabilities?: { network?: string[], notifications?: boolean, secrets?: string[], identity?: boolean, launcher?: boolean, iac?: boolean | { send?: string[], receive?: string[], channels?: string[] } }
  * }} Manifest
  */
 
@@ -83,6 +84,22 @@ function checkIacChannel(m, channel) {
 }
 
 const jsonSize = (/** @type {unknown} */ v) => { try { return v === undefined ? 0 : JSON.stringify(v).length; } catch { return Infinity; } };
+export const THEME_COLOR_KEYS = /** @type {const} */ (['brand', 'panel', 'ink']);
+export const THEME_SOURCES = /** @type {const} */ (['system', 'light', 'dark']);
+
+/** @param {unknown} v */
+const themeParams = (v) => {
+  const p = /** @type {any} */ (v);
+  if (typeof p !== 'object' || p === null || Array.isArray(p)) return false;
+  if (p.source === undefined && p.colors === undefined) return false;
+  if (p.source !== undefined && !THEME_SOURCES.includes(p.source)) return false;
+  if (p.colors === undefined) return true;
+  if (typeof p.colors !== 'object' || p.colors === null || Array.isArray(p.colors)) return false;
+  return Object.entries(p.colors).every(([k, c]) => THEME_COLOR_KEYS.includes(/** @type {any} */ (k)) && typeof c === 'string' && /^#[0-9a-fA-F]{6}$/.test(c));
+};
+
+const launcherCapability = (/** @type {Manifest} */ m) => (m.capabilities?.launcher === true && m.kind === 'launcher' ? null : 'launcher');
+
 const MAX_IAC_PAYLOAD = 64 * 1024;
 
 /**
@@ -131,6 +148,10 @@ export const METHODS = {
   'backend.call': { params: (p) => str(p?.method, 64), requires: (m) => (m.entry.backend ? null : 'backend') },
   'identity.token': { params: () => true, requires: (m) => (m.capabilities?.identity ? null : 'identity') },
   'identity.publicKey': { params: () => true, requires: () => null },
+  'launcher.apps': { params: () => true, requires: launcherCapability },
+  'launcher.widgets': { params: () => true, requires: launcherCapability },
+  'launcher.open': { params: (p) => str(p?.id, 64), requires: launcherCapability },
+  'launcher.setTheme': { params: themeParams, requires: launcherCapability },
   'iac.send': {
     params: (p) => str(p?.to, 64) && str(p?.action, 64) && jsonSize(p?.payload) <= MAX_IAC_PAYLOAD && (p?.launchIfNeeded === undefined || typeof p.launchIfNeeded === 'boolean'),
     requires: (m, p) => checkIacSend(m, p.to),
@@ -156,6 +177,7 @@ export const EVENTS = /** @type {const} */ ([
   'widgets.action',
   'shell.localeChanged',
   'storage.changed',
+  'launcher.changed',
   'iac.message',
   'iac.broadcast',
 ]);

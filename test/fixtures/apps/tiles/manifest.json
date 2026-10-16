@@ -1,0 +1,6 @@
+{
+  "id": "tiles", "version": "1.0.0", "title": "Tiles", "publisher": "Test", "kind": "launcher",
+  "engines": { "appshell": "^0.1" },
+  "entry": { "ui": "index.html" },
+  "capabilities": { "launcher": true }
+}

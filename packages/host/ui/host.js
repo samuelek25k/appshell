@@ -15,6 +15,8 @@ const fallbackApi = {
   startGuest() {},
   addAccount(/** @type {string} */ _name, /** @type {string | undefined} */ _pin) {},
   removeAccount(/** @type {string} */ _id, /** @type {string | undefined} */ _pin) {},
+  setLauncher(/** @type {string | null} */ _id) {},
+  setOverlay(/** @type {boolean} */ _open) {},
   onState(/** @type {(s: any) => void} */ fn) {},
 };
 
@@ -26,6 +28,9 @@ let currentState = null;
 /** @type {{ mode: 'pin' | 'add' | 'remove', id?: string, name?: string, locked?: boolean, unlock?: boolean } | null} */
 let accountDialog = null;
 let searchQuery = '';
+/** @type {Set<string>} */
+let appliedColors = new Set();
+let lastOverlay = false;
 
 /**
  * @param {string} tag
@@ -213,10 +218,14 @@ function render(state) {
     if (favicon && favicon.href !== state.brand.logo) favicon.href = state.brand.logo;
   }
   if (state.brand?.colors) {
+    const applied = new Set();
     for (const [key, value] of Object.entries(state.brand.colors)) {
       const prop = key.startsWith('--') ? key : `--${key.replace(/([A-Z])/g, '-$1').toLowerCase()}`;
       document.documentElement.style.setProperty(prop, String(value));
+      applied.add(prop);
     }
+    for (const prop of appliedColors) if (!applied.has(prop)) document.documentElement.style.removeProperty(prop);
+    appliedColors = applied;
   }
 
   const themeToggle = $('theme-toggle');
@@ -237,6 +246,23 @@ function render(state) {
   renderWidgets(state);
   renderCatalog(state);
   renderConfirm(state);
+  renderLauncherPicker(state);
+  syncOverlay();
+}
+
+function syncOverlay() {
+  const open = !$('account-menu').hidden || !$('settings-dialog').hidden || !$('account-dialog').hidden || !$('install-confirm').hidden;
+  if (open === lastOverlay) return;
+  lastOverlay = open;
+  api.setOverlay(open);
+}
+
+/** @param {any} state */
+function renderLauncherPicker(state) {
+  const select = /** @type {HTMLSelectElement} */ ($('launcher-select'));
+  const options = state.launcher?.options ?? [];
+  select.replaceChildren(el('option', { value: '' }, ['Built-in dashboard']), ...options.map((/** @type {any} */ o) => el('option', { value: o.id }, [o.title])));
+  select.value = state.launcher?.active ?? '';
 }
 
 /** @param {any} state */
@@ -244,7 +270,7 @@ function renderApps(state) {
   const ul = $('apps');
   const count = $('apps-count');
   if (!ul) return;
-  const apps = state.apps ?? [];
+  const apps = (state.apps ?? []).filter((/** @type {any} */ a) => a.kind !== 'launcher');
   if (count) count.textContent = String(apps.length);
 
   const q = searchQuery.trim().toLowerCase();
@@ -315,6 +341,7 @@ function renderAccounts(state) {
 function renderAccountDialog() {
   const panel = $('account-dialog');
   panel.hidden = !accountDialog;
+  syncOverlay();
   if (!accountDialog) return;
   const { mode, name, locked, unlock } = accountDialog;
   $('account-title').textContent = mode === 'add' ? 'Add local account' : mode === 'remove' ? `Remove ${name}?` : unlock ? `Unlock ${name}` : `Switch to ${name}`;
@@ -373,12 +400,15 @@ function renderConfirm(state) {
 }
 
 function wireEvents() {
-  $('settings-btn')?.addEventListener('click', () => { $('settings-dialog').hidden = false; });
-  $('settings-close')?.addEventListener('click', () => { $('settings-dialog').hidden = true; });
-  $('settings-dialog')?.addEventListener('click', (e) => { if (e.target === $('settings-dialog')) $('settings-dialog').hidden = true; });
+  const showSettings = (/** @type {boolean} */ open) => { $('settings-dialog').hidden = !open; syncOverlay(); };
+  $('settings-btn')?.addEventListener('click', () => showSettings(true));
+  $('settings-close')?.addEventListener('click', () => showSettings(false));
+  $('settings-dialog')?.addEventListener('click', (e) => { if (e.target === $('settings-dialog')) showSettings(false); });
+  $('launcher-select')?.addEventListener('change', (e) => api.setLauncher((/** @type {HTMLSelectElement} */ (e.target)).value || null));
   const menu = $('account-menu');
   const toggleMenu = (/** @type {boolean} */ open) => {
     menu.hidden = !open;
+    syncOverlay();
     $('account-btn').setAttribute('aria-expanded', String(open));
   };
   $('account-btn')?.addEventListener('click', () => toggleMenu(menu.hidden === true));

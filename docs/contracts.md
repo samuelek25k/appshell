@@ -78,6 +78,19 @@ A product has several local accounts and at most one temporary Guest. Apps are s
 
 A PIN (4 to 64 characters, stored as a salted scrypt hash, 5 failures lock it for 30 seconds) only controls who may open the account in the host UI. It does not encrypt the account's data on disk. Proved by `test/accounts.test.js`.
 
+## Launchers (D25)
+
+An app with `"kind": "launcher"` and `capabilities.launcher: true` can be chosen per account (Settings, Home screen) to fill the home area in place of the built-in dashboard. A launcher is never opened as an ordinary app and never gets back or close controls. Calls, all needing the capability:
+
+| Method | Result |
+| --- | --- |
+| `launcher.apps` | installed non-launcher apps not blocked by policy: `id`, `title`, `publisher`, `running` |
+| `launcher.widgets` | the widgets apps have published |
+| `launcher.open` `{ id }` | opens an app; `false` for launchers and unknown ids |
+| `launcher.setTheme` `{ source?, colors? }` | `source` is `system`, `light` or `dark`; `colors` may set only `brand`, `panel` and `ink` as `#rrggbb` |
+
+The host sends `launcher.changed` when apps or widgets change. Colours are stored with the account and cleared when another launcher or the dashboard is chosen. If a launcher fails to load or its process dies, the host shows the dashboard for the rest of the session. The host hides the launcher while its own menus and dialogs are open. Proved by `test/launcher.test.js` and `test/e2e/launcher.test.js`.
+
 ## Events (host to app, `appshell.on(name, fn)`)
 
 | Event | Payload | Expected reply |

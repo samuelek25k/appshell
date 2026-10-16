@@ -8,6 +8,7 @@ import { loadProduct, loadApps, ENGINE_VERSION } from './registry.js';
 import { createManager } from './manager.js';
 import { userInfo } from 'node:os';
 import { createAccounts } from './accounts.js';
+import { createLauncherPreferences, homeLauncher } from './launcher.js';
 import { createIdentity } from './identity.js';
 import { createServices, appendWithRotation } from './services.js';
 import { createBackend } from './backend.js';
@@ -123,6 +124,12 @@ const manager = createManager({
 });
 let apps = loadApps(product, appsRoot, manager.installed(), hostLog);
 const services = createServices(() => accounts.root(accounts.active()), dataRoot);
+const launcherPrefs = createLauncherPreferences(() => accounts.root(accounts.active()));
+/** @type {Set<string>} */
+const failedLaunchers = new Set();
+let overlay = false;
+let homeSuspended = false;
+let launcherSignature = '';
 /** @type {string | null} */
 let managerError = null;
 /** @type {string | null} */
@@ -176,6 +183,17 @@ const bridge = createBridge({
   hostLog,
   locale: () => currentLocale,
   getTheme: () => ({ source: nativeTheme.themeSource, dark: nativeTheme.shouldUseDarkColors }),
+  launcher: {
+    apps: () => [...apps.values()]
+      .filter(({ manifest }) => manifest.kind !== 'launcher' && !product.policy.blockedApps?.includes(manifest.id))
+      .map(({ manifest }) => ({ id: manifest.id, title: manifest.title, publisher: manifest.publisher, running: running.has(manifest.id) })),
+    widgets: () => widgetList(),
+    open: (id) => apps.get(id)?.manifest.kind !== 'launcher' && open(id),
+    setTheme({ source, colors }) {
+      if (colors) launcherPrefs.setColors(colors);
+      if (source) setTheme(source); else publish();
+    },
+  },
   getVersions: (appId) => {
     const prov = manager.provenance(appId);
     const app = apps.get(appId);
@@ -275,11 +293,35 @@ const bridge = createBridge({
   },
 });
 
+function widgetList() {
+  return [...apps.values()].flatMap(({ manifest }) =>
+    (manifest.widgets ?? []).flatMap((w) => {
+      const descriptor = widgets.get(manifest.id)?.[w.id];
+      return descriptor ? [{ appId: manifest.id, widgetId: w.id, title: w.title, descriptor }] : [];
+    }));
+}
+
+function homeId() {
+  const id = homeLauncher(apps, launcherPrefs.get().launcher, product.policy.blockedApps);
+  return id && !failedLaunchers.has(id) ? id : null;
+}
+
+function notifyLauncher() {
+  const id = homeId();
+  const entry = id ? running.get(id) : undefined;
+  if (!entry) return;
+  const signature = JSON.stringify([[...apps.keys()], [...running.keys()], widgetList()]);
+  if (signature === launcherSignature) return;
+  launcherSignature = signature;
+  entry.view.webContents.send('appshell:event', 'launcher.changed', null);
+}
+
 function publish() {
   if (!win) return;
+  notifyLauncher();
   win.webContents.send('host:state', {
     product: product.name,
-    brand: { logo: brandLogo, colors: brandColors },
+    brand: { logo: brandLogo, colors: { ...brandColors, ...launcherPrefs.get().colors } },
     locale: currentLocale,
     active,
     title: active ? running.get(active)?.title : product.name,
@@ -291,13 +333,14 @@ function publish() {
       protected: isProtected,
       running: running.has(manifest.id),
       capabilities: manifest.capabilities ?? {},
+      kind: manifest.kind ?? 'app',
       categories: (/** @type {any} */ (manifest)).categories ?? [],
     })),
-    widgets: [...apps.values()].flatMap(({ manifest }) =>
-      (manifest.widgets ?? []).flatMap((w) => {
-        const descriptor = widgets.get(manifest.id)?.[w.id];
-        return descriptor ? [{ appId: manifest.id, widgetId: w.id, title: w.title, descriptor }] : [];
-      })),
+    widgets: widgetList(),
+    launcher: {
+      active: homeId(),
+      options: [...apps.values()].filter(({ manifest }) => manifest.kind === 'launcher').map(({ manifest }) => ({ id: manifest.id, title: manifest.title })),
+    },
     manager: { ...manager.rows(), actionError: managerError, pendingInstall },
     accounts: { list: accounts.list(), activeId: accounts.activeView().id, locked: !unlocked, error: accountError, allowGuest: product.policy.allowGuest !== false },
   });
@@ -317,6 +360,7 @@ async function manage(appId, action, eventType = 'APP_MANAGED') {
     publish();
     return;
   }
+  homeSuspended = true;
   stop(appId);
   try {
     await action();
@@ -332,16 +376,36 @@ async function manage(appId, action, eventType = 'APP_MANAGED') {
     hostLog(`manage ${managerError}`);
   }
   apps = loadApps(product, appsRoot, manager.installed(), hostLog);
+  homeSuspended = false;
+  failedLaunchers.delete(appId);
+  layout();
   publish();
 }
 
 function layout() {
   if (!win) return;
+  if (active === null) ensureHome();
   const { width, height } = win.getContentBounds();
   for (const [id, { view }] of running) {
     view.setBounds({ x: 0, y: CHROME_HEIGHT, width, height: Math.max(0, height - CHROME_HEIGHT) });
-    view.setVisible(id === active);
+    view.setVisible(id === (active ?? (overlay ? null : homeId())));
   }
+}
+
+function ensureHome() {
+  const id = homeId();
+  if (!id || !unlocked || homeSuspended || !win || running.has(id)) return;
+  const installed = /** @type {import('./registry.js').InstalledApp} */ (apps.get(id));
+  const view = createAppView(installed, appLog(id), accounts.partition(id));
+  const fail = (/** @type {string} */ reason) => {
+    hostLog(`launcher ${id} failed: ${reason}`);
+    failedLaunchers.add(id);
+    stop(id);
+  };
+  view.webContents.on('render-process-gone', (_event, details) => fail(details.reason));
+  view.webContents.on('did-fail-load', (_event, _code, description, _url, isMainFrame) => { if (isMainFrame) fail(description); });
+  running.set(id, { view, title: installed.manifest.title });
+  win.contentView.addChildView(view);
 }
 
 /** @param {string} appId */
@@ -354,6 +418,7 @@ function open(appId) {
     return false;
   }
   const installed = apps.get(appId);
+  if (installed?.manifest.kind === 'launcher') return false;
   if (!installed) {
     hostLog(`cannot open ${appId}: not in apps (${[...apps.keys()].join(', ')})`);
     return false;
@@ -477,6 +542,7 @@ ipcMain.handle('host:back', (event) => {
 });
 ipcMain.handle('host:close', (event) => fromHost(event) && active && requestClose(active));
 function stopAll() {
+  homeSuspended = true;
   for (const id of [...running.keys()]) stop(id);
 }
 
@@ -495,6 +561,8 @@ function accountChange(event, change) {
   } catch (error) {
     accountError = messageOf(error);
   }
+  homeSuspended = false;
+  failedLaunchers.clear();
   active = null;
   layout();
   publish();
@@ -528,6 +596,24 @@ ipcMain.handle('host:accounts:remove', async (event, id, pin) => {
     accounts.remove(target, pin === undefined ? undefined : String(pin));
   });
   if (!accountError) for (const name of names) await session.fromPartition(name).clearStorageData();
+});
+ipcMain.handle('host:overlay', (event, open) => {
+  if (!fromHost(event)) return;
+  overlay = open === true;
+  layout();
+});
+ipcMain.handle('host:launcher:set', (event, id) => {
+  if (!fromHost(event)) return;
+  const next = id === null ? null : String(id);
+  if (next !== null && !homeLauncher(apps, next, product.policy.blockedApps)) return;
+  const previous = homeId();
+  launcherPrefs.setLauncher(next);
+  launcherPrefs.resetColors();
+  failedLaunchers.clear();
+  if (previous && previous !== next) stop(previous);
+  active = null;
+  layout();
+  publish();
 });
 ipcMain.handle('host:setTheme', (event, theme) => {
   if (fromHost(event) && ['system', 'light', 'dark'].includes(theme)) {
