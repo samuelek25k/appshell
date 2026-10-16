@@ -1,7 +1,9 @@
 import { mkdirSync, readFileSync, writeFileSync, appendFileSync, rmSync, existsSync, statSync, renameSync } from 'node:fs';
 import { join } from 'node:path';
 import { createCipheriv, createDecipheriv, randomBytes, hkdfSync } from 'node:crypto';
-import electron from 'electron';
+const electron = process.versions.electron
+  ? await import('electron').then((m) => m.default ?? m).catch(() => null)
+  : null;
 
 const safeStorage = typeof electron === 'object' && electron !== null && 'safeStorage' in electron
   ? electron.safeStorage
