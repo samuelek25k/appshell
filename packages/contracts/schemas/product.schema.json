@@ -47,6 +47,7 @@
           "items": { "type": "string", "pattern": "^https://" }
         },
         "channel": { "enum": ["stable", "beta"], "default": "stable" },
+        "allowUserEndpoints": { "description": "Whether apps may ask the user to approve extra network addresses.", "type": "boolean", "default": true },
         "allowGuest": { "description": "Whether the shell offers a guest account.", "type": "boolean", "default": true },
         "blockedApps": {
           "description": "App IDs prohibited from installation or execution under administrator governance.",

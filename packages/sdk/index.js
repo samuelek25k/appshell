@@ -42,6 +42,11 @@ export const widgets = {
   onAction: (/** @type {(e: { widget: string, action: string }) => void} */ fn) => bridge.on('widgets.action', fn),
 };
 
+export const network = {
+  requestEndpoint: (/** @type {string} */ url) => call('network.requestEndpoint', { url }),
+  endpoints: () => call('network.endpoints'),
+};
+
 export const launcher = {
   apps: () => call('launcher.apps'),
   widgets: () => call('launcher.widgets'),

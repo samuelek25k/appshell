@@ -4,7 +4,7 @@ import { readFile, realpath } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { extname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { isLoopback, networkAllowed } from '@appshell/contracts';
+import { isLoopback, networkAllowed, parseEndpoint } from '@appshell/contracts';
 import { isInside } from './registry.js';
 
 const SDK_FILE = createRequire(import.meta.url).resolve('@appshell/sdk');
@@ -19,7 +19,7 @@ const TYPES = {
 
 /** @param {import('@appshell/contracts').Manifest} m */
 const csp = (m) => {
-  const hosts = (m.capabilities?.network ?? []).map((h) => {
+  const declared = (m.capabilities?.network ?? []).map((h) => {
     if (isLoopback(h)) {
       const hasPort = h.startsWith('[') ? h.includes(']:') : h.includes(':');
       if (hasPort) return `http://${h} ws://${h} https://${h} wss://${h}`;
@@ -27,6 +27,7 @@ const csp = (m) => {
     }
     return `https://${h} wss://${h}`;
   }).join(' ');
+  const hosts = m.capabilities?.userEndpoints ? 'http: https: ws: wss:' : declared;
   return [
     `default-src 'self'`, `script-src 'self'`, `style-src 'self' 'unsafe-inline'`, `img-src 'self' data: blob:`,
     `connect-src 'self' ${hosts}`.trim(), `object-src 'none'`, `frame-src 'none'`, `base-uri 'none'`, `form-action 'none'`,
@@ -40,8 +41,9 @@ const prepared = new Set();
  * @param {import('./registry.js').InstalledApp} app
  * @param {(level: string, message: string) => void} log
  * @param {string} partition
+ * @param {() => string[]} approved
  */
-function prepareSession(app, log, partition) {
+function prepareSession(app, log, partition, approved) {
   const { id } = app.manifest;
   const ses = session.fromPartition(partition);
   if (prepared.has(partition)) return ses;
@@ -84,11 +86,12 @@ function prepareSession(app, log, partition) {
       return new Response('Not found', { status: 404 });
     }
   });
-  ses.webRequest.onBeforeRequest((details, callback) => callback({ cancel: !networkAllowed(app.manifest, details.url) }));
+  ses.webRequest.onBeforeRequest((details, callback) => callback({ cancel: !networkAllowed(app.manifest, details.url, approved()) }));
   ses.webRequest.onHeadersReceived((details, callback) => {
     let u;
     try { u = new URL(details.url); } catch { return callback({ responseHeaders: details.responseHeaders }); }
-    if (isLoopback(u.hostname) && networkAllowed(app.manifest, details.url)) {
+    const key = parseEndpoint(details.url);
+    if ((isLoopback(u.hostname) && networkAllowed(app.manifest, details.url)) || (key !== null && approved().includes(key))) {
       const responseHeaders = { ...details.responseHeaders };
       responseHeaders['access-control-allow-origin'] = ['*'];
       responseHeaders['access-control-allow-headers'] = ['*'];
@@ -107,12 +110,13 @@ function prepareSession(app, log, partition) {
  * @param {import('./registry.js').InstalledApp} app
  * @param {(level: string, message: string) => void} log
  * @param {string} partition
+ * @param {() => string[]} [approved]
  */
-export function createAppView(app, log, partition) {
+export function createAppView(app, log, partition, approved = () => []) {
   const { id, entry } = app.manifest;
   const view = new WebContentsView({
     webPreferences: {
-      session: prepareSession(app, log, partition),
+      session: prepareSession(app, log, partition, approved),
       preload: APP_PRELOAD,
       sandbox: true,
       contextIsolation: true,

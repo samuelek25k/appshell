@@ -16,6 +16,7 @@ const fallbackApi = {
   addAccount(/** @type {string} */ _name, /** @type {string | undefined} */ _pin) {},
   removeAccount(/** @type {string} */ _id, /** @type {string | undefined} */ _pin) {},
   setLauncher(/** @type {string | null} */ _id) {},
+  removeEndpoint(/** @type {string} */ _appId, /** @type {string} */ _address) {},
   setOverlay(/** @type {boolean} */ _open) {},
   onState(/** @type {(s: any) => void} */ fn) {},
 };
@@ -247,6 +248,7 @@ function render(state) {
   renderCatalog(state);
   renderConfirm(state);
   renderLauncherPicker(state);
+  renderEndpoints(state);
   syncOverlay();
 }
 
@@ -255,6 +257,16 @@ function syncOverlay() {
   if (open === lastOverlay) return;
   lastOverlay = open;
   api.setOverlay(open);
+}
+
+/** @param {any} state */
+function renderEndpoints(state) {
+  const list = state.endpoints ?? [];
+  $('endpoints-section').hidden = list.length === 0;
+  $('endpoints').replaceChildren(...list.map((/** @type {any} */ e) => {
+    const remove = el('button', { type: 'button', class: 'link', 'data-app': e.appId, 'data-address': e.address }, ['Remove']);
+    return el('li', { class: 'catalog-row' }, [el('div', { class: 'catalog-info' }, [el('strong', {}, [e.title]), el('span', { class: 'catalog-ver quiet' }, [` · ${e.address}`])]), remove]);
+  }));
 }
 
 /** @param {any} state */
@@ -404,6 +416,10 @@ function wireEvents() {
   $('settings-btn')?.addEventListener('click', () => showSettings(true));
   $('settings-close')?.addEventListener('click', () => showSettings(false));
   $('settings-dialog')?.addEventListener('click', (e) => { if (e.target === $('settings-dialog')) showSettings(false); });
+  $('endpoints').addEventListener('click', (e) => {
+    const btn = (/** @type {HTMLElement} */ (e.target)).closest('button[data-address]');
+    if (btn) api.removeEndpoint(btn.getAttribute('data-app'), btn.getAttribute('data-address'));
+  });
   $('launcher-select')?.addEventListener('change', (e) => api.setLauncher((/** @type {HTMLSelectElement} */ (e.target)).value || null));
   const menu = $('account-menu');
   const toggleMenu = (/** @type {boolean} */ open) => {

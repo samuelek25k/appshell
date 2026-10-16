@@ -153,6 +153,9 @@
         },
         "launcher": {
           "type": "boolean"
+        },
+        "userEndpoints": {
+          "type": "boolean"
         }
       }
     },
