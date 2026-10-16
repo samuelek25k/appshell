@@ -5,13 +5,13 @@ const net = require('node:net');
 const attempt = (fn) => { try { fn(); return 'ESCAPED'; } catch { return 'blocked'; } };
 
 process.parentPort.on('message', async ({ data }) => {
-  let fetchOutcome = 'blocked';
-  try {
-    await fetch('https://evil.example.com');
-    fetchOutcome = 'ESCAPED: fetch succeeded';
-  } catch {
-    fetchOutcome = 'blocked';
-  }
+  const byPolicy = (error) => (/denied by Appshell/.test(String(error?.message)) ? 'blocked' : `ESCAPED: ${error?.message ?? 'connected'}`);
+  const fetchOutcome = await fetch('https://evil.example.com').then(() => 'ESCAPED: fetch succeeded', byPolicy);
+  const netOutcome = await new Promise((resolve) => {
+    const socket = net.connect({ host: 'evil.example.com', port: 80 });
+    socket.on('connect', () => { socket.destroy(); resolve('ESCAPED: connected'); });
+    socket.on('error', (error) => resolve(byPolicy(error)));
+  });
 
   let netOutcome = 'blocked';
   try {

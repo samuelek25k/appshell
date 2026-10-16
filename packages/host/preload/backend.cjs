@@ -10,10 +10,10 @@ const allowedHosts = new Set(
     .filter(Boolean)
 );
 
-function isAllowed(host) {
+function isAllowed(host, port) {
   if (!host) return false;
-  const clean = String(host).split(':')[0].toLowerCase();
-  return allowedHosts.has(clean);
+  const clean = String(host).toLowerCase();
+  return allowedHosts.has(clean) || (port !== undefined && port !== '' && allowedHosts.has(`${clean}:${port}`));
 }
 try {
   const dns = require('node:dns');
@@ -60,19 +60,18 @@ try {
 const origConnect = net.Socket.prototype.connect;
 function guardedConnect(...args) {
   let host = null;
+  let port;
   const first = args[0];
   if (typeof first === 'object' && first !== null) {
-    if (Array.isArray(first)) {
-      const opts = first[0];
-      host = opts?.host || opts?.hostname || opts?.servername;
-    } else {
-      host = first.host || first.hostname || first.servername;
-    }
+    const opts = Array.isArray(first) ? first[0] : first;
+    host = opts?.host || opts?.hostname || opts?.servername;
+    port = opts?.port;
   } else if (typeof first === 'number' && typeof args[1] === 'string') {
     host = args[1];
+    port = first;
   }
 
-  if (!isAllowed(host)) {
+  if (!isAllowed(host, port)) {
     const err = new Error(`Network access to ${host ?? 'unknown'} denied by Appshell capability policy`);
     process.nextTick(() => {
       this.destroy(err);
@@ -95,7 +94,7 @@ if (typeof globalThis.fetch === 'function') {
       const urlStr = typeof input === 'string' ? input : input instanceof URL ? input.href : input?.url;
       if (urlStr) {
         const parsed = new URL(urlStr);
-        if (!isAllowed(parsed.hostname)) {
+        if (!isAllowed(parsed.hostname, parsed.port)) {
           return Promise.reject(new TypeError(`Network access to ${parsed.hostname} denied by Appshell capability policy`));
         }
       }
