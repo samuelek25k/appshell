@@ -19,6 +19,7 @@ import { fail } from './services.js';
  *   onIacSubscribe?: (appId: string, channel: string) => boolean,
  *   onIacUnsubscribe?: (appId: string, channel: string) => boolean,
  *   canReceiveIac?: (targetId: string, fromId: string) => boolean,
+ *   launcher?: { apps: () => object[], widgets: () => object[], open: (id: string) => boolean, setTheme: (theme: { source?: 'system' | 'light' | 'dark', colors?: Record<string, string> }) => void },
  *   getTheme?: () => { source: 'system' | 'light' | 'dark', dark: boolean },
  *   getVersions?: (appId: string) => { current: string, previous: string | null, installedAt: string },
  * }} BridgeDeps
@@ -71,6 +72,20 @@ export function createBridge(deps) {
     'shell.getVersions': (id, _p, app) => {
       if (deps.getVersions) return deps.getVersions(id);
       return { current: app.manifest.version, previous: null, installedAt: new Date().toISOString() };
+    },
+    'launcher.apps': (id) => {
+      services.audit({ event: 'LAUNCHER_LISTED', target: id });
+      return deps.launcher?.apps() ?? [];
+    },
+    'launcher.widgets': () => deps.launcher?.widgets() ?? [],
+    'launcher.open': (id, p) => {
+      if (policy.blockedApps?.includes(p.id)) throw fail(ERRORS.CAPABILITY_DENIED, `${p.id} is blocked by administrative policy`);
+      return deps.launcher?.open(p.id) ?? false;
+    },
+    'launcher.setTheme': (id, p) => {
+      services.audit({ event: 'LAUNCHER_THEME_SET', target: id, details: { source: p.source, colors: Object.keys(p.colors ?? {}) } });
+      deps.launcher?.setTheme(p);
+      return null;
     },
     'widgets.update': (id, p) => {
       const result = validate('widget', p.descriptor);

@@ -3,39 +3,93 @@
   "title": "Appshell app manifest",
   "type": "object",
   "additionalProperties": false,
-  "required": ["id", "version", "title", "publisher", "engines", "entry"],
+  "required": [
+    "id",
+    "version",
+    "title",
+    "publisher",
+    "engines",
+    "entry"
+  ],
   "properties": {
-    "$schema": { "type": "string" },
-    "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]*(\\.[a-z][a-z0-9-]*)*$", "maxLength": 64 },
-    "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+(-[0-9A-Za-z.-]+)?$" },
-    "title": { "type": "string", "minLength": 1, "maxLength": 60 },
-    "publisher": { "type": "string", "minLength": 1, "maxLength": 80 },
+    "$schema": {
+      "type": "string"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*(\\.[a-z][a-z0-9-]*)*$",
+      "maxLength": 64
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+(-[0-9A-Za-z.-]+)?$"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 60
+    },
+    "publisher": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80
+    },
     "engines": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["appshell"],
-      "properties": { "appshell": { "type": "string", "pattern": "^\\^\\d+\\.\\d+$" } }
+      "required": [
+        "appshell"
+      ],
+      "properties": {
+        "appshell": {
+          "type": "string",
+          "pattern": "^\\^\\d+\\.\\d+$"
+        }
+      }
     },
     "entry": {
       "type": "object",
       "additionalProperties": false,
       "minProperties": 1,
       "properties": {
-        "ui": { "type": "string", "pattern": "^[A-Za-z0-9_./-]+\\.html$" },
-        "backend": { "type": "string", "pattern": "^[A-Za-z0-9_./-]+\\.(c|m)?js$" }
+        "ui": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_./-]+\\.html$"
+        },
+        "backend": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_./-]+\\.(c|m)?js$"
+        }
       }
     },
-    "display": { "enum": ["shell", "standalone"], "default": "shell" },
+    "display": {
+      "enum": [
+        "shell",
+        "standalone"
+      ],
+      "default": "shell"
+    },
     "widgets": {
       "type": "array",
       "maxItems": 8,
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["id", "title"],
+        "required": [
+          "id",
+          "title"
+        ],
         "properties": {
-          "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$", "maxLength": 32 },
-          "title": { "type": "string", "minLength": 1, "maxLength": 40 }
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*$",
+            "maxLength": 32
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40
+          }
         }
       }
     },
@@ -43,25 +97,102 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "network": { "type": "array", "items": { "type": "string", "pattern": "^[a-z0-9.-]+(:\\d+)?$" } },
-        "notifications": { "type": "boolean" },
-        "secrets": { "type": "array", "items": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" } },
-        "identity": { "type": "boolean" },
+        "network": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9.-]+(:\\d+)?$"
+          }
+        },
+        "notifications": {
+          "type": "boolean"
+        },
+        "secrets": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*$"
+          }
+        },
+        "identity": {
+          "type": "boolean"
+        },
         "iac": {
           "oneOf": [
-            { "type": "boolean" },
+            {
+              "type": "boolean"
+            },
             {
               "type": "object",
               "additionalProperties": false,
               "properties": {
-                "send": { "type": "array", "items": { "type": "string", "maxLength": 64 } },
-                "receive": { "type": "array", "items": { "type": "string", "maxLength": 64 } },
-                "channels": { "type": "array", "items": { "type": "string", "maxLength": 64 } }
+                "send": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "maxLength": 64
+                  }
+                },
+                "receive": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "maxLength": 64
+                  }
+                },
+                "channels": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "maxLength": 64
+                  }
+                }
               }
             }
           ]
+        },
+        "launcher": {
+          "type": "boolean"
+        }
+      }
+    },
+    "kind": {
+      "enum": [
+        "app",
+        "launcher"
+      ],
+      "default": "app"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "launcher"
+          }
+        },
+        "required": [
+          "kind"
+        ]
+      },
+      "then": {
+        "required": [
+          "capabilities"
+        ],
+        "properties": {
+          "capabilities": {
+            "required": [
+              "launcher"
+            ],
+            "properties": {
+              "launcher": {
+                "const": true
+              }
+            }
+          }
         }
       }
     }
-  }
+  ]
 }

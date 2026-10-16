@@ -1,0 +1,8 @@
+{
+  "name": "Appshell Launcher Test",
+  "protocol": "appshelllauncher",
+  "dataDirectory": "appshell-launcher-test",
+  "package": { "extension": ".testapp", "displayName": "Test App" },
+  "apps": [{ "path": "victim", "protected": true }, { "path": "tiles", "protected": true }],
+  "policy": { "capabilities": "enforce", "developerMode": true }
+}

@@ -42,6 +42,14 @@ export const widgets = {
   onAction: (/** @type {(e: { widget: string, action: string }) => void} */ fn) => bridge.on('widgets.action', fn),
 };
 
+export const launcher = {
+  apps: () => call('launcher.apps'),
+  widgets: () => call('launcher.widgets'),
+  open: (/** @type {string} */ id) => call('launcher.open', { id }),
+  setTheme: (/** @type {{ source?: 'system' | 'light' | 'dark', colors?: { brand?: string, panel?: string, ink?: string } }} */ theme) => call('launcher.setTheme', theme),
+  onChange: (/** @type {() => void} */ fn) => bridge.on('launcher.changed', fn),
+};
+
 export const identity = {
   token: () => call('identity.token'),
   publicKey: () => call('identity.publicKey'),

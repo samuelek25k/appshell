@@ -18,6 +18,8 @@ contextBridge.exposeInMainWorld('host', {
   startGuest: () => ipcRenderer.invoke('host:accounts:guest'),
   addAccount: (name, pin) => ipcRenderer.invoke('host:accounts:add', String(name), pin === undefined || pin === '' ? undefined : String(pin)),
   removeAccount: (id, pin) => ipcRenderer.invoke('host:accounts:remove', String(id), pin === undefined ? undefined : String(pin)),
+  setLauncher: (id) => ipcRenderer.invoke('host:launcher:set', id === null ? null : String(id)),
+  setOverlay: (open) => ipcRenderer.invoke('host:overlay', open === true),
   onState(fn) {
     ipcRenderer.on('host:state', (_event, state) => fn(state));
     ipcRenderer.invoke('host:ready');

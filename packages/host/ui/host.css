@@ -807,3 +807,19 @@ body.app-open #dashboard {
 #close[hidden] {
   display: none;
 }
+
+.setting {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+}
+
+.setting select {
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--card-border);
+  background: var(--panel-hover);
+  color: var(--ink);
+}
