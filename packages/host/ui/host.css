@@ -192,6 +192,10 @@ body.app-open #dashboard {
   height: 18px;
 }
 
+.icon[hidden] {
+  display: none;
+}
+
 #dashboard {
   max-width: 960px;
   margin: 0 auto;
