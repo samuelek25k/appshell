@@ -79,6 +79,7 @@ export function generateBuildConfig(productPath, cwd = process.cwd()) {
     },
     appImage: { artifactName: '${productName}.${ext}' },
     linux: {
+      ...(product.maintainer ? { maintainer: product.maintainer } : {}),
       target: [
         { target: 'AppImage', arch: ['x64'] },
         { target: 'deb', arch: ['x64'] },

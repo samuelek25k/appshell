@@ -19,6 +19,7 @@
       }
     },
     "catalog": { "description": "URL of the catalog index.json", "type": "string", "pattern": "^https://" },
+    "maintainer": { "description": "Installer maintainer, Name <email>; required for Linux .deb packages.", "type": "string", "pattern": "^[^<>]+ <[^<>@\\s]+@[^<>@\\s]+>$" },
     "defaultLocale": {
       "description": "Default BCP 47 locale tag for the product, e.g. en-US.",
       "type": "string",

@@ -4,7 +4,7 @@ What Appshell guarantees to apps and requires of them. Code: `packages/contracts
 
 ## Product
 
-One `product.json` per product (`product.schema.json`): name, deep-link protocol, data folder, package extension, pre-installed apps, policy. Apps are resolved from the apps root: `--apps <dir>`, else `<product folder>/apps`.
+One `product.json` per product (`product.schema.json`): name, deep-link protocol, data folder, package extension, installer maintainer (`Name <email>`, needed for Linux `.deb`), pre-installed apps, policy. Apps are resolved from the apps root: `--apps <dir>`, else `<product folder>/apps`.
 
 `policy.capabilities`: `warn` logs undeclared capability use; `enforce` rejects it with `CAPABILITY_DENIED`. `policy.developerMode` allows secrets on Linux without an OS keyring.
 
