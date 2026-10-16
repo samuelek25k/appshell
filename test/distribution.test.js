@@ -190,13 +190,14 @@ test('builder config generates installer configuration for Windows, macOS and Li
   assert.deepEqual(cfg.win.target, [{ target: 'nsis', arch: ['x64'] }]);
   assert.equal(cfg.nsis.oneClick, false);
   assert.equal(cfg.nsis.allowToChangeInstallationDirectory, true);
-  assert.equal(cfg.nsis.installerIcon, 'products/appshell/assets/icon.png');
+  assert.equal(cfg.nsis.installerIcon, undefined);
 
   assert.deepEqual(cfg.mac.target, [
     { target: 'dmg', arch: ['x64', 'arm64'] },
     { target: 'zip', arch: ['x64', 'arm64'] },
   ]);
   assert.equal(cfg.mac.category, 'public.app-category.developer-tools');
+  assert.equal(cfg.mac.hardenedRuntime, true);
   assert.equal(cfg.mac.icon, 'products/appshell/assets/icon.png');
   assert.deepEqual(cfg.dmg.contents, [
     { x: 130, y: 220 },

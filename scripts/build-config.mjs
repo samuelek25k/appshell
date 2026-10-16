@@ -22,12 +22,19 @@ export function generateBuildConfig(productPath, cwd = process.cwd()) {
   const iconPath = iconCandidates.find((p) => existsSync(p));
   const relIcon = iconPath ? relative(cwd, iconPath).replaceAll('\\', '/') : undefined;
 
+  const icoCandidates = [
+    resolve(dirname(productFile), 'assets', 'icon.ico'),
+    resolve(dirname(productFile), 'icon.ico'),
+  ];
+  const icoPath = icoCandidates.find((p) => existsSync(p));
+  const relIco = icoPath ? relative(cwd, icoPath).replaceAll('\\', '/') : undefined;
+
   return {
     appId: `dev.appshell.${product.dataDirectory}`,
     productName: product.name,
     directories: { app: 'packages/host', output: 'dist' },
     extraMetadata: { name: product.dataDirectory },
-    extraResources: [{ from: productDir, to: 'product', filter: ['**/*', '!**/.git{,/**}'] }],
+    extraResources: [{ from: productDir, to: 'product', filter: ['**/*', '!**/.git{,/**}', '!**/node_modules{,/**}'] }],
     protocols: [{ name: product.name, schemes: [product.protocol] }],
     fileAssociations: [{ ext: product.package.extension.slice(1), name: product.package.displayName }],
     ...(relIcon ? { icon: relIcon } : {}),
@@ -39,7 +46,7 @@ export function generateBuildConfig(productPath, cwd = process.cwd()) {
       oneClick: false,
       perMachine: false,
       allowToChangeInstallationDirectory: true,
-      ...(relIcon ? { installerIcon: relIcon, uninstallerIcon: relIcon } : {}),
+      ...(relIco ? { installerIcon: relIco, uninstallerIcon: relIco } : {}),
     },
     mac: {
       target: [
@@ -47,7 +54,7 @@ export function generateBuildConfig(productPath, cwd = process.cwd()) {
         { target: 'zip', arch: ['x64', 'arm64'] },
       ],
       category: 'public.app-category.developer-tools',
-      hardenedRuntime: false,
+      hardenedRuntime: true,
       gatekeeperAssess: false,
       ...(relIcon ? { icon: relIcon } : {}),
     },
