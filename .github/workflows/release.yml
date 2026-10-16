@@ -22,7 +22,6 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      # Pre-installed apps come from the apps repository, pinned by the catalog in a later phase (D10).
       - uses: actions/checkout@v4
         with:
           repository: samuelek25k/appshell-apps
@@ -30,7 +29,6 @@ jobs:
       - run: pnpm check
       - run: pnpm test
       - run: node scripts/build-config.mjs ${{ inputs.product || 'products/appshell/product.json' }}
-      # Unsigned until D12 (signing) is decided; set CSC_LINK and CSC_KEY_PASSWORD secrets to sign.
       - run: pnpm exec electron-builder --win --publish never
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: false

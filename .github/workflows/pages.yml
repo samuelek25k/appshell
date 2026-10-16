@@ -1,5 +1,3 @@
-# Publishes site/ to GitHub Pages. Needs Settings > Pages > Source: GitHub Actions
-# (Pages on a private repository needs a paid GitHub plan; the site itself is public).
 name: pages
 on:
   push:
