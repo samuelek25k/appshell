@@ -1,8 +1,6 @@
-// The platform contract in code. docs/contracts.md describes it; keep the two in step.
 import { readFileSync } from 'node:fs';
 import AjvModule from 'ajv';
 
-// ajv ships CommonJS; under NodeNext its default import is the module object.
 const Ajv = AjvModule.default;
 
 const load = (/** @type {string} */ name) =>
@@ -27,10 +25,8 @@ export function validate(kind, value) {
   return { ok: false, errors: (check.errors ?? []).map((e) => `${e.instancePath || '/'} ${e.message}`) };
 }
 
-/** Shell protocol version spoken by this host. */
 export const SHELL_PROTOCOL = 1;
 
-/** How long an app has to answer shell.closeRequested before the host closes it. */
 export const CLOSE_VETO_TIMEOUT_MS = 600;
 
 export const ERRORS = /** @type {const} */ ({
@@ -57,8 +53,6 @@ const str = (/** @type {unknown} */ v, max = 1000) => typeof v === 'string' && v
 const key = (/** @type {unknown} */ v) => typeof v === 'string' && /^[A-Za-z0-9_.-]{1,64}$/.test(v);
 
 /**
- * Bridge methods an app may call. `params` checks shape; `requires` returns the
- * missing capability, or null when the manifest allows the call.
  * @type {Record<string, { params: (p: any) => boolean, requires: (m: Manifest, p: any) => string | null }>}
  */
 export const METHODS = {
@@ -99,12 +93,9 @@ export const METHODS = {
   'identity.publicKey': { params: () => true, requires: () => null },
 };
 
-/** Events the host sends to an app. */
 export const EVENTS = /** @type {const} */ (['shell.closeRequested', 'shell.deepLink', 'widgets.action', 'shell.localeChanged', 'storage.changed']);
 
 /**
- * True when `version` satisfies a caret range of the form `^MAJOR.MINOR`.
- * For 0.x, the minor version must match; otherwise the major must match and minor be at least the range's.
  * @param {string} range
  * @param {string} version
  */
@@ -118,7 +109,6 @@ export function satisfiesEngine(range, version) {
 }
 
 /**
- * Whether a request URL is allowed for an app: its own origin always, declared hosts otherwise.
  * @param {Manifest} manifest
  * @param {string} url
  */

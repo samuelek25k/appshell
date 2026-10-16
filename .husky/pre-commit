@@ -1,1 +1,4 @@
-pnpm exec secretlint $(git diff --cached --name-only --diff-filter=ACM)
+files=$(git diff --cached --name-only --diff-filter=ACM)
+[ -z "$files" ] && exit 0
+pnpm exec secretlint $files
+node scripts/hygiene.mjs $files

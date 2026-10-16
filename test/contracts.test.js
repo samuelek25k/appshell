@@ -119,12 +119,10 @@ test('bridge enforces blockedApps and audits denial on launch', async (t) => {
     protected: false,
   };
 
-  // Launch allowed app
   const okRes = await bridge(launcherApp, 'shell.launchApp', { id: 'allowed-app' });
   assert.equal(okRes.ok, true);
   assert.equal(launched, true);
 
-  // Launch blocked app
   const blockedRes = await bridge(launcherApp, 'shell.launchApp', { id: 'banned-app' });
   assert.equal(blockedRes.ok, false);
   assert.equal(blockedRes.error.code, 'CAPABILITY_DENIED');
@@ -251,23 +249,19 @@ test('secureStorage capability encrypts data at rest via authenticated AES-256-G
     protected: false,
   };
 
-  // Set confidential data
   const setRes = await bridge(secureApp, 'storage.set', { key: 'secret_token', value: { token: 'super-secret-xyz' } });
   assert.equal(setRes.ok, true);
   assert.equal(changedKey, 'secret_token');
   assert.deepEqual(changedVal, { token: 'super-secret-xyz' });
 
-  // Verify file on disk is encrypted
   const rawDisk = readFileSync(join(dir, 'apps', 'vault.app', 'storage.json'), 'utf8');
   assert.ok(rawDisk.includes('__appshell_encrypted__'));
   assert.ok(!rawDisk.includes('super-secret-xyz'));
 
-  // Verify transparent read through bridge returns decrypted data
   const getRes = await bridge(secureApp, 'storage.get', { key: 'secret_token' });
   assert.equal(getRes.ok, true);
   if (getRes.ok) {
     assert.deepEqual(getRes.result, { token: 'super-secret-xyz' });
   }
 });
-
 

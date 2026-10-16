@@ -1,4 +1,3 @@
-// Framework packages must not contain anything specific to a product.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
@@ -20,7 +19,7 @@ const products = readdirSync(join(root, 'products')).map((name) =>
 test('no product names, protocols, folders or package formats in packages/', () => {
   const terms = products.flatMap((p) => [p.name, p.protocol, p.dataDirectory, p.package.extension, p.package.displayName])
     .map((t) => t.toLowerCase())
-    .filter((t) => !t.includes('appshell')); // the default product shares the platform's name; tenants are checked
+    .filter((t) => !t.includes('appshell'));
   const hits = files(join(root, 'packages')).flatMap((file) => {
     const text = readFileSync(file, 'utf8').toLowerCase();
     return terms.filter((term) => text.includes(term)).map((term) => `${file.slice(root.length)}: ${term}`);

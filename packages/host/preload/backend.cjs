@@ -1,5 +1,3 @@
-// Preload for app backend utilityProcess: restricts outbound network access
-// to hosts explicitly declared in manifest.capabilities.network.
 const net = require('node:net');
 
 const rawAllowed = process.env.APPSHELL_ALLOWED_HOSTS ?? '';
@@ -18,7 +16,6 @@ function isAllowed(host) {
   return allowedHosts.has(clean);
 }
 
-// 1. Guard net.Socket.prototype.connect (intercepts net, tls, http, and https)
 const origConnect = net.Socket.prototype.connect;
 function guardedConnect(...args) {
   let host = null;
@@ -50,7 +47,6 @@ Object.defineProperty(net.Socket.prototype, 'connect', {
   configurable: false,
 });
 
-// 2. Guard globalThis.fetch (intercepts fetch requests before socket dispatch)
 if (typeof globalThis.fetch === 'function') {
   const origFetch = globalThis.fetch;
   function guardedFetch(input, init) {

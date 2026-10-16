@@ -1,5 +1,3 @@
-// One isolated view per app: its own origin (app://<id>/), session partition,
-// protocol handler, network allowlist and no permissions.
 import { WebContentsView, session } from 'electron';
 import { readFile, realpath } from 'node:fs/promises';
 import { createRequire } from 'node:module';
@@ -91,7 +89,7 @@ export function createAppView(app, log) {
   const wc = view.webContents;
   wc.setWindowOpenHandler(() => ({ action: 'deny' }));
   const stayHome = (/** @type {Electron.Event} */ event, /** @type {string} */ url) => {
-    const u = new URL(url); // URL.origin is "null" for custom schemes, so compare parts.
+    const u = new URL(url);
     if (u.protocol !== 'app:' || u.host !== id) {
       event.preventDefault();
       log('warn', `blocked navigation to ${url}`);

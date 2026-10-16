@@ -1,4 +1,3 @@
-// Phase 0 gate: a hostile app must fail every escape attempt, and the victim's data must survive.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
@@ -17,7 +16,7 @@ const readJson = (file) => { try { return JSON.parse(readFileSync(file, 'utf8'))
 
 test('hostile app cannot escape its sandbox', { timeout: 90_000 }, async (t) => {
   const userData = mkdtempSync(join(tmpdir(), 'appshell-e2e-'));
-  /** One deep link per launch: Windows exits at once when given two. @param {string} link */
+  /** @param {string} link */
   const launch = (link) => spawn(electron, [
     join(root, 'packages/host'),
     '--product', join(root, 'test/fixtures/product.json'),
@@ -34,7 +33,6 @@ test('hostile app cannot escape its sandbox', { timeout: 90_000 }, async (t) => 
     rmSync(userData, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
   });
 
-  // Open the hostile app the way users would: a second launch hands its link to the running host.
   for (let waited = 0; !readJson(join(userData, 'apps', 'victim', 'storage.json')).ready && waited < 30_000; waited += 250) {
     await new Promise((r) => setTimeout(r, 250));
   }
@@ -47,7 +45,6 @@ test('hostile app cannot escape its sandbox', { timeout: 90_000 }, async (t) => 
     report = readJson(reportFile).report;
     if (child.exitCode !== null) break;
   }
-  // CI prints this file when the job fails, so results are visible without the full log.
   if (process.env.APPSHELL_E2E_REPORT) {
     const tail = (/** @type {string} */ f) => { try { return readFileSync(join(userData, 'logs', f), 'utf8').slice(-700); } catch { return null; } };
     writeFileSync(process.env.APPSHELL_E2E_REPORT, JSON.stringify(report ?? {

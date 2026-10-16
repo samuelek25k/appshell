@@ -1,6 +1,3 @@
-// Backend side of the Appshell bridge. Copy into your app (backends can only read their own folder):
-//   const { serve } = require('./appshell-backend.cjs');
-//   serve({ async greet({ name }) { return `Hello ${name}`; } });
 function serve(handlers) {
   process.parentPort.on('message', async ({ data }) => {
     const { id, method, params } = data ?? {};

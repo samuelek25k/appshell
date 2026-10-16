@@ -1,0 +1,8 @@
+AGENTS.md
+CLAUDE.md
+.github/
+.husky/
+.claude/settings.json
+scripts/hygiene.mjs
+scripts/rules-guard.mjs
+test/hygiene.test.js

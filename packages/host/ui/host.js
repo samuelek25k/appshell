@@ -1,5 +1,3 @@
-// Host Shell UI — iOS & Android Fluid Experience.
-// Renders app squircles, widgets, and catalog listings with DOM APIs.
 
 const DEFAULT_PREVIEW_STATE = {
   product: 'Appshell',
@@ -136,7 +134,6 @@ function el(tag, attrs = {}, children = []) {
 }
 
 /**
- * Procedural iOS / Android App Icon Palettes & Glyphs.
  * @type {Record<string, { bg: string, svg: string }>}
  */
 const APP_THEMES = {
@@ -191,7 +188,6 @@ function hashColor(str) {
 }
 
 /**
- * Creates an iOS / Android squircle icon element for an app.
  * @param {any} app
  * @param {'normal' | 'small' | 'dock'} [size]
  */
@@ -483,7 +479,6 @@ function renderCatalog(manager) {
   $('no-catalog').hidden = rows.length > 0;
 }
 
-// Spotlight Search input handler
 const searchInput = /** @type {HTMLInputElement} */ ($('search-input'));
 const searchClear = $('search-clear');
 if (searchInput) {
@@ -502,7 +497,6 @@ if (searchClear) {
   });
 }
 
-// Keyboard shortcuts: '/' focuses search, 'Esc' closes/clears
 window.addEventListener('keydown', (e) => {
   if (e.key === '/' && document.activeElement !== searchInput) {
     e.preventDefault();
@@ -526,7 +520,6 @@ $('home').addEventListener('click', () => api.home());
 $('close').addEventListener('click', () => api.close());
 $('refresh').addEventListener('click', () => api.refreshCatalog());
 
-// Multi-Account Dialog & Form Interactions
 const accountBtn = $('account-btn');
 const accountDialog = /** @type {HTMLDialogElement} */ ($('account-dialog'));
 const accountDialogClose = $('account-dialog-close');
@@ -598,7 +591,6 @@ if (addAccountForm) {
   });
 }
 
-// Android At-a-Glance Live Clock & Date
 function updateClock() {
   const now = new Date();
   const timeEl = $('glance-time');
@@ -613,7 +605,6 @@ function updateClock() {
 setInterval(updateClock, 1000);
 updateClock();
 
-// Android App Drawer State & Category Map
 let drawerCategory = 'all';
 let drawerSearch = '';
 
@@ -704,7 +695,6 @@ document.querySelectorAll('.cat-pill').forEach((pill) => {
   });
 });
 
-// Home Screen & Launcher Customizer Dialog (D13)
 const launcherDialog = /** @type {HTMLDialogElement} */ ($('launcher-settings-dialog'));
 const btnHomeSettings = $('btn-home-settings');
 const launcherDialogClose = $('launcher-dialog-close');
@@ -811,7 +801,6 @@ function renderLauncherChoices(state) {
   }));
 }
 
-// Restore saved preferences
 try {
   const savedWp = localStorage.getItem('appshell_wallpaper');
   if (savedWp) applyWallpaper(savedWp);

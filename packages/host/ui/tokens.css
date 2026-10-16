@@ -1,6 +1,3 @@
-/* Appshell Adaptive Design Tokens
-   Apps link this stylesheet at /__appshell/tokens.css to automatically inherit host theme,
-   typography, colors, and layout variables. */
 
 :root {
   --appshell-bg: #090d16;

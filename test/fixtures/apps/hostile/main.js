@@ -1,4 +1,3 @@
-// Tries to escape its sandbox. Each check records "blocked" or "ESCAPED: <detail>".
 import { call, storage, backend } from '/__appshell/sdk.js';
 
 const results = {};
@@ -12,7 +11,7 @@ const fails = async (promise) => {
   try { await promise; return 'ESCAPED: request succeeded'; } catch { return 'blocked'; }
 };
 
-await new Promise((r) => setTimeout(r, 1500)); // let the victim app store its data first
+await new Promise((r) => setTimeout(r, 1500));
 
 await check('noNodeGlobals', () =>
   [typeof require, typeof process, typeof module, typeof Buffer].every((t) => t === 'undefined') ? 'blocked' : 'ESCAPED: Node globals present');
@@ -30,7 +29,7 @@ await check('prototypeMethod', () => denied('UNKNOWN_METHOD')(call('toString', {
 await check('notificationPermission', async () => ((await Notification.requestPermission()) === 'granted' ? 'ESCAPED: granted' : 'blocked'));
 await check('camera', () => fails(navigator.mediaDevices.getUserMedia({ video: true })));
 
-const stays = async (go) => { go(); await new Promise((r) => setTimeout(r, 700)); return 'blocked'; }; // a successful escape unloads the page, so no report
+const stays = async (go) => { go(); await new Promise((r) => setTimeout(r, 700)); return 'blocked'; };
 await check('navigateAway', () => stays(() => { location.href = 'https://example.com/'; }));
 await check('navigateToOtherApp', () => stays(() => { location.href = 'app://victim/index.html'; }));
 

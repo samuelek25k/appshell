@@ -1,4 +1,3 @@
-// Loads the product configuration and the app manifests it lists.
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { validate } from '@appshell/contracts';
@@ -25,11 +24,9 @@ export function loadProduct(productFile) {
 }
 
 /**
- * Pre-installed apps from the product, then apps installed from the catalog.
- * Invalid apps are skipped and reported; a pre-installed app wins an id clash.
  * @param {Product} product
- * @param {string} appsRoot folder the product's app paths are relative to
- * @param {{ dir: string }[]} installed folders of current catalog installs
+ * @param {string} appsRoot
+ * @param {{ dir: string }[]} installed
  * @param {(message: string) => void} report
  * @returns {Map<string, InstalledApp>}
  */

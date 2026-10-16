@@ -1,9 +1,6 @@
-// App manager: the catalog, and install, update, rollback and removal of catalog apps.
 import { createStore, latestRelease, parseCatalog, readUrl } from '@appshell/distribution';
 
 /**
- * The catalog URL is trusted configuration; each app's repository and release URLs
- * are checked against the product's allowed sources at install time.
  * @param {{
  *   policy: import('./registry.js').Product['policy'],
  *   catalogUrl: string | undefined,
@@ -42,7 +39,6 @@ export function createManager({ policy, catalogUrl, root, hostVersion, fetch }) 
       }
     },
 
-    /** Rows for the host UI: every catalog app plus anything installed that left the catalog. */
     rows() {
       const installed = new Map(store.list().map((s) => [s.current.id, s]));
       const rows = catalog.map((entry) => {
@@ -59,7 +55,7 @@ export function createManager({ policy, catalogUrl, root, hostVersion, fetch }) 
       return { rows, error: catalogError, enabled: Boolean(catalogUrl) };
     },
 
-    /** Installs or updates to the newest release in the product's channel. @param {string} id */
+    /** @param {string} id */
     install(id) {
       const { entry, release } = entryFor(id);
       return store.install(entry, release, { hostVersion, policy, fetch });

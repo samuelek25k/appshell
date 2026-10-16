@@ -16,7 +16,6 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap">
   
-  <!-- Tailwind CSS configured to match Appshell Apps Store theme -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -67,17 +66,14 @@
 </head>
 <body class="bg-[#f8fafc] text-slate-800 dark:bg-slate-900 dark:text-slate-100 min-h-screen flex flex-col font-sans antialiased transition-colors duration-200 bg-grid-pattern">
 
-  <!-- Top Navigation Header -->
   <header class="sticky top-0 z-50 w-full border-b border-slate-200/80 dark:border-slate-800/80 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
       
-      <!-- Brand & Title -->
       <a class="flex items-center gap-2.5 font-bold text-lg tracking-tight text-slate-900 dark:text-white flex-shrink-0 group" href="#">
         <img src="mark.svg" alt="Appshell" class="w-8 h-8 shadow-sm transition-transform group-hover:scale-105" width="32" height="32">
         <span class="font-extrabold uppercase tracking-wider text-base">Appshell</span>
       </a>
 
-      <!-- Center Nav Links -->
       <nav class="hidden md:flex items-center gap-6 text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-400">
         <a href="#architecture" class="hover:text-brand-600 dark:hover:text-brand-400 transition-colors">How It Works</a>
         <a href="#isolation" class="hover:text-brand-600 dark:hover:text-brand-400 transition-colors">Security Model</a>
@@ -87,9 +83,7 @@
         <a href="https://samuelek25k.github.io/appshell-apps/" class="hover:text-brand-600 dark:hover:text-brand-400 transition-colors">App Store ↗</a>
       </nav>
 
-      <!-- Right Header Actions -->
       <div class="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-        <!-- Dark / Light Theme Switcher -->
         <button type="button" id="theme-toggle" class="p-2 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" aria-label="Toggle theme">
           <svg id="theme-toggle-light-icon" class="hidden w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
@@ -99,12 +93,10 @@
           </svg>
         </button>
 
-        <!-- GitHub Repo Link -->
         <a href="https://github.com/samuelek25k/appshell" target="_blank" rel="noopener" class="hidden sm:inline-flex items-center px-3.5 py-1.5 text-xs font-semibold border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
           GitHub
         </a>
 
-        <!-- Buy Me a Coffee Button -->
         <a href="https://buymeacoffee.com/samuelek25k" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold bg-[#FFDD00] hover:bg-[#ffe338] text-slate-950 transition-all shadow-sm" title="Support Appshell on Buy Me a Coffee">
           <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M18 8h1a4 4 0 0 1 0 8h-1"></path>
@@ -116,7 +108,6 @@
           <span class="hidden md:inline">Buy me a coffee</span>
         </a>
 
-        <!-- Primary CTA to Store -->
         <a href="https://samuelek25k.github.io/appshell-apps/" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold bg-slate-900 text-white dark:bg-white dark:text-slate-950 hover:bg-slate-800 dark:hover:bg-slate-100 transition-colors shadow-sm">
           <span>Explore Apps</span>
           <span class="font-mono">→</span>
@@ -125,7 +116,6 @@
     </div>
   </header>
 
-  <!-- Hero Section -->
   <main class="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 sm:pt-16 pb-20 space-y-24">
     
     <section class="text-center space-y-6 max-w-4xl mx-auto">
@@ -156,7 +146,6 @@
         </a>
       </div>
 
-      <!-- Hero Dashboard Screenshot in Window Bezel -->
       <div class="mt-12 text-left border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950/70 shadow-2xl overflow-hidden glow-cyan">
         <div class="px-4 py-3 bg-slate-100 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
           <div class="flex items-center gap-2">
@@ -171,7 +160,6 @@
       </div>
     </section>
 
-    <!-- ARCHITECTURE DIAGRAM SECTION -->
     <section id="architecture" class="scroll-mt-24 space-y-10">
       <div class="max-w-3xl">
         <div class="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold bg-cyan-50 text-cyan-600 dark:bg-cyan-500/10 dark:text-cyan-400 border border-cyan-200/50 dark:border-cyan-500/20 mb-3">
@@ -185,10 +173,8 @@
         </p>
       </div>
 
-      <!-- VISUAL ARCHITECTURE SCHEMATIC DIAGRAM -->
       <div class="p-6 sm:p-8 bg-white dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 shadow-xl space-y-8">
         
-        <!-- Layer 1: Electron Host Control Plane -->
         <div class="p-5 border-2 border-brand-500/30 bg-brand-50/20 dark:bg-brand-500/[0.04] relative">
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-brand-500/20 mb-4">
             <div class="flex items-center gap-2">
@@ -218,7 +204,6 @@
           </div>
         </div>
 
-        <!-- Connection Bus Indicator -->
         <div class="flex items-center justify-center gap-4 text-xs font-mono text-slate-400">
           <div class="h-8 border-l-2 border-dashed border-brand-400 dark:border-brand-500"></div>
           <span class="px-3 py-1 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
@@ -227,10 +212,8 @@
           <div class="h-8 border-l-2 border-dashed border-brand-400 dark:border-brand-500"></div>
         </div>
 
-        <!-- Layer 2: Isolated App Runtimes -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
           
-          <!-- UI Boundary -->
           <div class="p-5 border-2 border-sky-500/30 bg-sky-50/20 dark:bg-sky-500/[0.04]">
             <div class="flex items-center justify-between pb-3 border-b border-sky-500/20 mb-3">
               <span class="px-2 py-0.5 text-[11px] font-mono font-bold bg-sky-600 text-white">Boundary 1</span>
@@ -244,7 +227,6 @@
             </ul>
           </div>
 
-          <!-- Backend Boundary -->
           <div class="p-5 border-2 border-indigo-500/30 bg-indigo-50/20 dark:bg-indigo-500/[0.04]">
             <div class="flex items-center justify-between pb-3 border-b border-indigo-500/20 mb-3">
               <span class="px-2 py-0.5 text-[11px] font-mono font-bold bg-indigo-600 text-white">Boundary 2</span>
@@ -259,7 +241,6 @@
           </div>
         </div>
 
-        <!-- Layer 3: Distribution & Consent Pipeline -->
         <div class="p-4 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-mono">
           <div class="flex items-center gap-2">
             <span class="text-lg">🔐</span>
@@ -273,7 +254,6 @@
       </div>
     </section>
 
-    <!-- ISOLATION & CONTRACT SPECIFICATION TABLE -->
     <section id="isolation" class="scroll-mt-24 space-y-8">
       <div class="max-w-3xl">
         <div class="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-500/20 mb-3">
@@ -332,7 +312,6 @@
       </div>
     </section>
 
-    <!-- HOW IT WORKS STEP-BY-STEP -->
     <section id="workflow" class="scroll-mt-24 space-y-10">
       <div class="max-w-3xl">
         <div class="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400 border border-indigo-200/50 dark:border-indigo-500/20 mb-3">
@@ -373,7 +352,6 @@
       </div>
     </section>
 
-    <!-- INSTALL CONSENT SHOWCASE -->
     <section class="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center pt-8 border-t border-slate-200 dark:border-slate-800">
       <div class="space-y-4">
         <div class="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-500/20">
@@ -399,7 +377,6 @@
       </div>
     </section>
 
-    <!-- CLI & BUILD SPECIFICATION -->
     <section id="build" class="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center pt-8 border-t border-slate-200 dark:border-slate-800">
       <div class="space-y-4">
         <div class="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold bg-cyan-50 text-cyan-600 dark:bg-cyan-500/10 dark:text-cyan-400 border border-cyan-200/50 dark:border-cyan-500/20">
@@ -434,7 +411,6 @@ pnpm appshell package ../my-app</code></pre>
       </div>
     </section>
 
-    <!-- PRODUCT CONFIGURATION & TENANT SPEC -->
     <section class="pt-8 border-t border-slate-200 dark:border-slate-800">
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
         <div>
@@ -469,7 +445,6 @@ pnpm appshell package ../my-app</code></pre>
       </div>
     </section>
 
-    <!-- SUPPORT OPEN SOURCE / BUY ME A COFFEE SECTION -->
     <section class="pt-12 border-t border-slate-200 dark:border-slate-800 text-center">
       <div class="max-w-2xl mx-auto space-y-4">
         <div class="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400 border border-amber-200/50 dark:border-amber-500/20">
@@ -498,7 +473,6 @@ pnpm appshell package ../my-app</code></pre>
 
   </main>
 
-  <!-- Footer -->
   <footer class="border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-10 mt-auto">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500 dark:text-slate-400">
       <div class="flex items-center gap-2.5">
@@ -516,7 +490,6 @@ pnpm appshell package ../my-app</code></pre>
     </div>
   </footer>
 
-  <!-- Floating Buy Me a Coffee Pill Widget -->
   <a href="https://buymeacoffee.com/samuelek25k" target="_blank" rel="noopener" class="fixed bottom-5 right-5 z-40 hidden sm:flex items-center gap-2 px-3.5 py-2 bg-[#FFDD00] hover:bg-[#ffe338] text-slate-950 font-bold text-xs shadow-xl shadow-amber-500/20 hover:shadow-amber-500/35 border border-amber-300 transition-all transform hover:-translate-y-0.5 group" title="Support Appshell on Buy Me a Coffee">
     <svg class="w-4 h-4 text-slate-950 group-hover:rotate-12 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
       <path d="M18 8h1a4 4 0 0 1 0 8h-1"></path>
@@ -528,7 +501,6 @@ pnpm appshell package ../my-app</code></pre>
     <span>Buy me a coffee</span>
   </a>
 
-  <!-- Theme Switcher JavaScript -->
   <script>
     (function setupTheme() {
       const themeToggle = document.getElementById('theme-toggle');

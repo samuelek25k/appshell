@@ -12,7 +12,6 @@
   <script src="host.js" defer></script>
 </head>
 <body>
-  <!-- Top Chrome Navigation Header (Translucent Control Bar) -->
   <header class="chrome">
     <div class="chrome-nav">
       <button id="back" title="Back (Esc)" aria-label="Back">
@@ -27,7 +26,6 @@
       <h1 id="title">Appshell</h1>
     </div>
     <div class="chrome-actions">
-      <!-- Android / iOS Style Multi-Account Pill (Google, Microsoft, Local) -->
       <button id="account-btn" class="account-pill" title="Switch Account & Identity" aria-label="Accounts">
         <span id="account-avatar" class="avatar-dot"></span>
         <span id="account-name">Personal Account</span>
@@ -40,9 +38,7 @@
     </div>
   </header>
 
-  <!-- Main Dashboard Surface -->
   <main id="dashboard">
-    <!-- Android At-a-Glance Smart Header Widget -->
     <section class="at-a-glance-section" id="at-a-glance">
       <div class="glance-time-wrapper">
         <span id="glance-time" class="glance-time">09:41</span>
@@ -63,7 +59,6 @@
       </div>
     </section>
 
-    <!-- Spotlight Quick Search Bar -->
     <div class="spotlight-bar">
       <div class="spotlight-input-wrapper">
         <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -72,7 +67,6 @@
       </div>
     </div>
 
-    <!-- Launcher & Identity Status Bar -->
     <div class="launcher-status-bar">
       <div class="launcher-mode" id="launcher-mode">
         <span class="launcher-icon">⚡</span>
@@ -85,7 +79,6 @@
       </div>
     </div>
 
-    <!-- Android / iOS Style Multi-Account Switcher Sheet Dialog -->
     <dialog id="account-dialog" class="account-dialog">
       <div class="account-dialog-content">
         <div class="account-dialog-header">
@@ -96,13 +89,11 @@
           <button id="account-dialog-close" class="dialog-close-btn" aria-label="Close">✕</button>
         </div>
 
-        <!-- Accounts List -->
         <div class="accounts-list-container">
           <h4>Configured Accounts</h4>
           <ul id="accounts-list" class="accounts-list"></ul>
         </div>
 
-        <!-- Add Account Section with Google, Microsoft, and Local options -->
         <div class="add-account-section">
           <h4>Add an Account</h4>
           <div class="provider-buttons">
@@ -120,7 +111,6 @@
             </button>
           </div>
 
-          <!-- Add Account Inline Form -->
           <form id="add-account-form" class="add-account-form" hidden>
             <h5 id="add-form-title">Add Account</h5>
             <div class="form-inputs">
@@ -137,7 +127,6 @@
       </div>
     </dialog>
 
-    <!-- Install Confirmation Sheet Modal -->
     <section id="install-confirm" class="confirm" role="dialog" aria-labelledby="install-title" hidden>
       <div class="confirm-content">
         <div class="confirm-badge">
@@ -158,7 +147,6 @@
       </div>
     </section>
 
-    <!-- Apps SpringBoard Shelf -->
     <section class="shelf-section">
       <div class="shelf-header">
         <h2>Apps</h2>
@@ -167,7 +155,6 @@
       <ul id="apps" class="apps"></ul>
     </section>
 
-    <!-- Widgets Bento Shelf -->
     <section class="shelf-section">
       <div class="shelf-header">
         <h2>Widgets</h2>
@@ -176,7 +163,6 @@
       <p id="no-widgets" class="empty">Widgets appear here once an app publishes them.</p>
     </section>
 
-    <!-- Catalog Shelf -->
     <section id="catalog-section" class="shelf-section">
       <div class="shelf-header">
         <h2>App Store Catalog</h2>
@@ -187,7 +173,6 @@
       <p id="no-catalog" class="empty">No apps in the catalog.</p>
     </section>
 
-    <!-- iOS / Android Floating App Dock & Gesture Bar -->
     <div class="dock-wrapper">
       <div id="dock" class="dock" role="toolbar" aria-label="Quick Launch Dock"></div>
       <div class="gesture-pill-wrapper">
@@ -195,7 +180,6 @@
       </div>
     </div>
 
-    <!-- Android App Drawer Slide-Up Overlay -->
     <aside id="app-drawer" class="app-drawer" hidden>
       <div class="drawer-header">
         <div class="drawer-handle" id="drawer-handle"></div>
@@ -217,7 +201,6 @@
       </div>
     </aside>
 
-    <!-- Home Screen & Launcher Customizer Dialog (D13) -->
     <dialog id="launcher-settings-dialog" class="account-dialog launcher-dialog">
       <div class="account-dialog-content">
         <div class="account-dialog-header">
@@ -228,14 +211,12 @@
           <button id="launcher-dialog-close" class="dialog-close-btn" aria-label="Close">✕</button>
         </div>
 
-        <!-- Default Launcher App Selection -->
         <div class="setting-group">
           <h4>Default Home Screen App</h4>
           <p class="setting-hint">Apps with launcher capability can replace the desktop home surface.</p>
           <div id="launcher-apps-list" class="launcher-choice-list"></div>
         </div>
 
-        <!-- Wallpaper & Ambient Theme -->
         <div class="setting-group">
           <h4>Wallpaper & Ambient Theme</h4>
           <div class="wallpaper-swatches">
@@ -247,7 +228,6 @@
           </div>
         </div>
 
-        <!-- Adaptive Icon Shape -->
         <div class="setting-group">
           <h4>Adaptive Icon Shape</h4>
           <div class="shape-buttons">
@@ -258,7 +238,6 @@
           </div>
         </div>
 
-        <!-- Grid Density -->
         <div class="setting-group">
           <h4>Desktop Grid Density</h4>
           <div class="density-buttons">

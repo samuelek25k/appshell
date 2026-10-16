@@ -1,4 +1,3 @@
-// Backend attacks: runs inside the per-app utilityProcess.
 const fs = require('node:fs');
 const path = require('node:path');
 const net = require('node:net');

@@ -1,5 +1,3 @@
-// Per-app platform services. Every function takes the caller's app id from the bridge,
-// never from the app, so one app cannot reach another's data.
 import { mkdirSync, readFileSync, writeFileSync, appendFileSync, rmSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { createCipheriv, createDecipheriv, randomBytes, hkdfSync } from 'node:crypto';
@@ -36,7 +34,7 @@ const appDir = (root, appId) => {
 /** @param {string} code @param {string} message */
 export const fail = (code, message) => Object.assign(new Error(message), { code });
 
-/** @param {string} root data folder (userData) */
+/** @param {string} root */
 export function createServices(root) {
   const storeFile = (/** @type {string} */ id) => join(appDir(root, id), 'storage.json');
   const secretFile = (/** @type {string} */ id) => join(appDir(root, id), 'secrets.json');
@@ -145,7 +143,6 @@ export function createServices(root) {
       /** @param {boolean} developerMode */
       assertAvailable(developerMode) {
         if (!safeStorage.isEncryptionAvailable()) throw fail('BACKEND_UNAVAILABLE', 'OS secure storage is unavailable');
-        // Linux without a keyring falls back to obfuscation only; allow it in developer mode alone.
         if (process.platform === 'linux' && safeStorage.getSelectedStorageBackend() === 'basic_text' && !developerMode) {
           throw fail('BACKEND_UNAVAILABLE', 'no OS keyring; secrets are disabled outside developer mode');
         }
@@ -172,7 +169,6 @@ export function createServices(root) {
     },
 
     /**
-     * Records an administrative, security, or lifecycle event to the audit log.
      * @param {{ event: string, actor?: string, target?: string, details?: Record<string, any> }} entry
      */
     audit(entry) {
@@ -188,7 +184,7 @@ export function createServices(root) {
       return null;
     },
 
-    /** Removes an app's data on uninstall. @param {string} id */
+    /** @param {string} id */
     removeAppData: (id) => rmSync(join(root, 'apps', id), { recursive: true, force: true }),
   };
 }

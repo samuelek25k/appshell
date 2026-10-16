@@ -1,6 +1,3 @@
-// Identity handoff (D8): the host signs short-lived tokens scoped to one app.
-// Apps and their services verify them with the host's public key; apps never see a key.
-// Plain Node (no Electron) so tests can use it.
 import { createPrivateKey, createPublicKey, generateKeyPairSync, randomUUID, sign, verify } from 'node:crypto';
 import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -11,9 +8,8 @@ export const TOKEN_TTL_SECONDS = 300;
 const b64url = (part) => Buffer.from(Buffer.isBuffer(part) ? part : JSON.stringify(part)).toString('base64url');
 
 /**
- * Loads or creates the host signing key and the local subject id.
- * @param {string} dir folder only the host can write
- * @param {string} issuer product identifier for `iss`
+ * @param {string} dir
+ * @param {string} issuer
  */
 export function createIdentity(dir, issuer) {
   const keyFile = join(dir, 'signing-key.pem');
@@ -79,16 +75,13 @@ export function createIdentity(dir, issuer) {
   const getActive = () => accounts.find((/** @type {Account} */ a) => a.active) ?? accounts[0];
 
   return {
-    /** JWK of the verification key, safe to share. */
     publicJwk: () => ({ ...publicKey.export({ format: 'jwk' }), kid, alg: 'EdDSA', use: 'sig' }),
 
-    /** List all configured accounts. */
     listAccounts: () => [...accounts],
 
-    /** Get the currently active account. */
     getActiveAccount: () => ({ ...getActive() }),
 
-    /** Switch the active account. @param {string} id */
+    /** @param {string} id */
     switchAccount(id) {
       if (!accounts.some((a) => a.id === id)) throw new Error(`account not found: ${id}`);
       accounts = accounts.map((a) => ({ ...a, active: a.id === id }));
@@ -96,7 +89,7 @@ export function createIdentity(dir, issuer) {
       return { ...getActive() };
     },
 
-    /** Add a new account with provider support (Google, Microsoft, Local). @param {{ name: string, email: string, role?: string, provider?: 'google' | 'microsoft' | 'local' }} data */
+    /** @param {{ name: string, email: string, role?: string, provider?: 'google' | 'microsoft' | 'local' }} data */
     addAccount({ name, email, role = 'User', provider = 'local' }) {
       const id = randomUUID();
       const color = defaultAvatarColors[provider] ?? defaultAvatarColors.local;
@@ -115,7 +108,7 @@ export function createIdentity(dir, issuer) {
       return newAcc;
     },
 
-    /** Remove an account. @param {string} id */
+    /** @param {string} id */
     removeAccount(id) {
       if (accounts.length <= 1) throw new Error('cannot remove last account');
       const wasActive = accounts.find((a) => a.id === id)?.active;
@@ -125,7 +118,7 @@ export function createIdentity(dir, issuer) {
       return { ...getActive() };
     },
 
-    /** Compact JWS for one app: `aud` is always `app:<appId>`. @param {string} appId */
+    /** @param {string} appId */
     mint(appId, now = Math.floor(Date.now() / 1000)) {
       const current = getActive();
       const header = b64url({ alg: 'EdDSA', typ: 'JWT', kid });
@@ -148,11 +141,9 @@ export function createIdentity(dir, issuer) {
 }
 
 /**
- * Verifies a token against a public JWK and an expected audience. Returns the claims or throws.
- * Reference implementation for app services; any EdDSA JWT library works too.
  * @param {string} token
  * @param {import('node:crypto').JsonWebKey} jwk
- * @param {string} audience e.g. `app:ops.monitor`
+ * @param {string} audience
  */
 export function verifyToken(token, jwk, audience, now = Math.floor(Date.now() / 1000)) {
   const [header, payload, signature] = String(token).split('.');

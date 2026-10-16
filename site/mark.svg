@@ -1,39 +1,31 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
   <defs>
-    <!-- Vibrant Electric Sky Gradient -->
     <linearGradient id="appshell-bg" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#4ea8de" />
       <stop offset="50%" stop-color="#38bdf8" />
       <stop offset="100%" stop-color="#2563eb" />
     </linearGradient>
 
-    <!-- Clip path to keep white channels flush with the rounded squircle boundary -->
     <clipPath id="squircle-clip">
       <rect x="4" y="4" width="92" height="92" rx="24" ry="24" />
     </clipPath>
   </defs>
 
-  <!-- Base Squircle -->
   <rect x="4" y="4" width="92" height="92" rx="24" ry="24" fill="url(#appshell-bg)" />
 
-  <!-- Clipped Interdigitated Circuit Bus Traces -->
   <g clip-path="url(#squircle-clip)">
-    <!-- Trace 1 (Col 1): Open at bottom, terminates at high node -->
     <path d="M 27 100 V 32" stroke="#ffffff" stroke-width="8.5" stroke-linecap="round" />
     <circle cx="27" cy="32" r="8" fill="#ffffff" />
     <circle cx="27" cy="32" r="4.25" fill="#111625" />
 
-    <!-- Trace 2 (Col 2): Open at top, terminates at low node -->
     <path d="M 43 0 V 68" stroke="#ffffff" stroke-width="8.5" stroke-linecap="round" />
     <circle cx="43" cy="68" r="8" fill="#ffffff" />
     <circle cx="43" cy="68" r="4.25" fill="#111625" />
 
-    <!-- Trace 3 (Col 3): Open at bottom, terminates at high node -->
     <path d="M 57 100 V 32" stroke="#ffffff" stroke-width="8.5" stroke-linecap="round" />
     <circle cx="57" cy="32" r="8" fill="#ffffff" />
     <circle cx="57" cy="32" r="4.25" fill="#111625" />
 
-    <!-- Trace 4 (Col 4): Open at top, terminates at low node -->
     <path d="M 73 0 V 68" stroke="#ffffff" stroke-width="8.5" stroke-linecap="round" />
     <circle cx="73" cy="68" r="8" fill="#ffffff" />
     <circle cx="73" cy="68" r="4.25" fill="#111625" />

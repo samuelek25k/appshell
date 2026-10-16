@@ -1,5 +1,3 @@
-// Phase 1: a catalog app installs from a verified package, runs isolated, and uninstalls
-// with its data; a package whose digest does not match the catalog is refused.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
@@ -30,7 +28,6 @@ test('catalog apps install, run and uninstall; tampered packages are refused', {
   const port = 9400 + Math.floor(Math.random() * 400);
   const launch = (/** @type {string[]} */ extra) => spawn(electron, [
     join(root, 'packages/host'), '--product', join(root, 'test/fixtures/product-catalog.json'),
-    // One argument: on Windows a separate URL-like argument stops Electron from starting.
     `--catalog=${pathToFileURL(catalogFile).href}`, '--user-data', userData,
     ...extra, ...(process.getuid?.() === 0 ? ['--no-sandbox'] : []),
   ], { stdio: 'ignore' });
@@ -62,7 +59,6 @@ test('catalog apps install, run and uninstall; tampered packages are refused', {
   assert.equal(existsSync(join(userData, 'installed', 'victim')), false);
   assert.equal(existsSync(join(userData, 'apps', 'victim')), false, 'app data removed with the app');
 
-  // An install link (as a store page sends) only asks; nothing installs until the user confirms.
   await once(launch(['appshellcatalog://_/install/victim']), 'exit');
   const prompt = "document.getElementById('install-confirm').hidden ? '' : document.getElementById('install-title').textContent";
   let title = '';

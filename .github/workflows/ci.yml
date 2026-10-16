@@ -20,6 +20,7 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm secrets
+      - run: pnpm hygiene
       - run: pnpm check
       - run: pnpm test
       - name: E2E (hostile-app gate, installs, template)
@@ -29,13 +30,11 @@ jobs:
         run: |
           set -o pipefail
           if [ "$RUNNER_OS" = Linux ]; then
-            # Ubuntu 24 blocks the unprivileged user namespaces Chromium's sandbox needs.
             sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
             xvfb-run -a pnpm e2e 2>&1 | tee "$RUNNER_TEMP/e2e.log"
           else
             pnpm e2e 2>&1 | tee "$RUNNER_TEMP/e2e.log"
           fi
-      # Job logs are not always reachable; annotations are.
       - name: Show e2e failures
         if: failure()
         shell: bash

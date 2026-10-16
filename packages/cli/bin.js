@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-// appshell: create, run, package and catalogue apps.
 import { spawn } from 'node:child_process';
 import { cpSync, existsSync, mkdtempSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
@@ -35,7 +34,10 @@ const { values, positionals } = parseArgs({
 /** @param {string} message */
 const die = (message) => { console.error(message); process.exit(1); };
 
-/** Replaces __ID__, __TITLE__ and __PUBLISHER__ in every template file. @param {string} dir @param {Record<string, string>} vars */
+/**
+ * @param {string} dir
+ * @param {Record<string, string>} vars
+ */
 function fill(dir, vars) {
   for (const name of readdirSync(dir)) {
     const file = join(dir, name);

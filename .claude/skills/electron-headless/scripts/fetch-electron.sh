@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-# Downloads the Electron binary for this platform when npm's postinstall cannot.
-# Usage: fetch-electron.sh [version]   (defaults to the version in node_modules/electron)
 set -euo pipefail
 version="${1:-$(node -p "require('electron/package.json').version")}"
 case "$(uname -s)" in Linux) os=linux ;; Darwin) os=darwin ;; *) os=win32 ;; esac
