@@ -273,7 +273,10 @@ export function checkMessage(message) {
   return AI_TRAILERS.filter((re) => re.test(message)).map((re) => `commit message matches ${re}`);
 }
 
-const tracked = () => execFileSync('git', ['ls-files', '-z'], { encoding: 'utf8' }).split('\0').filter(Boolean);
+const tracked = () => execFileSync('git', ['ls-files', '-z'], {
+  encoding: 'utf8',
+  env: { ...process.env, HOME: '/tmp', GIT_CONFIG_GLOBAL: '/dev/null', GIT_CONFIG_SYSTEM: '/dev/null' },
+}).split('\0').filter(Boolean);
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   const args = process.argv.slice(2);

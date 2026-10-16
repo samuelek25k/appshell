@@ -1,6 +1,6 @@
 import { app, BrowserWindow, ipcMain, net, protocol, session } from 'electron';
 import { randomUUID } from 'node:crypto';
-import { appendFileSync, mkdirSync } from 'node:fs';
+import { appendFileSync, existsSync, mkdirSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { CLOSE_VETO_TIMEOUT_MS, allowsIacReceive } from '@appshell/contracts';
@@ -230,9 +230,9 @@ async function manage(appId, action, eventType = 'APP_MANAGED') {
 
 function layout() {
   if (!win) return;
-  const [width, height] = win.getContentSize();
+  const { width, height } = win.getContentBounds();
   for (const [id, { view }] of running) {
-    view.setBounds({ x: 0, y: CHROME_HEIGHT, width, height: height - CHROME_HEIGHT });
+    view.setBounds({ x: 0, y: CHROME_HEIGHT, width, height: Math.max(0, height - CHROME_HEIGHT) });
     view.setVisible(id === active);
   }
 }
@@ -380,14 +380,25 @@ app.on('web-contents-created', (_event, contents) => {
 
 app.whenReady().then(async () => {
   if (app.isPackaged) app.setAsDefaultProtocolClient(product.protocol);
+  const iconFile = [
+    join(dirname(productFile), 'icon.png'),
+    join(dirname(productFile), 'icon.ico'),
+    join(process.resourcesPath, 'product', 'icon.png'),
+    join(process.resourcesPath, 'product', 'icon.ico'),
+  ].find((p) => existsSync(p));
   win = new BrowserWindow({
     width: 1200,
     height: 800,
     title: product.name,
+    ...(iconFile ? { icon: iconFile } : {}),
     autoHideMenuBar: true,
     webPreferences: { preload: HOST_PRELOAD, sandbox: true, contextIsolation: true, nodeIntegration: false, spellcheck: false },
   });
   win.on('resize', layout);
+  win.on('maximize', layout);
+  win.on('unmaximize', layout);
+  win.on('enter-full-screen', layout);
+  win.on('leave-full-screen', layout);
   win.on('closed', () => { win = null; });
   win.webContents.on('will-navigate', (e) => e.preventDefault());
   win.webContents.on('console-message', (e) => { if (e.level === 'error') hostLog(`host ui: ${e.message}`); });

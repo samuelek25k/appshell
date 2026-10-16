@@ -84,6 +84,7 @@ export function createAppView(app, log) {
       safeDialogs: true,
     },
   });
+  view.setBackgroundColor('#00000000');
   const wc = view.webContents;
   wc.setWindowOpenHandler(() => ({ action: 'deny' }));
   const stayHome = (/** @type {Electron.Event} */ event, /** @type {string} */ url) => {

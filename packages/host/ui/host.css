@@ -51,12 +51,23 @@
 
 * { box-sizing: border-box; }
 
+html {
+  height: 100%;
+  background: var(--bg);
+  color: var(--ink);
+}
+
 body {
   margin: 0;
+  min-height: 100%;
   background: var(--bg);
   color: var(--ink);
   overflow-x: hidden;
   user-select: none;
+}
+
+body.app-open #dashboard {
+  display: none !important;
 }
 
 .chrome {
@@ -97,7 +108,13 @@ body {
   padding: 0;
 }
 
-.chrome button:hover {
+.chrome button:disabled {
+  opacity: 0.25;
+  cursor: default;
+  pointer-events: none;
+}
+
+.chrome button:hover:not(:disabled) {
   background: var(--panel-hover);
   color: var(--ink);
 }
