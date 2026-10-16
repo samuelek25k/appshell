@@ -12,8 +12,29 @@ permissions:
   contents: write
 
 jobs:
-  windows:
-    runs-on: windows-latest
+  ci:
+    uses: ./.github/workflows/ci.yml
+
+  build:
+    needs: ci
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            platform: --win
+            files: dist/*.exe
+          - os: macos-latest
+            platform: --mac
+            files: |
+              dist/*.dmg
+              dist/*.zip
+          - os: ubuntu-latest
+            platform: --linux
+            files: |
+              dist/*.AppImage
+              dist/*.deb
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -22,22 +43,33 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - if: startsWith(github.ref, 'refs/tags/')
+        shell: bash
+        run: test "v$(node -p "require('./packages/host/package.json').version")" = "$GITHUB_REF_NAME"
       - uses: actions/checkout@v4
         with:
           repository: samuelek25k/appshell-apps
           path: products/appshell/apps
-      - run: pnpm check
-      - run: pnpm test
       - run: node scripts/build-config.mjs ${{ inputs.product || 'products/appshell/product.json' }}
-      - run: pnpm exec electron-builder --win --publish never
+      - run: pnpm exec electron-builder ${{ matrix.platform }} --publish never
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: false
       - uses: actions/upload-artifact@v4
         with:
-          name: windows-installer
-          path: dist/*.exe
+          name: installer-${{ runner.os }}
+          path: ${{ matrix.files }}
           if-no-files-found: error
-      - if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v2
+
+  publish:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
         with:
-          files: dist/*.exe
+          path: dist
+          merge-multiple: true
+      - uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          files: dist/*
