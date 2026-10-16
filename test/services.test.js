@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync, readFileSync, existsSync } from 'node:fs';
+import { mkdtempSync, rmSync, readFileSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createServices } from '../packages/host/src/services.js';
@@ -44,3 +44,28 @@ test('storage limits value size to 64 KB and store size to 1 MB', (t) => {
   services.removeAppData('test-app');
   assert.equal(existsSync(join(dir, 'apps', 'test-app')), false);
 });
+
+test('audit and app logs rotate at 2 MB and removeAppLogs unlinks both', (t) => {
+  const dir = createTempWorkspace(t, 'appshell-log-rotate-');
+  const services = createServices(dir);
+
+  const logsDir = join(dir, 'logs');
+  mkdirSync(logsDir, { recursive: true });
+  writeFileSync(join(logsDir, 'audit.log'), 'x'.repeat(2 * 1024 * 1024));
+  services.audit({ event: 'TEST_ROTATION' });
+
+  assert.equal(existsSync(join(logsDir, 'audit.1.log')), true);
+  assert.equal(existsSync(join(logsDir, 'audit.log')), true);
+  const auditContent = readFileSync(join(logsDir, 'audit.log'), 'utf8');
+  assert.ok(auditContent.includes('TEST_ROTATION'));
+
+  writeFileSync(join(logsDir, 'test-app.log'), 'y'.repeat(2 * 1024 * 1024));
+  services.log('test-app', 'info', 'rotated message');
+  assert.equal(existsSync(join(logsDir, 'test-app.1.log')), true);
+  assert.equal(existsSync(join(logsDir, 'test-app.log')), true);
+
+  services.removeAppLogs('test-app');
+  assert.equal(existsSync(join(logsDir, 'test-app.log')), false);
+  assert.equal(existsSync(join(logsDir, 'test-app.1.log')), false);
+});
+

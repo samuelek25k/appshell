@@ -1,4 +1,4 @@
-import { mkdirSync, readFileSync, writeFileSync, appendFileSync, rmSync, existsSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync, appendFileSync, rmSync, existsSync, statSync, renameSync } from 'node:fs';
 import { join } from 'node:path';
 import { createCipheriv, createDecipheriv, randomBytes, hkdfSync } from 'node:crypto';
 import electron from 'electron';
@@ -23,6 +23,18 @@ const Notification = typeof electron === 'object' && electron !== null && 'Notif
 
 const MAX_VALUE_BYTES = 64 * 1024;
 const MAX_STORE_BYTES = 1024 * 1024;
+const MAX_LOG_BYTES = 2 * 1024 * 1024;
+
+/** @param {string} file @param {string} line */
+function appendWithRotation(file, line) {
+  try {
+    if (existsSync(file) && statSync(file).size >= MAX_LOG_BYTES) {
+      const rotated = file.replace(/\.log$/, '.1.log');
+      renameSync(file, rotated);
+    }
+  } catch {}
+  appendFileSync(file, line);
+}
 
 /** @param {string} root @param {string} appId */
 const appDir = (root, appId) => {
@@ -101,7 +113,7 @@ export function createServices(root) {
     /** @param {string} id @param {string} level @param {string} message */
     log(id, level, message) {
       mkdirSync(join(root, 'logs'), { recursive: true });
-      appendFileSync(join(root, 'logs', `${id}.log`), JSON.stringify({ t: new Date().toISOString(), level, message }) + '\n');
+      appendWithRotation(join(root, 'logs', `${id}.log`), JSON.stringify({ t: new Date().toISOString(), level, message }) + '\n');
       return null;
     },
 
@@ -111,7 +123,7 @@ export function createServices(root) {
     audit(entry) {
       mkdirSync(join(root, 'logs'), { recursive: true });
       const record = { t: new Date().toISOString(), ...entry };
-      appendFileSync(join(root, 'logs', 'audit.log'), JSON.stringify(record) + '\n');
+      appendWithRotation(join(root, 'logs', 'audit.log'), JSON.stringify(record) + '\n');
       return record;
     },
 
@@ -124,6 +136,9 @@ export function createServices(root) {
     /** @param {string} id */
     removeAppData: (id) => rmSync(join(root, 'apps', id), { recursive: true, force: true }),
     /** @param {string} id */
-    removeAppLogs: (id) => rmSync(join(root, 'logs', `${id}.log`), { force: true }),
+    removeAppLogs: (id) => {
+      rmSync(join(root, 'logs', `${id}.log`), { force: true });
+      rmSync(join(root, 'logs', `${id}.1.log`), { force: true });
+    },
   };
 }
