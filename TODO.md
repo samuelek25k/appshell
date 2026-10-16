@@ -1,6 +1,6 @@
 # TODO
 
-Status on 2026-10-14. Update this file when work lands; delete items that are done.
+Status on 2026-10-16. Update this file when work lands; delete items that are done.
 
 ## Where things stand
 
@@ -18,16 +18,18 @@ Status on 2026-10-14. Update this file when work lands; delete items that are do
 
 ## Needs the repo owner
 
-- [x] appshell: default branch set to `main`; `phase-0` branch deleted.
-- [ ] Pages: in both repos, set Settings > Pages > Source to GitHub Actions. `appshell` is private, so its Pages need a paid GitHub plan.
-- [ ] After merging, push tag `welcome-v0.1.0` in appshell-apps to publish the first catalog app.
-- [x] Confirm D8–D16 decisions.
+- [ ] Decide D12 (app package signing), D22 (installer signing) and D23 (product and engine versions).
+- [ ] Sign and merge the release workflow change (`.github/` is protected).
 
-## Next: Phase 1 gate
+## Next: v0.3.0
 
-- [x] Streamline host UI: removed mobile launcher concepts (drawer, gesture pill, dock, glance clock) in favor of a lean, fast desktop layout for apps, widgets, and catalog matching `docs/contracts.md`.
+- [ ] Run the release workflow by hand for a release candidate on all three platforms.
+- [ ] On the candidate: run the hostile-app gate against the packaged build, install a catalog app, uninstall and check nothing is left behind.
+- [ ] Tag `v0.3.0`. Release notes state that installers are unsigned until D22.
+
+## Phase 1 gate
+
 - [ ] Timed walkthrough: template to installed release in under 15 minutes, using the docs only.
-- [ ] Run the hostile-app gate against a packaged build, because hardened builds may drop `NODE_OPTIONS` (see Known risks in `docs/decisions.md`).
 
 ## Later
 
