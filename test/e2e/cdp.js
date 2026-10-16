@@ -44,3 +44,8 @@ export async function waitForPage(port, prefix, ready = "document.readyState ===
   }
   throw new Error(`timed out waiting for ${prefix}`);
 }
+
+/** @param {string} file */
+export function readJsonFile(file) {
+  try { return JSON.parse(readFileSync(file, 'utf8')); } catch { return null; }
+}
