@@ -197,6 +197,7 @@ test('builder config generates installer configuration for Windows, macOS and Li
   });
 
   assert.deepEqual(cfg.win.target, [{ target: 'nsis', arch: ['x64'] }]);
+  assert.match(cfg.linux.maintainer, /^.+ <.+@.+>$/, '.deb packages need a maintainer');
   assert.deepEqual(
     [cfg.nsis.artifactName, cfg.dmg.artifactName, cfg.appImage.artifactName],
     ['${productName}-Setup.${ext}', '${productName}-${arch}.${ext}', '${productName}.${ext}'],
