@@ -52,19 +52,45 @@
   </script>
   
   <style>
-    .bg-grid-pattern {
+    .animated-grid-bg {
+      position: fixed;
+      top: -32px;
+      left: -32px;
+      width: calc(100vw + 64px);
+      height: calc(100vh + 64px);
+      z-index: 0;
+      pointer-events: none;
       background-size: 32px 32px;
-      background-image: radial-gradient(circle, rgba(148, 163, 184, 0.12) 1px, transparent 1px);
+      background-image: radial-gradient(circle, rgba(100, 116, 139, 0.28) 1.2px, transparent 1.2px);
+      animation: grid-drift 24s linear infinite;
+      will-change: transform;
+      mask-image: radial-gradient(ellipse 90% 75% at 50% 25%, #000 50%, transparent 100%);
+      -webkit-mask-image: radial-gradient(ellipse 90% 75% at 50% 25%, #000 50%, transparent 100%);
     }
-    .dark .bg-grid-pattern {
-      background-image: radial-gradient(circle, rgba(56, 189, 248, 0.08) 1px, transparent 1px);
+    .dark .animated-grid-bg {
+      background-image: radial-gradient(circle, rgba(56, 189, 248, 0.22) 1.2px, transparent 1.2px);
+    }
+    @keyframes grid-drift {
+      0% {
+        transform: translate3d(0, 0, 0);
+      }
+      100% {
+        transform: translate3d(32px, 32px, 0);
+      }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .animated-grid-bg {
+        animation: none;
+      }
     }
     .glow-cyan {
       box-shadow: 0 0 50px -10px rgba(56, 189, 248, 0.25);
     }
   </style>
 </head>
-<body class="bg-[#f8fafc] text-slate-800 dark:bg-slate-900 dark:text-slate-100 min-h-screen flex flex-col font-sans antialiased transition-colors duration-200 bg-grid-pattern">
+<body class="bg-[#f8fafc] text-slate-800 dark:bg-slate-900 dark:text-slate-100 min-h-screen flex flex-col font-sans antialiased transition-colors duration-200 relative overflow-x-hidden">
+
+  <div class="animated-grid-bg" aria-hidden="true"></div>
 
   <header class="sticky top-0 z-50 w-full border-b border-slate-200/80 dark:border-slate-800/80 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
@@ -80,24 +106,24 @@
         <a href="#workflow" class="hover:text-brand-600 dark:hover:text-brand-400 transition-colors">Developer Flow</a>
         <a href="#build" class="hover:text-brand-600 dark:hover:text-brand-400 transition-colors">CLI & Tools</a>
         <a href="releases.html" class="hover:text-brand-600 dark:hover:text-brand-400 transition-colors">Releases</a>
-        <a href="https://samuelek25k.github.io/appshell-apps/" class="hover:text-brand-600 dark:hover:text-brand-400 transition-colors">App Store ↗</a>
       </nav>
 
-      <div class="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-        <button type="button" id="theme-toggle" class="p-2 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" aria-label="Toggle theme">
-          <svg id="theme-toggle-light-icon" class="hidden w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+      <div class="flex items-center gap-2 sm:gap-2.5 flex-shrink-0">
+        <button type="button" id="theme-toggle" class="h-9 w-9 inline-flex items-center justify-center border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors shadow-sm" aria-label="Toggle theme">
+          <svg id="theme-toggle-light-icon" class="hidden w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
           </svg>
-          <svg id="theme-toggle-dark-icon" class="hidden w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <svg id="theme-toggle-dark-icon" class="hidden w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
           </svg>
         </button>
 
-        <a href="https://github.com/samuelek25k/appshell" target="_blank" rel="noopener" class="hidden sm:inline-flex items-center px-3.5 py-1.5 text-xs font-semibold border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-          GitHub
+        <a href="https://github.com/samuelek25k/appshell" target="_blank" rel="noopener" class="h-9 inline-flex items-center gap-1.5 px-3.5 text-xs font-semibold border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors shadow-sm">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>
+          <span>GitHub</span>
         </a>
 
-        <a href="https://buymeacoffee.com/samuelek25k" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold bg-[#FFDD00] hover:bg-[#ffe338] text-slate-950 transition-all shadow-sm" title="Support Appshell on Buy Me a Coffee">
+        <a href="https://buymeacoffee.com/samuelek25k" target="_blank" rel="noopener" class="h-9 inline-flex items-center gap-1.5 px-3.5 text-xs font-semibold border border-amber-400/80 dark:border-amber-500/50 bg-[#FFDD00] hover:bg-[#ffe338] text-slate-950 transition-colors shadow-sm" title="Support Appshell on Buy Me a Coffee">
           <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M18 8h1a4 4 0 0 1 0 8h-1"></path>
             <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path>
@@ -105,18 +131,13 @@
             <line x1="10" y1="1" x2="10" y2="4"></line>
             <line x1="14" y1="1" x2="14" y2="4"></line>
           </svg>
-          <span class="hidden md:inline">Buy me a coffee</span>
-        </a>
-
-        <a href="https://samuelek25k.github.io/appshell-apps/" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold bg-slate-900 text-white dark:bg-white dark:text-slate-950 hover:bg-slate-800 dark:hover:bg-slate-100 transition-colors shadow-sm">
-          <span>Explore Apps</span>
-          <span class="font-mono">→</span>
+          <span class="hidden sm:inline">Buy me a coffee</span>
         </a>
       </div>
     </div>
   </header>
 
-  <main class="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 sm:pt-16 pb-20 space-y-24">
+  <main class="relative z-10 flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 sm:pt-16 pb-20 space-y-24">
     
     <section class="text-center space-y-6 max-w-4xl mx-auto">
       <div class="inline-flex items-center gap-2 px-3 py-1 text-xs font-semibold bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400 border border-brand-200/50 dark:border-brand-500/20">
@@ -136,13 +157,13 @@
       </p>
 
       <div class="flex flex-wrap items-center justify-center gap-3 pt-2">
-        <a href="https://samuelek25k.github.io/appshell-apps/" class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold bg-slate-900 text-white dark:bg-white dark:text-slate-900 hover:opacity-90 transition-all shadow-md">
-          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-          Browse App Store
-        </a>
-        <a href="releases.html" class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+        <a href="releases.html" class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold bg-slate-900 text-white dark:bg-white dark:text-slate-900 hover:opacity-90 transition-all shadow-md">
           <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           Download Appshell
+        </a>
+        <a href="https://github.com/samuelek25k/appshell" target="_blank" rel="noopener" class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>
+          View on GitHub
         </a>
       </div>
 
@@ -472,7 +493,7 @@ pnpm appshell package ../my-app</code></pre>
 
   </main>
 
-  <footer class="border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-10 mt-auto">
+  <footer class="relative z-10 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-10 mt-auto">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500 dark:text-slate-400">
       <div class="flex items-center gap-2.5">
         <img src="mark.svg" alt="Appshell" class="w-5 h-5" width="20" height="20">
@@ -481,9 +502,7 @@ pnpm appshell package ../my-app</code></pre>
       </div>
       <div class="flex items-center gap-5 font-semibold">
         <a href="releases.html" class="hover:text-slate-900 dark:hover:text-white transition-colors">Releases</a>
-        <a href="https://samuelek25k.github.io/appshell-apps/" class="hover:text-slate-900 dark:hover:text-white transition-colors">App Store</a>
         <a href="https://github.com/samuelek25k/appshell" class="hover:text-slate-900 dark:hover:text-white transition-colors">GitHub</a>
-        <a href="https://github.com/samuelek25k/appshell-apps" class="hover:text-slate-900 dark:hover:text-white transition-colors">Catalog Repo</a>
         <a href="https://buymeacoffee.com/samuelek25k" target="_blank" rel="noopener" class="text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 font-bold transition-colors flex items-center gap-1">☕ Buy Me a Coffee</a>
       </div>
     </div>
