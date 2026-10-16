@@ -22,7 +22,7 @@ A folder with `manifest.json` (`manifest.schema.json`). `engines.appshell` is a 
 | Browser | All permission requests denied; `window.open`, webviews and navigation off the app origin blocked |
 | Backend | `utilityProcess` with Node permission model: reads only its folder (also its working directory), no writes, child processes or workers; host environment not inherited |
 
-Not yet enforced: network limits for backends (Phase 2), signing (D12).
+Enforced by preload: backend network limits (TCP, UDP, DNS lookup & resolution). Not yet enforced: package signing (D12).
 
 ## Catalog and installs
 
@@ -117,10 +117,12 @@ The host provides locale-aware environment detection:
 
 Host-mediated messaging and topic pub/sub broadcasting:
 - **Zero Cross-Origin Access**: Apps never communicate directly and never receive references to another app's DOM, origin (`app://<id>/`), or `WebContents`. All events flow through the host as an authenticated broker.
-- **Permission Scoping**: Both sender and receiver must declare `capabilities.iac` in `manifest.json`. May be boolean (`true` for open communication among opted-in apps) or an object scoped by allowlists: `{ send?: string[], receive?: string[], channels?: string[] }`.
-- **Targeted Messaging (`iac.send`)**: Sends targeted actions/payloads from App A to App B (`iac.send({ to, action, payload, launchIfNeeded })`). Returns `{ delivered, targetRunning }`. Target app receives `iac.message`.
+- **Permission Scoping**: Both sender and receiver must declare `capabilities.iac` in `manifest.json`. Senders declare authorized targets in `send: string[]` (or `["*"]`). Receivers must explicitly list authorized senders in `receive: string[]` (or `["*"]`); declaring `iac: true` or `send` without an explicit `receive` list denies incoming messages. Topic pub/sub requires declaring `channels: string[]`.
+- **Payload & Rate Limits**: Messages and broadcast payloads are capped at 64 KB. The host enforces a rate limit of 50 messages/sec per app; messages exceeding this rate reject with `CAPABILITY_DENIED` and are recorded in `logs/audit.log`.
+- **Targeted Messaging (`iac.send`)**: Sends targeted actions/payloads from App A to App B (`iac.send({ to, action, payload, launchIfNeeded })`). Returns `{ delivered, targetRunning }`. Target app receives `iac.message`. `launchIfNeeded` is only permitted if the target explicitly allows receiving from the sender.
 - **Topic Pub/Sub (`iac.publish` / `iac.subscribe` / `iac.unsubscribe`)**: Apps subscribe to named channels and receive `iac.broadcast` events when another app publishes to that channel.
 - **Security & Audit**: The host verifies and stamps the caller's origin (`from: caller.id`). Unsolicited messages to apps that do not permit the sender are rejected with `CAPABILITY_DENIED`. Apps in `policy.blockedApps` cannot send or receive messages. Events are recorded in `logs/audit.log` (`IAC_MESSAGE_SENT`, `IAC_PUBLISHED`, `IAC_DENIED`).
+
  
 ## Browser Automation (D21)
  

@@ -97,9 +97,15 @@ test('IAC schema validation and capability checking', () => {
   assert.equal(METHODS['iac.publish'].requires(scopedManifest, { channel: 'secret-channel', data: 1 }), 'iac:channel:secret-channel');
 
   assert.equal(allowsIacReceive(base, 'app.b'), false);
-  assert.equal(allowsIacReceive({ ...base, capabilities: { iac: true } }, 'app.b'), true);
+  assert.equal(allowsIacReceive({ ...base, capabilities: { iac: true } }, 'app.b'), false);
+  assert.equal(allowsIacReceive({ ...base, capabilities: { iac: { send: ['app.b'] } } }, 'app.b'), false);
+  assert.equal(allowsIacReceive({ ...base, capabilities: { iac: { receive: ['*'] } } }, 'app.b'), true);
   assert.equal(allowsIacReceive({ ...base, capabilities: { iac: { receive: ['app.b'] } } }, 'app.b'), true);
   assert.equal(allowsIacReceive({ ...base, capabilities: { iac: { receive: ['app.c'] } } }, 'app.b'), false);
+
+  const oversized = 'x'.repeat(65 * 1024);
+  assert.equal(METHODS['iac.send'].params({ to: 'app.b', action: 'big', payload: oversized }), false);
+  assert.equal(METHODS['iac.publish'].params({ channel: 'news', data: oversized }), false);
 });
 
 test('bridge mediates IAC messaging, verifies permissions, and audits events', async (t) => {

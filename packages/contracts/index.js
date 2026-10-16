@@ -104,18 +104,17 @@ function checkIacChannel(m, channel) {
   return 'iac';
 }
 
+const jsonSize = (/** @type {unknown} */ v) => { try { return v === undefined ? 0 : JSON.stringify(v).length; } catch { return Infinity; } };
+const MAX_IAC_PAYLOAD = 64 * 1024;
+
 /**
  * @param {Manifest} m
  * @param {string} senderId
  */
 export function allowsIacReceive(m, senderId) {
   const iac = m.capabilities?.iac;
-  if (!iac) return false;
-  if (iac === true) return true;
-  if (typeof iac === 'object') {
-    return !iac.receive || iac.receive.includes('*') || iac.receive.includes(senderId);
-  }
-  return false;
+  if (!iac || typeof iac !== 'object' || !Array.isArray(iac.receive)) return false;
+  return iac.receive.includes('*') || iac.receive.includes(senderId);
 }
 
 /**
@@ -155,11 +154,11 @@ export const METHODS = {
   'identity.token': { params: () => true, requires: (m) => (m.capabilities?.identity ? null : 'identity') },
   'identity.publicKey': { params: () => true, requires: () => null },
   'iac.send': {
-    params: (p) => str(p?.to, 64) && str(p?.action, 64) && (p?.payload === undefined || typeof p.payload === 'object' || typeof p.payload === 'string' || typeof p.payload === 'number' || typeof p.payload === 'boolean') && (p?.launchIfNeeded === undefined || typeof p.launchIfNeeded === 'boolean'),
+    params: (p) => str(p?.to, 64) && str(p?.action, 64) && jsonSize(p?.payload) <= MAX_IAC_PAYLOAD && (p?.launchIfNeeded === undefined || typeof p.launchIfNeeded === 'boolean'),
     requires: (m, p) => checkIacSend(m, p.to),
   },
   'iac.publish': {
-    params: (p) => key(p?.channel) && p?.data !== undefined,
+    params: (p) => key(p?.channel) && p?.data !== undefined && jsonSize(p?.data) <= MAX_IAC_PAYLOAD,
     requires: (m, p) => checkIacChannel(m, p.channel),
   },
   'iac.subscribe': {

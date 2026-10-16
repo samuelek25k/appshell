@@ -31,6 +31,23 @@ import { fail } from './services.js';
 export function createBridge(deps) {
   const { services, policy } = deps;
 
+  /** @type {Map<string, { start: number, count: number }>} */
+  const rateLimits = new Map();
+  const MAX_IAC_RATE_PER_SEC = 50;
+
+  /** @param {string} id */
+  const checkIacRateLimit = (id) => {
+    const now = Date.now();
+    let bucket = rateLimits.get(id);
+    if (!bucket || now - bucket.start >= 1000) {
+      bucket = { start: now, count: 1 };
+      rateLimits.set(id, bucket);
+      return true;
+    }
+    bucket.count++;
+    return bucket.count <= MAX_IAC_RATE_PER_SEC;
+  };
+
   /** @type {Record<string, (id: string, p: any, app: import('./registry.js').InstalledApp) => unknown>} */
   const handlers = {
     'shell.hello': (id) => ({ protocol: SHELL_PROTOCOL, appId: id }),
@@ -88,6 +105,10 @@ export function createBridge(deps) {
     },
     'identity.publicKey': () => deps.identity.publicJwk(),
     'iac.send': async (id, p) => {
+      if (!checkIacRateLimit(id)) {
+        services.audit({ event: 'IAC_DENIED', target: id, details: { to: p.to, action: p.action, reason: 'rate limit exceeded' } });
+        throw fail(ERRORS.CAPABILITY_DENIED, 'IAC rate limit exceeded (max 50 msg/sec)');
+      }
       if (policy.blockedApps?.includes(p.to)) {
         services.audit({ event: 'IAC_DENIED', target: id, details: { to: p.to, action: p.action, reason: 'target blocked by policy' } });
         throw fail(ERRORS.CAPABILITY_DENIED, `target app ${p.to} is blocked by administrative policy`);
@@ -101,6 +122,10 @@ export function createBridge(deps) {
       return res;
     },
     'iac.publish': (id, p) => {
+      if (!checkIacRateLimit(id)) {
+        services.audit({ event: 'IAC_DENIED', target: id, details: { channel: p.channel, reason: 'rate limit exceeded' } });
+        throw fail(ERRORS.CAPABILITY_DENIED, 'IAC rate limit exceeded (max 50 msg/sec)');
+      }
       const res = deps.onIacPublish?.(id, p.channel, p.data) ?? { subscribersCount: 0 };
       services.audit({ event: 'IAC_PUBLISHED', target: id, details: { channel: p.channel, subscribersCount: res.subscribersCount } });
       return res;
