@@ -33,7 +33,7 @@ Every architecture, tooling and dependency choice is recorded here. Agents add e
 | `ajv` | JSON Schema validation for manifests, product config and widgets; the schemas are the contract. | Decided (D5, D6) |
 | `typescript` (dev) | Type checks JSDoc-annotated JavaScript with `checkJs`; no build step. | Decided (D7) |
 | `tar` | Reads and writes app packages; maintained by the npm team, used by npm itself. Node has no built-in tar. | Decided (D9) |
-| `electron-builder` (dev) | Builds installers; the Windows `.exe` pipeline was requested by the product owner on 2026-10-13. Unsigned until D12. | Decided |
+| `electron-builder` (dev) | Builds installers across Windows (`.exe` NSIS), Apple macOS (`.dmg`, `.zip`) and Linux (`.AppImage`, `.deb`). Unsigned until D12. | Decided |
 | `secretlint`, `@secretlint/secretlint-rule-preset-recommend`, `husky` (dev) | Secret scanning before commit and in CI. | Decided (D7) |
 
 ## Known risks

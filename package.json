@@ -15,6 +15,10 @@
     "secrets": "secretlint \"**/*\"",
     "hygiene": "node scripts/hygiene.mjs",
     "appshell": "node packages/cli/bin.js",
+    "dist:win": "node scripts/build-config.mjs && electron-builder --win --publish never",
+    "dist:mac": "node scripts/build-config.mjs && electron-builder --mac --publish never",
+    "dist:linux": "node scripts/build-config.mjs && electron-builder --linux --publish never",
+    "dist": "node scripts/build-config.mjs && electron-builder --publish never",
     "start": "electron packages/host --product products/appshell/product.json --apps ../appshell-apps",
     "prepare": "husky"
   },

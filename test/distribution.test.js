@@ -167,3 +167,35 @@ test('isInside validates nested paths and handles platform prefix and casing', (
   assert.equal(isInside('C:\\app\\dir', '\\\\?\\C:\\app\\dir\\file.txt'), true);
 });
 
+test('builder config generates installer configuration for Windows, macOS and Linux', async () => {
+  const { generateBuildConfig } = await import('../scripts/build-config.mjs');
+  const cfg = /** @type {any} */ (generateBuildConfig('products/appshell/product.json'));
+  assert.equal(cfg.appId, 'dev.appshell.appshell');
+  assert.equal(cfg.productName, 'Appshell');
+  assert.equal(cfg.icon, 'products/appshell/assets/icon.png');
+
+  assert.deepEqual(cfg.win.target, [{ target: 'nsis', arch: ['x64'] }]);
+  assert.equal(cfg.nsis.oneClick, false);
+  assert.equal(cfg.nsis.allowToChangeInstallationDirectory, true);
+  assert.equal(cfg.nsis.installerIcon, 'products/appshell/assets/icon.png');
+
+  assert.deepEqual(cfg.mac.target, [
+    { target: 'dmg', arch: ['x64', 'arm64'] },
+    { target: 'zip', arch: ['x64', 'arm64'] },
+  ]);
+  assert.equal(cfg.mac.category, 'public.app-category.developer-tools');
+  assert.equal(cfg.mac.icon, 'products/appshell/assets/icon.png');
+  assert.deepEqual(cfg.dmg.contents, [
+    { x: 130, y: 220 },
+    { x: 410, y: 220, type: 'link', path: '/Applications' },
+  ]);
+
+  assert.deepEqual(cfg.linux.target, [
+    { target: 'AppImage', arch: ['x64'] },
+    { target: 'deb', arch: ['x64'] },
+  ]);
+  assert.equal(cfg.linux.category, 'Utility');
+  assert.equal(cfg.linux.icon, 'products/appshell/assets/icon.png');
+});
+
+
