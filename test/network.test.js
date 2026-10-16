@@ -20,6 +20,21 @@ test('network allows own origin and declared hosts only', () => {
   assert.equal(networkAllowed(manifest, 'http://api.example.com/x'), false);
 });
 
+test('network allows loopback over http and ws when declared', () => {
+  const localManifest = {
+    ...manifest,
+    capabilities: { network: ['localhost', '127.0.0.1:11434', '[::1]'] },
+  };
+  assert.equal(networkAllowed(localManifest, 'http://localhost:11434/api/chat'), true);
+  assert.equal(networkAllowed(localManifest, 'ws://localhost:11434/ws'), true);
+  assert.equal(networkAllowed(localManifest, 'https://localhost:11434/api/chat'), true);
+  assert.equal(networkAllowed(localManifest, 'http://127.0.0.1:11434/api/chat'), true);
+  assert.equal(networkAllowed(localManifest, 'http://127.0.0.1:8080/api/chat'), false);
+  assert.equal(networkAllowed(localManifest, 'http://[::1]:8080/api/chat'), true);
+  assert.equal(networkAllowed(localManifest, 'http://api.example.com/x'), false);
+  assert.equal(networkAllowed(manifest, 'http://localhost:11434/api/chat'), false);
+});
+
 test('backend network preload blocks undeclared network connections', async () => {
   const preload = realpathSync(fileURLToPath(new URL('../packages/host/preload/backend.cjs', import.meta.url)));
   const script = `

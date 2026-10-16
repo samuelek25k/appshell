@@ -174,6 +174,16 @@ export function satisfiesEngine(range, version) {
 }
 
 /**
+ * @param {string} host
+ * @returns {boolean}
+ */
+export function isLoopback(host) {
+  if (!host) return false;
+  const name = (host.startsWith('[') ? host.slice(1, host.indexOf(']')) : host.split(':')[0]).toLowerCase();
+  return name === 'localhost' || name.startsWith('127.') || name === '::1';
+}
+
+/**
  * @param {Manifest} manifest
  * @param {string} url
  */
@@ -182,6 +192,9 @@ export function networkAllowed(manifest, url) {
   try { u = new URL(url); } catch { return false; }
   if (u.protocol === 'app:') return u.host === manifest.id;
   if (u.protocol === 'data:' || u.protocol === 'blob:') return true;
-  if (u.protocol !== 'https:' && u.protocol !== 'wss:') return false;
+  const loopback = isLoopback(u.hostname);
+  const allowedProtocols = loopback ? ['https:', 'wss:', 'http:', 'ws:'] : ['https:', 'wss:'];
+  if (!allowedProtocols.includes(u.protocol)) return false;
   return (manifest.capabilities?.network ?? []).some((h) => h === u.host || h === u.hostname);
 }
+

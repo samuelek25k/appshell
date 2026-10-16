@@ -18,7 +18,7 @@ A folder with `manifest.json` (`manifest.schema.json`). `engines.appshell` is a 
 | --- | --- |
 | UI | Own `WebContentsView`, `sandbox`, `contextIsolation`, no Node, origin `app://<id>/`, session partition `persist:app:<id>` |
 | Files | The partition's protocol handler serves only the app's own folder (symlinks resolved) plus `/__appshell/sdk.js` |
-| Network | Own origin, `data:`, `blob:`, and `https`/`wss` to hosts in `capabilities.network`; everything else is cancelled. CSP mirrors this |
+| Network | Own origin, `data:`, `blob:`, and `https`/`wss` to hosts in `capabilities.network` (plus `http`/`ws` for declared loopback hosts: `localhost`, `127.0.0.0/8`, `::1`); everything else is cancelled. CSP mirrors this |
 | Browser | All permission requests denied; `window.open`, webviews and navigation off the app origin blocked |
 | Backend | `utilityProcess` with Node permission model: reads only its folder (also its working directory), no writes, child processes or workers; host environment not inherited |
 

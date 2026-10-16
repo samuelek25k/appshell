@@ -4,7 +4,7 @@ import { readFile, realpath } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { extname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { networkAllowed } from '@appshell/contracts';
+import { isLoopback, networkAllowed } from '@appshell/contracts';
 import { isInside } from './registry.js';
 
 const SDK_FILE = createRequire(import.meta.url).resolve('@appshell/sdk');
@@ -19,7 +19,14 @@ const TYPES = {
 
 /** @param {import('@appshell/contracts').Manifest} m */
 const csp = (m) => {
-  const hosts = (m.capabilities?.network ?? []).map((h) => `https://${h} wss://${h}`).join(' ');
+  const hosts = (m.capabilities?.network ?? []).map((h) => {
+    if (isLoopback(h)) {
+      const hasPort = h.startsWith('[') ? h.includes(']:') : h.includes(':');
+      if (hasPort) return `http://${h} ws://${h} https://${h} wss://${h}`;
+      return `http://${h}:* ws://${h}:* https://${h}:* wss://${h}:* http://${h} ws://${h} https://${h} wss://${h}`;
+    }
+    return `https://${h} wss://${h}`;
+  }).join(' ');
   return [
     `default-src 'self'`, `script-src 'self'`, `style-src 'self' 'unsafe-inline'`, `img-src 'self' data: blob:`,
     `connect-src 'self' ${hosts}`.trim(), `object-src 'none'`, `frame-src 'none'`, `base-uri 'none'`, `form-action 'none'`,
@@ -78,6 +85,18 @@ function prepareSession(app, log, partition) {
     }
   });
   ses.webRequest.onBeforeRequest((details, callback) => callback({ cancel: !networkAllowed(app.manifest, details.url) }));
+  ses.webRequest.onHeadersReceived((details, callback) => {
+    let u;
+    try { u = new URL(details.url); } catch { return callback({ responseHeaders: details.responseHeaders }); }
+    if (isLoopback(u.hostname) && networkAllowed(app.manifest, details.url)) {
+      const responseHeaders = { ...details.responseHeaders };
+      responseHeaders['access-control-allow-origin'] = ['*'];
+      responseHeaders['access-control-allow-headers'] = ['*'];
+      responseHeaders['access-control-allow-methods'] = ['GET, POST, PUT, DELETE, OPTIONS, PATCH'];
+      return callback({ responseHeaders });
+    }
+    callback({ responseHeaders: details.responseHeaders });
+  });
   ses.setPermissionRequestHandler((_wc, _permission, callback) => callback(false));
   ses.setPermissionCheckHandler(() => false);
   ses.setDevicePermissionHandler(() => false);
