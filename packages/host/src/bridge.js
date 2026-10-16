@@ -7,6 +7,7 @@ import { fail } from './services.js';
  *   services: ReturnType<typeof import('./services.js').createServices>,
  *   backendFor: (appId: string) => ReturnType<typeof import('./backend.js').createBackend>,
  *   identity: ReturnType<typeof import('./identity.js').createIdentity>,
+ *   account?: () => { sub: string, type: string, name?: string, email?: string },
  *   onTitle: (appId: string, title: string) => void,
  *   onWidget: (appId: string, widgetId: string, descriptor: object) => void,
  *   onCloseResponse: (appId: string, nonce: string, allow: boolean) => void,
@@ -101,7 +102,7 @@ export function createBridge(deps) {
     'backend.call': (id, p) => deps.backendFor(id).call(p.method, p.params),
     'identity.token': (id) => {
       services.audit({ event: 'TOKEN_ISSUED', target: id });
-      return deps.identity.mint(id);
+      return deps.identity.mint(id, deps.account?.());
     },
     'identity.publicKey': () => deps.identity.publicJwk(),
     'iac.send': async (id, p) => {

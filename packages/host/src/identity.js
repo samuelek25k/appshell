@@ -30,12 +30,16 @@ export function createIdentity(dir, issuer) {
 
     getSubject: () => subject,
 
-    /** @param {string} appId */
-    mint(appId, now = Math.floor(Date.now() / 1000)) {
+    /**
+     * @param {string} appId
+     * @param {{ sub: string, type: string, name?: string, email?: string }} [account]
+     */
+    mint(appId, account, now = Math.floor(Date.now() / 1000)) {
       const header = b64url({ alg: 'EdDSA', typ: 'JWT', kid });
       const payload = b64url({
         iss: issuer,
-        sub: subject,
+        sub: account?.sub ?? subject,
+        ...(account ? { type: account.type, ...(account.name ? { name: account.name } : {}), ...(account.email ? { email: account.email } : {}) } : {}),
         aud: `app:${appId}`,
         iat: now,
         exp: now + TOKEN_TTL_SECONDS,

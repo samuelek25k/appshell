@@ -46,10 +46,14 @@ const appDir = (root, appId) => {
 /** @param {string} code @param {string} message */
 export const fail = (code, message) => Object.assign(new Error(message), { code });
 
-/** @param {string} root */
-export function createServices(root) {
-  const storeFile = (/** @type {string} */ id) => join(appDir(root, id), 'storage.json');
-  const secretFile = (/** @type {string} */ id) => join(appDir(root, id), 'secrets.json');
+/**
+ * @param {string | (() => string)} rootOf
+ * @param {string} [auditRoot]
+ */
+export function createServices(rootOf, auditRoot) {
+  const root = () => (typeof rootOf === 'function' ? rootOf() : rootOf);
+  const storeFile = (/** @type {string} */ id) => join(appDir(root(), id), 'storage.json');
+  const secretFile = (/** @type {string} */ id) => join(appDir(root(), id), 'secrets.json');
   /** @param {string} id */
   const readStore = (id) => {
     try {
@@ -112,8 +116,8 @@ export function createServices(root) {
 
     /** @param {string} id @param {string} level @param {string} message */
     log(id, level, message) {
-      mkdirSync(join(root, 'logs'), { recursive: true });
-      appendWithRotation(join(root, 'logs', `${id}.log`), JSON.stringify({ t: new Date().toISOString(), level, message }) + '\n');
+      mkdirSync(join(root(), 'logs'), { recursive: true });
+      appendWithRotation(join(root(), 'logs', `${id}.log`), JSON.stringify({ t: new Date().toISOString(), level, message }) + '\n');
       return null;
     },
 
@@ -121,9 +125,10 @@ export function createServices(root) {
      * @param {{ event: string, actor?: string, target?: string, details?: Record<string, any> }} entry
      */
     audit(entry) {
-      mkdirSync(join(root, 'logs'), { recursive: true });
+      const dir = join(auditRoot ?? root(), 'logs');
+      mkdirSync(dir, { recursive: true });
       const record = { t: new Date().toISOString(), ...entry };
-      appendWithRotation(join(root, 'logs', 'audit.log'), JSON.stringify(record) + '\n');
+      appendWithRotation(join(dir, 'audit.log'), JSON.stringify(record) + '\n');
       return record;
     },
 
@@ -133,12 +138,12 @@ export function createServices(root) {
       return null;
     },
 
-    /** @param {string} id */
-    removeAppData: (id) => rmSync(join(root, 'apps', id), { recursive: true, force: true }),
-    /** @param {string} id */
-    removeAppLogs: (id) => {
-      rmSync(join(root, 'logs', `${id}.log`), { force: true });
-      rmSync(join(root, 'logs', `${id}.1.log`), { force: true });
-    },
+    /** @param {string} id @param {string[]} [roots] */
+    removeAppData: (id, roots = [root()]) => roots.forEach((r) => rmSync(join(r, 'apps', id), { recursive: true, force: true })),
+    /** @param {string} id @param {string[]} [roots] */
+    removeAppLogs: (id, roots = [root()]) => roots.forEach((r) => {
+      rmSync(join(r, 'logs', `${id}.log`), { force: true });
+      rmSync(join(r, 'logs', `${id}.1.log`), { force: true });
+    }),
   };
 }

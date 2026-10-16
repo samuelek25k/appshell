@@ -10,7 +10,7 @@ test('tokens are scoped to one app, expire, and fail on tampering', (t) => {
   t.after(() => rmSync(dir, { recursive: true, force: true }));
   const identity = createIdentity(dir, 'test-product');
   const jwk = identity.publicJwk();
-  const { token } = identity.mint('ops.monitor', 1000);
+  const { token } = identity.mint('ops.monitor', undefined, 1000);
 
   const claims = verifyToken(token, jwk, 'app:ops.monitor', 1001);
   assert.equal(claims.iss, 'test-product');
@@ -30,9 +30,18 @@ test('the signing key and subject persist; the key file is private', (t) => {
   const first = createIdentity(dir, 'p');
   const second = createIdentity(dir, 'p');
   assert.deepEqual(first.publicJwk(), second.publicJwk());
-  const a = verifyToken(first.mint('x', 10).token, second.publicJwk(), 'app:x', 11);
-  const b = verifyToken(second.mint('x', 10).token, first.publicJwk(), 'app:x', 11);
+  const a = verifyToken(first.mint('x', undefined, 10).token, second.publicJwk(), 'app:x', 11);
+  const b = verifyToken(second.mint('x', undefined, 10).token, first.publicJwk(), 'app:x', 11);
   assert.equal(a.sub, b.sub);
   if (process.platform !== 'win32') assert.equal(statSync(join(dir, 'signing-key.pem')).mode & 0o777, 0o600);
 });
 
+
+test('a signed-in account adds its id, type and name to the token; a guest adds no name', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'identity-'));
+  const identity = createIdentity(dir, 'p');
+  const local = verifyToken(identity.mint('x', { sub: 'local:1', type: 'local', name: 'Alex' }, 10).token, identity.publicJwk(), 'app:x', 11);
+  assert.deepEqual([local.sub, local.type, local.name, local.email], ['local:1', 'local', 'Alex', undefined]);
+  const guest = verifyToken(identity.mint('x', { sub: 'guest:2', type: 'guest' }, 10).token, identity.publicJwk(), 'app:x', 11);
+  assert.deepEqual([guest.sub, guest.type, 'name' in guest], ['guest:2', 'guest', false]);
+});

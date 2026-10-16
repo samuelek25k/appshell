@@ -6,6 +6,8 @@ import { fileURLToPath } from 'node:url';
 import { CLOSE_VETO_TIMEOUT_MS, allowsIacReceive } from '@appshell/contracts';
 import { loadProduct, loadApps, ENGINE_VERSION } from './registry.js';
 import { createManager } from './manager.js';
+import { userInfo } from 'node:os';
+import { createAccounts } from './accounts.js';
 import { createIdentity } from './identity.js';
 import { createServices, appendWithRotation } from './services.js';
 import { createBackend } from './backend.js';
@@ -69,6 +71,10 @@ if (brandFile) {
 app.setName(product.name);
 app.setPath('userData', resolve(flag('--user-data') ?? join(app.getPath('appData'), product.dataDirectory)));
 const dataRoot = app.getPath('userData');
+const accounts = createAccounts(dataRoot, userInfo().username);
+let unlocked = !accounts.activeView().locked;
+/** @type {string | null} */
+let accountError = null;
 
 const settingsFile = join(dataRoot, 'settings.json');
 /** @type {{ theme?: 'system' | 'light' | 'dark' }} */
@@ -116,7 +122,7 @@ const manager = createManager({
   fetch: /** @type {typeof globalThis.fetch} */ ((input, init) => net.fetch(/** @type {any} */ (input), init)),
 });
 let apps = loadApps(product, appsRoot, manager.installed(), hostLog);
-const services = createServices(dataRoot);
+const services = createServices(() => accounts.root(accounts.active()), dataRoot);
 /** @type {string | null} */
 let managerError = null;
 /** @type {string | null} */
@@ -166,6 +172,7 @@ const bridge = createBridge({
   policy: product.policy,
   services,
   identity,
+  account: () => accounts.claims(),
   hostLog,
   locale: () => currentLocale,
   getTheme: () => ({ source: nativeTheme.themeSource, dark: nativeTheme.shouldUseDarkColors }),
@@ -292,6 +299,7 @@ function publish() {
         return descriptor ? [{ appId: manifest.id, widgetId: w.id, title: w.title, descriptor }] : [];
       })),
     manager: { ...manager.rows(), actionError: managerError, pendingInstall },
+    accounts: { list: accounts.list(), activeId: accounts.activeView().id, locked: !unlocked, error: accountError, allowGuest: product.policy.allowGuest !== false },
   });
 }
 
@@ -301,9 +309,10 @@ function publish() {
  * @param {string} [eventType]
  */
 async function manage(appId, action, eventType = 'APP_MANAGED') {
+  if (accounts.active().type === 'guest') { managerError = 'Guests cannot install or remove apps'; publish(); return; }
   if (apps.get(appId)?.protected) { managerError = `${appId} is a core app`; publish(); return; }
   if (product.policy.blockedApps?.includes(appId) && eventType === 'APP_INSTALLED') {
-    services.audit({ event: 'APP_INSTALL_BLOCKED', actor: identity.getSubject(), target: appId, details: { reason: 'policy.blockedApps' } });
+    services.audit({ event: 'APP_INSTALL_BLOCKED', actor: accounts.active().id, target: appId, details: { reason: 'policy.blockedApps' } });
     managerError = `${appId} is blocked by administrative policy`;
     publish();
     return;
@@ -312,9 +321,11 @@ async function manage(appId, action, eventType = 'APP_MANAGED') {
   try {
     await action();
     if (eventType === 'APP_INSTALLED' || eventType === 'APP_ROLLEDBACK') {
-      try { await session.fromPartition(`persist:app:${appId}`).clearCache(); } catch {}
+      for (const name of accounts.partitions(appId)) {
+        try { await session.fromPartition(name).clearCache(); } catch {}
+      }
     }
-    services.audit({ event: eventType, actor: identity.getSubject(), target: appId });
+    services.audit({ event: eventType, actor: accounts.active().id, target: appId });
     managerError = null;
   } catch (error) {
     managerError = `${appId}: ${error instanceof Error ? error.message : String(error)}`;
@@ -335,8 +346,9 @@ function layout() {
 
 /** @param {string} appId */
 function open(appId) {
+  if (!unlocked) return false;
   if (product.policy.blockedApps?.includes(appId)) {
-    services.audit({ event: 'APP_LAUNCH_BLOCKED', actor: identity.getSubject(), target: appId, details: { reason: 'policy.blockedApps' } });
+    services.audit({ event: 'APP_LAUNCH_BLOCKED', actor: accounts.active().id, target: appId, details: { reason: 'policy.blockedApps' } });
     managerError = `${appId} is blocked by administrative policy`;
     publish();
     return false;
@@ -351,7 +363,7 @@ function open(appId) {
     return false;
   }
   if (!running.has(appId)) {
-    const view = createAppView(installed, appLog(appId));
+    const view = createAppView(installed, appLog(appId), accounts.partition(appId));
     running.set(appId, { view, title: installed.manifest.title });
     win.contentView.addChildView(view);
   }
@@ -412,6 +424,7 @@ function handleLink(link) {
  * @param {string} appId
  */
 async function requestInstall(appId) {
+  if (accounts.active().type === 'guest') { managerError = 'Guests cannot install or remove apps'; publish(); return; }
   await manager.refresh();
   const row = manager.rows().rows.find((r) => r.id === appId);
   pendingInstall = row?.latest ? appId : null;
@@ -445,9 +458,9 @@ ipcMain.handle('host:dismissInstall', (event) => { if (fromHost(event)) { pendin
 ipcMain.handle('host:rollback', (event, id) => fromHost(event) && manage(id, () => manager.rollback(id), 'APP_ROLLEDBACK'));
 ipcMain.handle('host:uninstall', (event, id) => fromHost(event) && manage(id, async () => {
   manager.uninstall(id);
-  services.removeAppData(id);
-  services.removeAppLogs(id);
-  await session.fromPartition(`persist:app:${id}`).clearStorageData();
+  services.removeAppData(id, accounts.roots());
+  services.removeAppLogs(id, accounts.roots());
+  for (const name of accounts.partitions(id)) await session.fromPartition(name).clearStorageData();
 }, 'APP_UNINSTALLED'));
 ipcMain.handle('host:open', (event, id) => fromHost(event) && open(id));
 ipcMain.handle('host:home', (event) => {
@@ -463,6 +476,59 @@ ipcMain.handle('host:back', (event) => {
   else { active = null; layout(); publish(); }
 });
 ipcMain.handle('host:close', (event) => fromHost(event) && active && requestClose(active));
+function stopAll() {
+  for (const id of [...running.keys()]) stop(id);
+}
+
+/** @param {unknown} error */
+const messageOf = (error) => (error instanceof Error ? error.message : String(error));
+
+/**
+ * @param {Electron.IpcMainInvokeEvent} event
+ * @param {() => void} change
+ */
+function accountChange(event, change) {
+  if (!fromHost(event)) return;
+  try {
+    change();
+    accountError = null;
+  } catch (error) {
+    accountError = messageOf(error);
+  }
+  active = null;
+  layout();
+  publish();
+}
+
+ipcMain.handle('host:accounts:switch', (event, id, pin) => accountChange(event, () => {
+  const target = String(id);
+  const secret = pin === undefined ? undefined : String(pin);
+  accounts.verify(target, secret);
+  if (target !== accounts.active().id) {
+    stopAll();
+    accounts.switchTo(target, secret);
+  }
+  unlocked = true;
+}));
+ipcMain.handle('host:accounts:guest', (event) => accountChange(event, () => {
+  if (product.policy.allowGuest === false) throw new Error('Guest accounts are disabled');
+  stopAll();
+  accounts.startGuest();
+  unlocked = true;
+}));
+ipcMain.handle('host:accounts:add', (event, name, pin) => accountChange(event, () => {
+  accounts.createLocal(String(name), pin === undefined ? undefined : String(pin));
+}));
+ipcMain.handle('host:accounts:remove', async (event, id, pin) => {
+  if (!fromHost(event)) return;
+  const target = String(id);
+  const names = [...apps.keys()].map((appId) => accounts.partition(appId, target));
+  accountChange(event, () => {
+    if (target === accounts.active().id) throw new Error('Switch to another account before removing this one');
+    accounts.remove(target, pin === undefined ? undefined : String(pin));
+  });
+  if (!accountError) for (const name of names) await session.fromPartition(name).clearStorageData();
+});
 ipcMain.handle('host:setTheme', (event, theme) => {
   if (fromHost(event) && ['system', 'light', 'dark'].includes(theme)) {
     setTheme(/** @type {'system' | 'light' | 'dark'} */ (theme));

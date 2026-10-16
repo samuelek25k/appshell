@@ -70,6 +70,14 @@ Limits: storage values ≤ 64 KB, ≤ 1 MB per app. Errors: `UNKNOWN_METHOD`, `I
 
 `identity.token` returns `{ token, expiresAt }`: a compact JWS (EdDSA) with `iss` (product data folder), `sub` (an installation-scoped persistent subject ID), `aud` (`app:<caller id>`, never chosen by the caller), `iat`, `exp` (5 minutes), `jti`. Verify with `identity.publicKey` (JWK); `verifyToken` in `packages/host/src/identity.js` is a reference. The signing key and subject stay in the host's data folder (file mode 0600).
 
+Claims: `sub` is the active account id (`local:<uuid>` or `guest:<uuid>`), `type` is `local` or `guest`, `name` is the account name (omitted for guests).
+
+## Accounts (D24)
+
+A product has several local accounts and at most one temporary Guest. Apps are shared; each account has its own app storage, secrets, app logs and browser partitions. The audit log is global. Switching accounts stops all running apps first. Guests cannot install or remove apps and are wiped when they leave or the host restarts; `policy.allowGuest: false` disables Guest. Removing an account deletes its data; the active account and the last account cannot be removed.
+
+A PIN (4 to 64 characters, stored as a salted scrypt hash, 5 failures lock it for 30 seconds) only controls who may open the account in the host UI. It does not encrypt the account's data on disk. Proved by `test/accounts.test.js`.
+
 ## Events (host to app, `appshell.on(name, fn)`)
 
 | Event | Payload | Expected reply |
