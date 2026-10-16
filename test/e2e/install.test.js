@@ -8,7 +8,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { pack } from '../../packages/distribution/index.js';
-import { evaluate, waitForPage } from './cdp.js';
+import { accountRoot as accountRootOf, evaluate, waitForPage } from './cdp.js';
 
 const root = fileURLToPath(new URL('../..', import.meta.url));
 const electron = /** @type {string} */ (createRequire(import.meta.url)('electron'));
@@ -63,9 +63,10 @@ test('catalog apps install, run and uninstall; tampered packages are refused', {
 
   const opened = await ui("host.open('victim')");
   assert.equal(opened, true, 'host.open returned true');
-  const storage = join(userData, 'apps', 'victim', 'storage.json');
+  const accountRoot = accountRootOf(userData);
+  const storage = join(accountRoot, 'apps', 'victim', 'storage.json');
   for (let i = 0; i < 80 && !existsSync(storage); i++) await new Promise((r) => setTimeout(r, 250));
-  const readLog = (/** @type {string} */ name) => { try { return readFileSync(join(userData, 'logs', name), 'utf8'); } catch { return '<none>'; } };
+  const readLog = (/** @type {string} */ name) => { try { return readFileSync(join(name === 'host.log' ? userData : accountRoot, 'logs', name), 'utf8'); } catch { return '<none>'; } };
   assert.ok(existsSync(storage), `installed app ran and used its storage.\nHost log:\n${readLog('host.log')}\nVictim log:\n${readLog('victim.log')}\nChild stderr:\n${childStderr}`);
 
   await ui("host.install('hostile')");
@@ -74,7 +75,7 @@ test('catalog apps install, run and uninstall; tampered packages are refused', {
 
   await ui("host.uninstall('victim')");
   assert.equal(existsSync(join(userData, 'installed', 'victim')), false);
-  assert.equal(existsSync(join(userData, 'apps', 'victim')), false, 'app data removed with the app');
+  assert.equal(existsSync(join(accountRoot, 'apps', 'victim')), false, 'app data removed with the app');
 
   await once(launch(['appshellcatalog://_/install/victim']), 'exit');
   const prompt = "document.getElementById('install-confirm').hidden ? '' : document.getElementById('install-title').textContent";

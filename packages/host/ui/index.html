@@ -23,6 +23,13 @@
       <h1 id="title">Appshell</h1>
     </div>
     <div class="chrome-actions">
+      <div class="account">
+        <button id="account-btn" class="account-btn" aria-haspopup="menu" aria-expanded="false" title="Accounts">
+          <span id="account-initial" class="avatar"></span>
+          <span id="account-name" class="account-label"></span>
+        </button>
+        <div id="account-menu" class="account-menu" role="menu" hidden></div>
+      </div>
       <select id="locale-select" class="locale-select" title="Change locale" aria-label="Change locale">
         <option value="en-US">EN</option>
         <option value="es-ES">ES</option>
@@ -31,6 +38,9 @@
         <option value="ja-JP">JA</option>
         <option value="ar-SA">AR</option>
       </select>
+      <button id="settings-btn" class="theme-btn" title="Settings" aria-label="Settings">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+      </button>
       <button id="theme-toggle" class="theme-btn" title="Toggle theme" aria-label="Toggle theme">
         <svg id="theme-icon-system" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
         <svg id="theme-icon-light" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon" hidden><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
@@ -50,6 +60,36 @@
         <span id="search-clear" class="search-clear" hidden>✕</span>
       </div>
     </div>
+
+    <section id="settings-dialog" class="confirm" role="dialog" aria-labelledby="settings-title" hidden>
+      <div class="confirm-content settings-content">
+        <h2 id="settings-title">Settings</h2>
+        <div class="shelf-header">
+          <h3>Manage apps</h3>
+          <button id="refresh" class="link">↻ Refresh</button>
+        </div>
+        <p id="manager-error" class="error" role="alert" hidden></p>
+        <ul id="catalog" class="catalog"></ul>
+        <p id="no-catalog" class="empty">No apps in the catalog.</p>
+        <div class="actions">
+          <button id="settings-close" type="button" class="primary">Done</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="account-dialog" class="confirm" role="dialog" aria-labelledby="account-title" hidden>
+      <form id="account-form" class="confirm-content">
+        <h2 id="account-title"></h2>
+        <p id="account-detail" class="quiet"></p>
+        <input id="account-name-input" type="text" maxlength="40" placeholder="Name" autocomplete="off" aria-label="Name">
+        <input id="account-pin-input" type="password" minlength="4" maxlength="64" placeholder="PIN" autocomplete="off" aria-label="PIN">
+        <p id="account-error" class="error" role="alert"></p>
+        <div class="actions">
+          <button id="account-submit" type="submit" class="primary"></button>
+          <button id="account-cancel" type="button">Cancel</button>
+        </div>
+      </form>
+    </section>
 
     <section id="install-confirm" class="confirm" role="dialog" aria-labelledby="install-title" hidden>
       <div class="confirm-content">
@@ -87,15 +127,6 @@
       <p id="no-widgets" class="empty">Widgets appear here once an app publishes them.</p>
     </section>
 
-    <section id="catalog-section" class="shelf-section">
-      <div class="shelf-header">
-        <h2>Catalog</h2>
-        <button id="refresh" class="link">↻ Refresh</button>
-      </div>
-      <p id="manager-error" class="error" role="alert" hidden></p>
-      <ul id="catalog" class="catalog"></ul>
-      <p id="no-catalog" class="empty">No apps in the catalog.</p>
-    </section>
   </main>
 </body>
 </html>
