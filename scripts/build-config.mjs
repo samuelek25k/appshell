@@ -10,7 +10,7 @@ import { fileURLToPath } from 'node:url';
 export function generateBuildConfig(productPath, cwd = process.cwd()) {
   const productFile = resolve(cwd, productPath);
   const product = JSON.parse(readFileSync(productFile, 'utf8'));
-  const productDir = relative(cwd, dirname(productFile));
+  const productDir = relative(cwd, dirname(productFile)).replaceAll('\\', '/');
 
   const iconCandidates = [
     resolve(dirname(productFile), 'assets', 'icon.png'),
@@ -20,7 +20,7 @@ export function generateBuildConfig(productPath, cwd = process.cwd()) {
     resolve(cwd, 'site/icon-512.png'),
   ];
   const iconPath = iconCandidates.find((p) => existsSync(p));
-  const relIcon = iconPath ? relative(cwd, iconPath) : undefined;
+  const relIcon = iconPath ? relative(cwd, iconPath).replaceAll('\\', '/') : undefined;
 
   return {
     appId: `dev.appshell.${product.dataDirectory}`,
