@@ -9,11 +9,22 @@
   },
   "maintainer": "samuelek25k <samuelek25k@users.noreply.github.com>",
   "catalog": "https://raw.githubusercontent.com/samuelek25k/appshell-apps/main/index.json",
-  "apps": [],
+  "apps": [
+    {
+      "path": "launcher-grid",
+      "protected": true
+    },
+    {
+      "path": "launcher-list",
+      "protected": true
+    }
+  ],
   "policy": {
     "capabilities": "enforce",
     "developerMode": false,
-    "allowedSources": ["https://github.com/samuelek25k/"],
+    "allowedSources": [
+      "https://github.com/samuelek25k/"
+    ],
     "channel": "stable"
   }
 }
