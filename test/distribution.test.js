@@ -197,6 +197,11 @@ test('builder config generates installer configuration for Windows, macOS and Li
   });
 
   assert.deepEqual(cfg.win.target, [{ target: 'nsis', arch: ['x64'] }]);
+  assert.deepEqual(
+    [cfg.nsis.artifactName, cfg.dmg.artifactName, cfg.appImage.artifactName],
+    ['${productName}-Setup.${ext}', '${productName}-${arch}.${ext}', '${productName}.${ext}'],
+    'stable names behind releases/latest/download links',
+  );
   assert.equal(cfg.nsis.oneClick, false);
   assert.equal(cfg.nsis.allowToChangeInstallationDirectory, true);
   assert.equal(cfg.nsis.installerIcon, undefined);
