@@ -73,7 +73,8 @@ test('catalog apps install, run and uninstall; tampered packages are refused', {
   assert.equal(title, 'Install victim?');
   assert.equal(existsSync(join(userData, 'installed', 'victim')), false, 'not installed before confirmation');
   await ui("document.getElementById('install-yes').click()");
-  for (let i = 0; i < 40 && !existsSync(join(userData, 'installed', 'victim')); i++) await new Promise((r) => setTimeout(r, 250));
+  const listed = "!!document.querySelector('.app-btn[data-id=\"victim\"]')";
+  for (let i = 0; i < 40 && !(await ui(listed)); i++) await new Promise((r) => setTimeout(r, 250));
   assert.ok(existsSync(join(userData, 'installed', 'victim', '1.0.0')), 'installed after confirmation');
 
   await once(launch(['appshellcatalog://_/install/not-listed']), 'exit');
