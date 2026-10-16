@@ -111,3 +111,51 @@ test('backend network preload honours ports on declared hosts', async () => {
   });
   assert.deepEqual(JSON.parse(child.stdout), { declared: false, other: true });
 });
+
+test('backend network preload blocks dns.resolveTxt and direct resolver queries', async () => {
+  const preload = realpathSync(fileURLToPath(new URL('../packages/host/preload/backend.cjs', import.meta.url)));
+  const script = `
+    const dns = require('node:dns');
+    let resolveTxtBlocked = false;
+    let promiseResolveBlocked = false;
+    let resolverBlocked = false;
+
+    function checkDone() {
+      if (resolveTxtBlocked && promiseResolveBlocked && resolverBlocked) {
+        process.stdout.write('BLOCKED_RESOLVE');
+        process.exit(0);
+      }
+    }
+
+    dns.resolveTxt('evil.com', (err) => {
+      if (err && err.message.includes('denied by Appshell capability policy')) resolveTxtBlocked = true;
+      checkDone();
+    });
+
+    dns.promises.resolve('evil.com', 'A')
+      .catch((err) => {
+        if (err && err.message.includes('denied by Appshell capability policy')) promiseResolveBlocked = true;
+        checkDone();
+      });
+
+    const res = new dns.Resolver();
+    res.resolveTxt('evil.com', (err) => {
+      if (err && err.message.includes('denied by Appshell capability policy')) resolverBlocked = true;
+      checkDone();
+    });
+  `;
+
+  const child = spawnSync(process.execPath, [
+    '--permission',
+    `--allow-fs-read=${preload}`,
+    `--require=${preload}`,
+    '-e', script,
+  ], {
+    env: { ...process.env, APPSHELL_ALLOWED_HOSTS: 'api.example.com' },
+    encoding: 'utf8',
+  });
+
+  assert.equal(child.status, 0, child.stderr);
+  assert.equal(child.stdout, 'BLOCKED_RESOLVE');
+});
+

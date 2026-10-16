@@ -40,6 +40,50 @@ try {
       return origPromisesLookup.apply(this, arguments);
     };
   }
+
+  const resolveMethods = [
+    'resolve', 'resolve4', 'resolve6', 'resolveAny', 'resolveCaa', 'resolveCname',
+    'resolveMx', 'resolveNaptr', 'resolveNs', 'resolvePtr', 'resolveSoa', 'resolveSrv',
+    'resolveTxt', 'reverse',
+  ];
+
+  function wrapCallbackResolver(target, methodName) {
+    const orig = target[methodName];
+    if (typeof orig !== 'function') return;
+    target[methodName] = function (hostname, ...args) {
+      if (hostname && !isAllowed(hostname)) {
+        const err = new Error(`DNS resolution for ${hostname} denied by Appshell capability policy`);
+        const cb = args[args.length - 1];
+        if (typeof cb === 'function') return process.nextTick(() => cb(err));
+        throw err;
+      }
+      return orig.apply(this, [hostname, ...args]);
+    };
+  }
+
+  function wrapPromiseResolver(target, methodName) {
+    const orig = target[methodName];
+    if (typeof orig !== 'function') return;
+    target[methodName] = function (hostname, ...args) {
+      if (hostname && !isAllowed(hostname)) {
+        return Promise.reject(new Error(`DNS resolution for ${hostname} denied by Appshell capability policy`));
+      }
+      return orig.apply(this, [hostname, ...args]);
+    };
+  }
+
+  for (const m of resolveMethods) {
+    wrapCallbackResolver(dns, m);
+    if (dns.Resolver && dns.Resolver.prototype) {
+      wrapCallbackResolver(dns.Resolver.prototype, m);
+    }
+    if (dns.promises) {
+      wrapPromiseResolver(dns.promises, m);
+      if (dns.promises.Resolver && dns.promises.Resolver.prototype) {
+        wrapPromiseResolver(dns.promises.Resolver.prototype, m);
+      }
+    }
+  }
 } catch {}
 
 try {
