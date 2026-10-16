@@ -128,21 +128,29 @@
       </h1>
       
       <p class="text-base sm:text-lg text-slate-600 dark:text-slate-400 leading-relaxed">
-        Download the official desktop shell to install and run sandboxed mini-apps directly from the App Store with cryptographic verification.
+        Download the official desktop shell to install and run sandboxed mini-apps directly from the App Store with cryptographic verification. Available for Windows, macOS, and Linux.
       </p>
 
-      <div class="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
-        <a href="https://github.com/samuelek25k/appshell/releases/latest/download/Appshell-Setup.exe" class="w-full sm:w-auto inline-flex items-center justify-center gap-3 px-8 py-3.5 text-sm font-bold bg-brand-600 hover:bg-brand-500 text-white shadow-lg shadow-brand-500/20 hover:shadow-brand-500/30 transition-all">
-          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          <span>Download for Windows (.exe)</span>
+      <div class="pt-4 flex flex-wrap items-center justify-center gap-3">
+        <a href="https://github.com/samuelek25k/appshell/releases/latest/download/Appshell-Setup.exe" class="inline-flex items-center justify-center gap-2 px-5 py-3 text-sm font-bold bg-brand-600 hover:bg-brand-500 text-white shadow-lg shadow-brand-500/20 hover:shadow-brand-500/30 transition-all">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <span>Windows (.exe)</span>
         </a>
-        <a href="https://github.com/samuelek25k/appshell/releases" target="_blank" rel="noopener" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 text-sm font-semibold border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
-          <span>All Releases & Source on GitHub →</span>
+        <a href="https://github.com/samuelek25k/appshell/releases/latest/download/Appshell-arm64.dmg" class="inline-flex items-center justify-center gap-2 px-5 py-3 text-sm font-bold bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:opacity-90 shadow-md transition-all">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <span>macOS (.dmg)</span>
+        </a>
+        <a href="https://github.com/samuelek25k/appshell/releases/latest/download/Appshell.AppImage" class="inline-flex items-center justify-center gap-2 px-5 py-3 text-sm font-bold bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:opacity-90 shadow-md transition-all">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <span>Linux (.AppImage)</span>
+        </a>
+        <a href="https://github.com/samuelek25k/appshell/releases" target="_blank" rel="noopener" class="inline-flex items-center justify-center gap-2 px-5 py-3 text-sm font-semibold border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+          <span>All Releases & Checksums →</span>
         </a>
       </div>
 
       <p class="text-xs text-slate-500 dark:text-slate-400 font-mono">
-        Windows 10 / 11 (64-bit) · Electron 35 & Chromium 134 · Zero Host IPC Exposure
+        Windows 10/11 · macOS 13+ (Apple Silicon & Intel) · Linux (Ubuntu, Debian, Fedora, Arch) · Zero Host IPC Exposure
       </p>
     </div>
 
@@ -156,13 +164,14 @@
           </div>
           <h3 class="text-base font-bold text-slate-900 dark:text-white">Windows</h3>
           <p class="mt-2 text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-            Windows 10 and 11 (64-bit). Standalone NSIS installer with desktop protocol registration for <code class="font-mono text-[11px] bg-slate-100 dark:bg-slate-900 px-1 py-0.5">appshell://</code>.
+            Windows 10 and 11 (64-bit). Standalone NSIS installer with desktop protocol registration for <code class="font-mono text-[11px] bg-slate-100 dark:bg-slate-900 px-1 py-0.5">appshell://</code> and seamless updates.
           </p>
         </div>
-        <div class="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800">
+        <div class="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800 space-y-2">
           <a href="https://github.com/samuelek25k/appshell/releases/latest/download/Appshell-Setup.exe" class="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-600 dark:text-brand-400 hover:underline">
             Download Appshell-Setup.exe →
           </a>
+          <div class="text-[11px] text-slate-500 dark:text-slate-400 font-mono">Local build: <code class="bg-slate-100 dark:bg-slate-900 px-1 py-0.5">pnpm dist:win</code></div>
         </div>
       </div>
 
@@ -170,17 +179,25 @@
         <div>
           <div class="flex items-center justify-between mb-4">
             <span class="text-2xl">🍏</span>
-            <span class="inline-flex items-center px-2 py-0.5 text-xs font-semibold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-300 dark:border-slate-700">Source Build</span>
+            <span class="inline-flex items-center px-2 py-0.5 text-xs font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-500/30">Official</span>
           </div>
           <h3 class="text-base font-bold text-slate-900 dark:text-white">macOS</h3>
           <p class="mt-2 text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-            Apple Silicon & Intel. Ready to build and run locally via Node and Electron. Official notarized DMG packages coming in an upcoming release.
+            macOS 13+ (Ventura, Sonoma, Sequoia). Native DMG installers with hardened runtime and universal architecture support.
           </p>
         </div>
-        <div class="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800">
-          <a href="#build-from-source" class="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-600 dark:text-brand-400 hover:underline">
-            View build instructions →
-          </a>
+        <div class="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800 space-y-2">
+          <div>
+            <a href="https://github.com/samuelek25k/appshell/releases/latest/download/Appshell-arm64.dmg" class="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-600 dark:text-brand-400 hover:underline">
+              Download Apple Silicon (.dmg) →
+            </a>
+          </div>
+          <div>
+            <a href="https://github.com/samuelek25k/appshell/releases/latest/download/Appshell-x64.dmg" class="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:underline">
+              Download Intel x64 (.dmg) →
+            </a>
+          </div>
+          <div class="text-[11px] text-slate-500 dark:text-slate-400 font-mono">Local build: <code class="bg-slate-100 dark:bg-slate-900 px-1 py-0.5">pnpm dist:mac</code></div>
         </div>
       </div>
 
@@ -188,17 +205,25 @@
         <div>
           <div class="flex items-center justify-between mb-4">
             <span class="text-2xl">🐧</span>
-            <span class="inline-flex items-center px-2 py-0.5 text-xs font-semibold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-300 dark:border-slate-700">Source Build</span>
+            <span class="inline-flex items-center px-2 py-0.5 text-xs font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-500/30">Official</span>
           </div>
           <h3 class="text-base font-bold text-slate-900 dark:text-white">Linux</h3>
           <p class="mt-2 text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-            Ubuntu, Debian, Fedora, and Arch. Build from source with full sandboxed isolation support. AppImage and deb packages planned.
+            Ubuntu, Debian, Fedora, and Arch. Portable self-contained AppImage binary and Debian package (.deb) with full sandbox support.
           </p>
         </div>
-        <div class="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800">
-          <a href="#build-from-source" class="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-600 dark:text-brand-400 hover:underline">
-            View build instructions →
-          </a>
+        <div class="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800 space-y-2">
+          <div>
+            <a href="https://github.com/samuelek25k/appshell/releases/latest/download/Appshell.AppImage" class="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-600 dark:text-brand-400 hover:underline">
+              Download AppImage (x64) →
+            </a>
+          </div>
+          <div>
+            <a href="https://github.com/samuelek25k/appshell/releases/latest/download/appshell_amd64.deb" class="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:underline">
+              Download Debian / Ubuntu (.deb) →
+            </a>
+          </div>
+          <div class="text-[11px] text-slate-500 dark:text-slate-400 font-mono">Local build: <code class="bg-slate-100 dark:bg-slate-900 px-1 py-0.5">pnpm dist:linux</code></div>
         </div>
       </div>
 
@@ -221,8 +246,10 @@
         <div class="p-4 bg-slate-900 text-slate-200 font-mono text-xs border border-slate-800 overflow-x-auto shadow-inner">
           <div class="text-slate-500 mb-2"># Windows PowerShell:</div>
           <div>Get-FileHash .\Appshell-Setup.exe -Algorithm SHA256</div>
-          <div class="text-slate-500 mt-4 mb-2"># macOS & Linux:</div>
-          <div>sha256sum Appshell-Setup.exe</div>
+          <div class="text-slate-500 mt-4 mb-2"># macOS Terminal:</div>
+          <div>shasum -a 256 Appshell-arm64.dmg</div>
+          <div class="text-slate-500 mt-4 mb-2"># Linux:</div>
+          <div>sha256sum Appshell.AppImage</div>
         </div>
 
         <p class="text-xs text-slate-500 dark:text-slate-400">
@@ -279,13 +306,23 @@
           </p>
         </div>
 
+        <div class="p-5 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950/70 md:col-span-2">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="w-2 h-2 bg-brand-500 rounded-full"></span>
+            <h3 class="font-bold text-sm text-slate-900 dark:text-white">Unified Cross-Platform Packaging</h3>
+          </div>
+          <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+            Automated production packaging for Windows (NSIS installer), macOS (hardened DMG and Zip with Apple Silicon & Intel architectures), and Linux (portable AppImage and Debian .deb packages).
+          </p>
+        </div>
+
       </div>
     </div>
 
     <div id="build-from-source" class="mt-14 p-6 sm:p-8 bg-white dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 shadow-sm">
-      <h2 class="text-lg font-bold text-slate-900 dark:text-white">Build from Source</h2>
+      <h2 class="text-lg font-bold text-slate-900 dark:text-white">Build from Source & Package Local Installers</h2>
       <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
-        You can build and run Appshell on macOS, Linux, or Windows using Node 20+ and pnpm:
+        You can build, test, and package Appshell desktop installers locally on Windows, macOS, or Linux using Node 22 and pnpm:
       </p>
 
       <div class="mt-4 p-4 bg-slate-900 text-slate-200 font-mono text-xs border border-slate-800 overflow-x-auto shadow-inner">
@@ -293,14 +330,18 @@
 git clone https://github.com/samuelek25k/appshell.git
 cd appshell
 
-<span class="text-slate-500"># 2. Install dependencies</span>
+<span class="text-slate-500"># 2. Install dependencies & verify tests</span>
 pnpm install
-
-<span class="text-slate-500"># 3. Run validation checks</span>
 pnpm check && pnpm test
 
-<span class="text-slate-500"># 4. Launch the desktop shell</span>
-pnpm start</code></pre>
+<span class="text-slate-500"># 3. Launch the desktop shell in development</span>
+pnpm start
+
+<span class="text-slate-500"># 4. Package standalone installers for your platform</span>
+pnpm dist:win      <span class="text-slate-500"># Windows NSIS installer (.exe)</span>
+pnpm dist:mac      <span class="text-slate-500"># macOS DMG (.dmg) and Zip (.zip)</span>
+pnpm dist:linux    <span class="text-slate-500"># Linux AppImage (.AppImage) and Debian (.deb)</span>
+pnpm dist          <span class="text-slate-500"># Package all target installers</span></code></pre>
       </div>
     </div>
 
