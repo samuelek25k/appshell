@@ -13,6 +13,8 @@ import { fail } from './services.js';
  *   onWidget: (appId: string, widgetId: string, descriptor: object) => void,
  *   onCloseResponse: (appId: string, nonce: string, allow: boolean) => void,
  *   hostLog: (message: string) => void,
+ *   locale?: string,
+ *   onStorageChanged?: (appId: string, key: string, value: unknown) => void,
  *   onListApps?: () => { id: string, title: string, publisher: string, running: boolean }[],
  *   onLaunchApp?: (appId: string) => boolean,
  *   onGetWidgets?: () => object[],
@@ -26,11 +28,21 @@ import { fail } from './services.js';
 export function createBridge(deps) {
   const { services, policy } = deps;
 
-  /** @type {Record<string, (id: string, p: any) => unknown>} */
+  /** @type {Record<string, (id: string, p: any, app: import('./registry.js').InstalledApp) => unknown>} */
   const handlers = {
     'shell.hello': (id) => ({ protocol: SHELL_PROTOCOL, appId: id }),
     'shell.setTitle': (id, p) => deps.onTitle(id, p.title),
     'shell.closeResponse': (id, p) => deps.onCloseResponse(id, p.nonce, p.allow),
+    'shell.getLocale': () => {
+      const loc = deps.locale ?? (typeof Intl === 'object' ? Intl.DateTimeFormat().resolvedOptions().locale : 'en-US');
+      const isRtl = loc.startsWith('ar') || loc.startsWith('he') || loc.startsWith('fa') || loc.startsWith('ur');
+      return {
+        locale: loc,
+        languages: typeof navigator === 'object' && navigator.languages ? [...navigator.languages] : [loc, 'en'],
+        direction: isRtl ? 'rtl' : 'ltr',
+        timeZone: typeof Intl === 'object' ? Intl.DateTimeFormat().resolvedOptions().timeZone : 'UTC',
+      };
+    },
     'shell.listInstalledApps': () => deps.onListApps?.() ?? [],
     'shell.launchApp': (_id, p) => {
       if (policy.blockedApps?.includes(p.id)) {
@@ -48,9 +60,17 @@ export function createBridge(deps) {
       deps.onWidget(id, p.id, p.descriptor);
       return null;
     },
-    'storage.get': (id, p) => services.storage.get(id, p.key),
-    'storage.set': (id, p) => services.storage.set(id, p.key, p.value),
-    'storage.remove': (id, p) => services.storage.remove(id, p.key),
+    'storage.get': (id, p, app) => services.storage.get(id, p.key, app.manifest.capabilities?.secureStorage === true),
+    'storage.set': (id, p, app) => {
+      const res = services.storage.set(id, p.key, p.value, app.manifest.capabilities?.secureStorage === true);
+      deps.onStorageChanged?.(id, p.key, p.value);
+      return res;
+    },
+    'storage.remove': (id, p, app) => {
+      const res = services.storage.remove(id, p.key, app.manifest.capabilities?.secureStorage === true);
+      deps.onStorageChanged?.(id, p.key, undefined);
+      return res;
+    },
     'secrets.get': (id, p) => {
       services.secrets.assertAvailable(policy.developerMode === true);
       return services.secrets.get(id, p.name);
@@ -82,7 +102,7 @@ export function createBridge(deps) {
         deps.hostLog(`[warn] ${id} called ${method} without capability ${missing}`);
         services.log(id, 'warn', `undeclared capability ${missing} used by ${method}`);
       }
-      return { ok: true, result: await handlers[method](id, params) };
+      return { ok: true, result: await handlers[method](id, params, app) };
     } catch (error) {
       const e = /** @type {Error & { code?: string }} */ (error);
       return { ok: false, error: { code: e.code ?? 'INTERNAL', message: e.code ? e.message : 'internal error' } };

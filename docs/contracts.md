@@ -55,6 +55,7 @@ UI: `await window.appshell.call(method, params)`; failures reject with `Error("<
 | `backend.call` | `method`, `params` | `entry.backend` |
 | `identity.token` | | `capabilities.identity` |
 | `identity.publicKey` | | |
+| `shell.getLocale` | | |
 | `shell.listInstalledApps` | | `capabilities.launcher` |
 | `shell.launchApp` | `id` ≤ 64 | `capabilities.launcher` |
 | `shell.getWidgets` | | `capabilities.launcher` |
@@ -74,6 +75,8 @@ Limits: storage values ≤ 64 KB, ≤ 1 MB per app. Errors: `UNKNOWN_METHOD`, `I
 | `shell.closeRequested` | `{ nonce }` | `shell.closeResponse` within 600 ms, else the app closes |
 | `shell.deepLink` | `{ path }` | from `<protocol>://<app-id>/<path>`; one link per launch (Windows exits when given two), later launches hand theirs to the running host |
 | `widgets.action` | `{ widget, action }` | sent after the host brings the app to the front |
+| `shell.localeChanged` | `{ locale, direction, timeZone, languages }` | sent when user updates locale in host settings |
+| `storage.changed` | `{ key, value }` | sent when app storage key is mutated |
 
 Back goes back in the app's history, or home when there is none. Home hides the app and keeps it running.
 
@@ -102,4 +105,25 @@ Product policies govern app permissions, life cycle, and administrative control 
 - `policy.blockedApps`: array of prohibited app IDs blocked from installation and launch.
 - `policy.requireReview`: administrative workflow flag for organizational trust requirements.
 - **Audit Log (`logs/audit.log`)**: append-only JSONL log recording sensitive life cycle events (`APP_INSTALLED`, `APP_ROLLEDBACK`, `APP_UNINSTALLED`, `APP_LAUNCH_BLOCKED`, `APP_INSTALL_BLOCKED`, `CAPABILITY_DENIED`, `TOKEN_ISSUED`, `ACCOUNT_SWITCHED`, `ACCOUNT_ADDED`, `ACCOUNT_REMOVED`) with ISO timestamp, actor, target app, and details.
+
+## Localization & Internationalization (D15)
+
+The host provides locale-aware environment detection and runtime updates:
+- `shell.getLocale`: returns `{ locale, languages, direction, timeZone }`. Apps query this on launch to initialize translations and RTL layouts (`'ltr' | 'rtl'`).
+- `shell.localeChanged`: pushed to running apps whenever the user switches the system or shell display language.
+- `product.schema.json` supports `defaultLocale` and `supportedLocales`.
+
+## Secure Storage at Rest (D16)
+
+Apps declaring `capabilities.secureStorage: true` receive automatic cryptographic protection for `storage.json`:
+- Stored data is encrypted at rest using authenticated AES-256-GCM.
+- Per-app cryptographic keys are derived via HKDF-SHA256 from a machine-local host master secret file (`storage.key`, mode 0600).
+- Transparent decryption is handled at the bridge boundary so apps read and write without managing cryptographic material. Unencrypted plaintext never touches disk.
+
+## Design Tokens
+
+The host serves native design tokens to all app views at `/__appshell/tokens.css`:
+- Exposes standard CSS variables for typography, fluid spacing, elevation, border radii, and system color palettes (`--appshell-color-bg`, `--appshell-color-ink`, `--appshell-color-brand`, `--appshell-radius-squircle`).
+- Allows apps to visually harmonize with iOS and Android host surfaces while maintaining strictly decoupled CSS.
+
 

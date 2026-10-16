@@ -50,6 +50,21 @@
           "description": "Require explicit administrator confirmation / review before new apps are trusted.",
           "type": "boolean",
           "default": false
+        },
+        "defaultLocale": {
+          "description": "Default BCP 47 locale tag for the product, e.g. en-US.",
+          "type": "string",
+          "pattern": "^[a-z]{2,3}(-[A-Z][a-z]{3})?(-[A-Z]{2}|-\\d{3})?$"
+        },
+        "supportedLocales": {
+          "description": "List of BCP 47 locale tags supported by the platform.",
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "requireSecureStorage": {
+          "description": "Enforce encrypted storage at rest for all installed apps.",
+          "type": "boolean",
+          "default": false
         }
       }
     }

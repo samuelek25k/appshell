@@ -85,6 +85,10 @@ const bridge = createBridge({
   services,
   identity,
   hostLog,
+  locale: product.defaultLocale ?? 'en-US',
+  onStorageChanged(appId, key, value) {
+    running.get(appId)?.view.webContents.send('appshell:event', 'storage.changed', { key, value });
+  },
   backendFor(appId) {
     let backend = backends.get(appId);
     if (!backend) {

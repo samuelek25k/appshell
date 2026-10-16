@@ -1225,3 +1225,433 @@ main {
 body.app-open main {
   display: none;
 }
+
+/* ==========================================================================
+   Android Home Screen & Launcher Architecture (D13)
+   ========================================================================== */
+
+/* ---- At-a-Glance Smart Header Widget ---- */
+.at-a-glance-section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 24px;
+  margin-bottom: 20px;
+  background: var(--panel);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-card);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+.glance-time-wrapper {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+}
+
+.glance-time {
+  font-size: 38px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  color: var(--ink);
+  line-height: 1;
+  font-feature-settings: "tnum";
+}
+
+.glance-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.glance-date {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+
+.glance-status-pill {
+  font-size: 11.5px;
+  color: var(--brand);
+  background: var(--brand-glow);
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  width: fit-content;
+}
+
+.glance-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.glance-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  font-size: 12.5px;
+  font-weight: 600;
+  border-radius: var(--radius-pill);
+  background: var(--brand-glow);
+  color: var(--brand);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.glance-btn:hover {
+  background: rgba(56, 189, 248, 0.25);
+  transform: translateY(-1px);
+}
+
+.glance-btn-secondary {
+  background: var(--panel);
+  color: var(--quiet);
+  border: 1px solid var(--card-border);
+}
+
+.glance-btn-secondary:hover {
+  background: var(--panel-hover);
+  color: var(--ink);
+}
+
+/* ---- Dynamic Wallpaper Backdrop Engines ---- */
+#dashboard.wp-obsidian {
+  background: radial-gradient(circle at 50% 0%, rgba(56, 189, 248, 0.08), transparent 45%),
+              linear-gradient(180deg, #090d16 0%, #060911 100%);
+}
+
+#dashboard.wp-aurora {
+  background: radial-gradient(circle at 20% 10%, rgba(16, 185, 129, 0.15), transparent 40%),
+              radial-gradient(circle at 80% 20%, rgba(56, 189, 248, 0.15), transparent 45%),
+              linear-gradient(180deg, #051410 0%, #030a08 100%);
+}
+
+#dashboard.wp-cyber {
+  background: radial-gradient(circle at 75% 15%, rgba(99, 102, 241, 0.18), transparent 45%),
+              linear-gradient(180deg, #0a0e1a 0%, #060810 100%);
+}
+
+#dashboard.wp-violet {
+  background: radial-gradient(circle at 50% 10%, rgba(168, 85, 247, 0.16), transparent 50%),
+              linear-gradient(180deg, #100a1c 0%, #090510 100%);
+}
+
+#dashboard.wp-sunset {
+  background: radial-gradient(circle at 30% 10%, rgba(245, 158, 11, 0.15), transparent 45%),
+              radial-gradient(circle at 70% 30%, rgba(239, 68, 68, 0.12), transparent 45%),
+              linear-gradient(180deg, #180d08 0%, #0c0604 100%);
+}
+
+/* ---- Adaptive Icon Shapes (Android Style) ---- */
+.shape-squircle .app-icon,
+.shape-squircle .app-squircle,
+.shape-squircle .dock-squircle {
+  border-radius: var(--radius-icon);
+}
+
+.shape-circle .app-icon,
+.shape-circle .app-squircle,
+.shape-circle .dock-squircle {
+  border-radius: 50% !important;
+}
+
+.shape-rounded .app-icon,
+.shape-rounded .app-squircle,
+.shape-rounded .dock-squircle {
+  border-radius: 8px !important;
+}
+
+.shape-teardrop .app-icon,
+.shape-teardrop .app-squircle,
+.shape-teardrop .dock-squircle {
+  border-radius: 20px 20px 4px 20px !important;
+}
+
+/* ---- Grid Density Controls ---- */
+.density-compact .apps {
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: 12px;
+}
+
+.density-compact .app-card {
+  padding: 10px 4px 8px;
+}
+
+.density-compact .app-icon {
+  width: 52px;
+  height: 52px;
+}
+
+.density-spacious .apps {
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 20px;
+}
+
+.density-spacious .app-card {
+  padding: 16px 8px 12px;
+}
+
+.density-spacious .app-icon {
+  width: 72px;
+  height: 72px;
+}
+
+/* ---- Android Bottom Navigation Gesture Bar ---- */
+.gesture-pill-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding-top: 8px;
+}
+
+.android-gesture-pill {
+  width: 120px;
+  height: 5px;
+  background: rgba(255, 255, 255, 0.28);
+  border-radius: 9999px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.android-gesture-pill:hover {
+  width: 150px;
+  height: 7px;
+  background: var(--brand);
+  box-shadow: 0 0 12px var(--brand-glow);
+}
+
+/* ---- Android App Drawer Slide-Up Sheet ---- */
+.app-drawer {
+  position: fixed;
+  inset: 48px 0 0 0;
+  background: rgba(9, 13, 22, 0.95);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  padding: 24px 36px 40px;
+  animation: slideUpDrawer 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.app-drawer[hidden] {
+  display: none;
+}
+
+@keyframes slideUpDrawer {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.drawer-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.drawer-handle {
+  width: 44px;
+  height: 4px;
+  border-radius: 9999px;
+  background: var(--card-border);
+}
+
+.drawer-search-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  max-width: 540px;
+  background: var(--panel);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-pill);
+  padding: 8px 16px;
+}
+
+.drawer-search-bar input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--ink);
+  font-size: 14px;
+}
+
+.drawer-close {
+  background: transparent;
+  border: none;
+  color: var(--quiet);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.drawer-close:hover {
+  color: var(--ink);
+}
+
+.drawer-categories {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.cat-pill {
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: var(--radius-pill);
+  background: var(--panel);
+  color: var(--quiet);
+  border: 1px solid var(--card-border);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.cat-pill.active, .cat-pill:hover {
+  background: var(--brand);
+  color: #ffffff;
+  border-color: var(--brand);
+}
+
+.drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  max-width: 900px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.drawer-apps-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 16px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+/* ---- Home Screen & Launcher Customizer Dialog (D13) ---- */
+.launcher-dialog {
+  max-width: 580px;
+}
+
+.setting-group {
+  margin-bottom: 22px;
+}
+
+.setting-group h4 {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0 0 4px;
+}
+
+.setting-hint {
+  font-size: 11.5px;
+  color: var(--quiet);
+  margin: 0 0 10px;
+}
+
+.wallpaper-swatches {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.swatch-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: var(--panel);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-card);
+  color: var(--quiet);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.swatch-btn.active, .swatch-btn:hover {
+  border-color: var(--brand);
+  color: var(--ink);
+}
+
+.swatch-color {
+  width: 44px;
+  height: 28px;
+  border-radius: 6px;
+}
+
+.wp-obsidian { background: linear-gradient(135deg, #090d16, #1e293b); }
+.wp-aurora { background: linear-gradient(135deg, #064e3b, #0284c7); }
+.wp-cyber { background: linear-gradient(135deg, #312e81, #0f172a); }
+.wp-violet { background: linear-gradient(135deg, #581c87, #1e1b4b); }
+.wp-sunset { background: linear-gradient(135deg, #7c2d12, #991b1b); }
+
+.shape-buttons, .density-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.shape-btn, .density-btn {
+  flex: 1;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--quiet);
+  border: 1px solid var(--card-border);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.shape-btn.active, .shape-btn:hover,
+.density-btn.active, .density-btn:hover {
+  background: var(--brand-glow);
+  color: var(--brand);
+  border-color: rgba(56, 189, 248, 0.4);
+}
+
+.launcher-choice-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.launcher-choice-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-radius: var(--radius-card);
+  background: var(--panel);
+  border: 1px solid var(--card-border);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.launcher-choice-item.active {
+  border-color: var(--brand);
+  background: var(--brand-glow);
+}
+

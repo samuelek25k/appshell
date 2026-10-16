@@ -8,6 +8,11 @@ export const call = (/** @type {string} */ method, /** @type {object} */ params 
 export const shell = {
   hello: () => call('shell.hello'),
   setTitle: (/** @type {string} */ title) => call('shell.setTitle', { title }),
+  /** Queries active system/platform locale configuration. */
+  getLocale: () => call('shell.getLocale'),
+  /** Listen for dynamic locale or text direction changes from host settings. */
+  onLocaleChanged: (/** @type {(locale: { locale: string, direction: 'ltr' | 'rtl', timeZone: string, languages: string[] }) => void} */ fn) =>
+    bridge.on('shell.localeChanged', fn),
   /** Return false (or a promise of false) to keep the app open. The host waits 600 ms. */
   onCloseRequested: (/** @type {() => boolean | Promise<boolean>} */ fn) =>
     bridge.on('shell.closeRequested', async (/** @type {{ nonce: string }} */ { nonce }) =>
@@ -19,6 +24,8 @@ export const storage = {
   get: (/** @type {string} */ key) => call('storage.get', { key }),
   set: (/** @type {string} */ key, /** @type {unknown} */ value) => call('storage.set', { key, value }),
   remove: (/** @type {string} */ key) => call('storage.remove', { key }),
+  /** Listen for reactive storage mutations on this app's storage. */
+  onChange: (/** @type {(change: { key: string, value: unknown }) => void} */ fn) => bridge.on('storage.changed', fn),
 };
 
 export const secrets = {

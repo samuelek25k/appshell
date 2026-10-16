@@ -49,7 +49,7 @@ export const ERRORS = /** @type {const} */ ({
  *   entry: { ui?: string, backend?: string },
  *   display?: 'shell' | 'standalone',
  *   widgets?: { id: string, title: string }[],
- *   capabilities?: { network?: string[], notifications?: boolean, secrets?: string[], identity?: boolean, launcher?: boolean }
+ *   capabilities?: { network?: string[], notifications?: boolean, secrets?: string[], identity?: boolean, launcher?: boolean, secureStorage?: boolean }
  * }} Manifest
  */
 
@@ -65,6 +65,7 @@ export const METHODS = {
   'shell.hello': { params: () => true, requires: () => null },
   'shell.setTitle': { params: (p) => str(p?.title, 60), requires: () => null },
   'shell.closeResponse': { params: (p) => str(p?.nonce, 64) && typeof p?.allow === 'boolean', requires: () => null },
+  'shell.getLocale': { params: () => true, requires: () => null },
   'shell.listInstalledApps': { params: () => true, requires: (m) => (m.capabilities?.launcher ? null : 'launcher') },
   'shell.launchApp': { params: (p) => str(p?.id, 64), requires: (m) => (m.capabilities?.launcher ? null : 'launcher') },
   'shell.getWidgets': { params: () => true, requires: (m) => (m.capabilities?.launcher ? null : 'launcher') },
@@ -99,7 +100,7 @@ export const METHODS = {
 };
 
 /** Events the host sends to an app. */
-export const EVENTS = /** @type {const} */ (['shell.closeRequested', 'shell.deepLink', 'widgets.action']);
+export const EVENTS = /** @type {const} */ (['shell.closeRequested', 'shell.deepLink', 'widgets.action', 'shell.localeChanged', 'storage.changed']);
 
 /**
  * True when `version` satisfies a caret range of the form `^MAJOR.MINOR`.

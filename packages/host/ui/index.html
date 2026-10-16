@@ -42,6 +42,27 @@
 
   <!-- Main Dashboard Surface -->
   <main id="dashboard">
+    <!-- Android At-a-Glance Smart Header Widget -->
+    <section class="at-a-glance-section" id="at-a-glance">
+      <div class="glance-time-wrapper">
+        <span id="glance-time" class="glance-time">09:41</span>
+        <div class="glance-meta">
+          <span id="glance-date" class="glance-date">Thursday, Oct 15</span>
+          <span class="glance-status-pill" id="glance-status">⛅ 72°F · All Systems Operational</span>
+        </div>
+      </div>
+      <div class="glance-actions">
+        <button id="btn-open-drawer" class="glance-btn" title="Open App Drawer">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="icon"><circle cx="5" cy="5" r="2"/><circle cx="12" cy="5" r="2"/><circle cx="19" cy="5" r="2"/><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/><circle cx="5" cy="19" r="2"/><circle cx="12" cy="19" r="2"/><circle cx="19" cy="19" r="2"/></svg>
+          <span>App Drawer</span>
+        </button>
+        <button id="btn-home-settings" class="glance-btn glance-btn-secondary" title="Launcher & Desktop Customization">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+          <span>Launcher Settings</span>
+        </button>
+      </div>
+    </section>
+
     <!-- Spotlight Quick Search Bar -->
     <div class="spotlight-bar">
       <div class="spotlight-input-wrapper">
@@ -55,8 +76,8 @@
     <div class="launcher-status-bar">
       <div class="launcher-mode" id="launcher-mode">
         <span class="launcher-icon">⚡</span>
-        <span class="launcher-title">System Launcher</span>
-        <span class="launcher-badge">D13</span>
+        <span class="launcher-title">Android Springboard</span>
+        <span class="launcher-badge">D13 Customizer</span>
       </div>
       <div class="auth-status" id="auth-status">
         <span class="auth-dot"></span>
@@ -166,10 +187,88 @@
       <p id="no-catalog" class="empty">No apps in the catalog.</p>
     </section>
 
-    <!-- iOS / Android Floating App Dock -->
+    <!-- iOS / Android Floating App Dock & Gesture Bar -->
     <div class="dock-wrapper">
       <div id="dock" class="dock" role="toolbar" aria-label="Quick Launch Dock"></div>
+      <div class="gesture-pill-wrapper">
+        <button id="gesture-pill" class="android-gesture-pill" title="Tap to toggle App Drawer" aria-label="App Drawer Toggle"></button>
+      </div>
     </div>
+
+    <!-- Android App Drawer Slide-Up Overlay -->
+    <aside id="app-drawer" class="app-drawer" hidden>
+      <div class="drawer-header">
+        <div class="drawer-handle" id="drawer-handle"></div>
+        <div class="drawer-search-bar">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="search" id="drawer-search-input" placeholder="Search all installed apps…" autocomplete="off">
+          <button id="drawer-close-btn" class="drawer-close" aria-label="Close Drawer">✕</button>
+        </div>
+        <div class="drawer-categories">
+          <button class="cat-pill active" data-cat="all">All Apps</button>
+          <button class="cat-pill" data-cat="productivity">Productivity</button>
+          <button class="cat-pill" data-cat="utilities">Utilities</button>
+          <button class="cat-pill" data-cat="dev">Developer</button>
+          <button class="cat-pill" data-cat="system">System</button>
+        </div>
+      </div>
+      <div class="drawer-body">
+        <ul id="drawer-apps" class="drawer-apps-grid"></ul>
+      </div>
+    </aside>
+
+    <!-- Home Screen & Launcher Customizer Dialog (D13) -->
+    <dialog id="launcher-settings-dialog" class="account-dialog launcher-dialog">
+      <div class="account-dialog-content">
+        <div class="account-dialog-header">
+          <div>
+            <h3>Launcher & Desktop Settings</h3>
+            <p>Customize your wallpaper, adaptive icons, and select your default launcher app.</p>
+          </div>
+          <button id="launcher-dialog-close" class="dialog-close-btn" aria-label="Close">✕</button>
+        </div>
+
+        <!-- Default Launcher App Selection -->
+        <div class="setting-group">
+          <h4>Default Home Screen App</h4>
+          <p class="setting-hint">Apps with launcher capability can replace the desktop home surface.</p>
+          <div id="launcher-apps-list" class="launcher-choice-list"></div>
+        </div>
+
+        <!-- Wallpaper & Ambient Theme -->
+        <div class="setting-group">
+          <h4>Wallpaper & Ambient Theme</h4>
+          <div class="wallpaper-swatches">
+            <button class="swatch-btn active" data-wp="obsidian" title="Obsidian Dark"><span class="swatch-color wp-obsidian"></span><span>Obsidian</span></button>
+            <button class="swatch-btn" data-wp="aurora" title="Deep Aurora"><span class="swatch-color wp-aurora"></span><span>Aurora</span></button>
+            <button class="swatch-btn" data-wp="cyber" title="Cyber Slate"><span class="swatch-color wp-cyber"></span><span>Cyber</span></button>
+            <button class="swatch-btn" data-wp="violet" title="Midnight Violet"><span class="swatch-color wp-violet"></span><span>Violet</span></button>
+            <button class="swatch-btn" data-wp="sunset" title="Sunset Ember"><span class="swatch-color wp-sunset"></span><span>Sunset</span></button>
+          </div>
+        </div>
+
+        <!-- Adaptive Icon Shape -->
+        <div class="setting-group">
+          <h4>Adaptive Icon Shape</h4>
+          <div class="shape-buttons">
+            <button class="shape-btn active" data-shape="squircle">Squircle</button>
+            <button class="shape-btn" data-shape="circle">Circle</button>
+            <button class="shape-btn" data-shape="rounded">Rounded</button>
+            <button class="shape-btn" data-shape="teardrop">Teardrop</button>
+          </div>
+        </div>
+
+        <!-- Grid Density -->
+        <div class="setting-group">
+          <h4>Desktop Grid Density</h4>
+          <div class="density-buttons">
+            <button class="density-btn" data-density="compact">Compact (5×5)</button>
+            <button class="density-btn active" data-density="standard">Standard (4×4)</button>
+            <button class="density-btn" data-density="spacious">Spacious (3×4)</button>
+          </div>
+        </div>
+      </div>
+    </dialog>
   </main>
 </body>
 </html>

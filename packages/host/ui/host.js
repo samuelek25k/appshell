@@ -294,6 +294,8 @@ function render(state) {
   renderAccounts(state);
   renderDock(state);
   renderCatalog(state.manager);
+  renderDrawer(state);
+  renderLauncherChoices(state);
 }
 
 /** @type {Record<string, string>} */
@@ -506,7 +508,9 @@ window.addEventListener('keydown', (e) => {
     e.preventDefault();
     searchInput?.focus();
   } else if (e.key === 'Escape') {
-    if (searchQuery) {
+    if (appDrawer && !appDrawer.hidden) {
+      toggleDrawer(false);
+    } else if (searchQuery) {
       searchQuery = '';
       if (searchInput) searchInput.value = '';
       if (searchClear) searchClear.hidden = true;
@@ -593,5 +597,228 @@ if (addAccountForm) {
     }
   });
 }
+
+// Android At-a-Glance Live Clock & Date
+function updateClock() {
+  const now = new Date();
+  const timeEl = $('glance-time');
+  const dateEl = $('glance-date');
+  if (timeEl) {
+    timeEl.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+  }
+  if (dateEl) {
+    dateEl.textContent = now.toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' });
+  }
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// Android App Drawer State & Category Map
+let drawerCategory = 'all';
+let drawerSearch = '';
+
+/** @type {Record<string, string>} */
+const APP_CATEGORIES = {
+  welcome: 'system',
+  profile: 'system',
+  'quick-notes': 'productivity',
+  'world-clock': 'utilities',
+  'clipboard-manager': 'utilities',
+  pomodoro: 'productivity',
+  'color-picker': 'utilities',
+  'markdown-preview': 'dev',
+  'json-tools': 'dev',
+  'outlook-calendar': 'productivity',
+};
+
+/** @param {any} state */
+function renderDrawer(state) {
+  const container = $('drawer-apps');
+  if (!container) return;
+
+  const q = drawerSearch.toLowerCase().trim();
+  const filtered = state.apps.filter((/** @type {any} */ a) => {
+    const cat = APP_CATEGORIES[a.id] ?? 'utilities';
+    if (drawerCategory !== 'all' && cat !== drawerCategory) return false;
+    if (q && !a.title.toLowerCase().includes(q) && !a.id.toLowerCase().includes(q)) return false;
+    return true;
+  });
+
+  container.replaceChildren(...filtered.map((/** @type {any} */ a) => {
+    const btn = el('button', { class: 'app-tile drawer-tile', 'data-id': a.id, 'aria-label': `Launch ${a.title}` }, [
+      createSquircle(a, 'normal'),
+      el('div', { class: 'app-label' }, [
+        el('strong', {}, [a.title]),
+        el('span', {}, [a.publisher || 'Appshell']),
+      ]),
+    ]);
+    btn.addEventListener('click', () => {
+      const drawer = $('app-drawer');
+      if (drawer) drawer.hidden = true;
+      api.open(a.id);
+    });
+    return el('li', {}, [btn]);
+  }));
+}
+
+const appDrawer = $('app-drawer');
+const btnOpenDrawer = $('btn-open-drawer');
+const drawerCloseBtn = $('drawer-close-btn');
+const drawerHandle = $('drawer-handle');
+const gesturePill = $('gesture-pill');
+const drawerSearchInput = /** @type {HTMLInputElement} */ ($('drawer-search-input'));
+
+/** @param {boolean} [open] */
+function toggleDrawer(open) {
+  if (!appDrawer) return;
+  const isHidden = typeof open === 'boolean' ? !open : !appDrawer.hidden;
+  appDrawer.hidden = isHidden;
+  if (!isHidden) {
+    drawerSearch = '';
+    if (drawerSearchInput) {
+      drawerSearchInput.value = '';
+      drawerSearchInput.focus();
+    }
+    if (lastState) renderDrawer(lastState);
+  }
+}
+
+btnOpenDrawer?.addEventListener('click', () => toggleDrawer(true));
+drawerCloseBtn?.addEventListener('click', () => toggleDrawer(false));
+drawerHandle?.addEventListener('click', () => toggleDrawer(false));
+gesturePill?.addEventListener('click', () => toggleDrawer());
+
+if (drawerSearchInput) {
+  drawerSearchInput.addEventListener('input', (e) => {
+    drawerSearch = /** @type {HTMLInputElement} */ (e.target).value;
+    if (lastState) renderDrawer(lastState);
+  });
+}
+
+document.querySelectorAll('.cat-pill').forEach((pill) => {
+  pill.addEventListener('click', () => {
+    document.querySelectorAll('.cat-pill').forEach((p) => p.classList.remove('active'));
+    pill.classList.add('active');
+    drawerCategory = pill.getAttribute('data-cat') || 'all';
+    if (lastState) renderDrawer(lastState);
+  });
+});
+
+// Home Screen & Launcher Customizer Dialog (D13)
+const launcherDialog = /** @type {HTMLDialogElement} */ ($('launcher-settings-dialog'));
+const btnHomeSettings = $('btn-home-settings');
+const launcherDialogClose = $('launcher-dialog-close');
+
+btnHomeSettings?.addEventListener('click', () => {
+  launcherDialog?.showModal();
+});
+launcherDialogClose?.addEventListener('click', () => {
+  launcherDialog?.close();
+});
+if (launcherDialog) {
+  launcherDialog.addEventListener('click', (e) => {
+    if (e.target === launcherDialog) launcherDialog.close();
+  });
+}
+
+/** @param {string} wp */
+function applyWallpaper(wp) {
+  const dash = $('dashboard');
+  if (!dash) return;
+  dash.classList.remove('wp-obsidian', 'wp-aurora', 'wp-cyber', 'wp-violet', 'wp-sunset');
+  dash.classList.add(`wp-${wp}`);
+  document.querySelectorAll('.swatch-btn').forEach((b) => {
+    b.classList.toggle('active', b.getAttribute('data-wp') === wp);
+  });
+  try { localStorage.setItem('appshell_wallpaper', wp); } catch {}
+}
+
+document.querySelectorAll('.swatch-btn').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    const wp = btn.getAttribute('data-wp') || 'obsidian';
+    applyWallpaper(wp);
+  });
+});
+
+/** @param {string} shape */
+function applyIconShape(shape) {
+  document.body.classList.remove('shape-squircle', 'shape-circle', 'shape-rounded', 'shape-teardrop');
+  document.body.classList.add(`shape-${shape}`);
+  document.querySelectorAll('.shape-btn').forEach((b) => {
+    b.classList.toggle('active', b.getAttribute('data-shape') === shape);
+  });
+  try { localStorage.setItem('appshell_icon_shape', shape); } catch {}
+}
+
+document.querySelectorAll('.shape-btn').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    const shape = btn.getAttribute('data-shape') || 'squircle';
+    applyIconShape(shape);
+  });
+});
+
+/** @param {string} density */
+function applyDensity(density) {
+  const dash = $('dashboard');
+  if (!dash) return;
+  dash.classList.remove('density-compact', 'density-standard', 'density-spacious');
+  dash.classList.add(`density-${density}`);
+  document.querySelectorAll('.density-btn').forEach((b) => {
+    b.classList.toggle('active', b.getAttribute('data-density') === density);
+  });
+  try { localStorage.setItem('appshell_density', density); } catch {}
+}
+
+document.querySelectorAll('.density-btn').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    const density = btn.getAttribute('data-density') || 'standard';
+    applyDensity(density);
+  });
+});
+
+/** @param {any} state */
+function renderLauncherChoices(state) {
+  const container = $('launcher-apps-list');
+  if (!container) return;
+  const currentDefault = (() => {
+    try { return localStorage.getItem('appshell_default_launcher') || 'default'; } catch { return 'default'; }
+  })();
+
+  const launcherApps = [
+    { id: 'default', title: 'Appshell Native Springboard', subtitle: 'Built-in At-a-Glance & Bento Shelf Home Experience' },
+    ...state.apps.filter((/** @type {any} */ a) => a.capabilities?.launcher || a.id.includes('launcher')).map((/** @type {any} */ a) => ({
+      id: a.id,
+      title: a.title,
+      subtitle: `${a.publisher} · Custom Launcher Experience`,
+    }))
+  ];
+
+  container.replaceChildren(...launcherApps.map((item) => {
+    const active = item.id === currentDefault;
+    const choice = el('div', { class: `launcher-choice-item${active ? ' active' : ''}` }, [
+      el('div', { class: 'choice-info' }, [
+        el('strong', {}, [item.title]),
+        el('br'),
+        el('small', { class: 'quiet' }, [item.subtitle]),
+      ]),
+      el('span', { class: 'badge' }, [active ? '✓ Default' : 'Select']),
+    ]);
+    choice.addEventListener('click', () => {
+      try { localStorage.setItem('appshell_default_launcher', item.id); } catch {}
+      renderLauncherChoices(state);
+    });
+    return choice;
+  }));
+}
+
+// Restore saved preferences
+try {
+  const savedWp = localStorage.getItem('appshell_wallpaper');
+  if (savedWp) applyWallpaper(savedWp);
+  const savedShape = localStorage.getItem('appshell_icon_shape');
+  if (savedShape) applyIconShape(savedShape);
+  const savedDensity = localStorage.getItem('appshell_density');
+  if (savedDensity) applyDensity(savedDensity);
+} catch {}
 
 api.onState(render);

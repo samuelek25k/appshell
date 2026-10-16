@@ -47,7 +47,8 @@
         "notifications": { "type": "boolean" },
         "secrets": { "type": "array", "items": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" } },
         "identity": { "type": "boolean" },
-        "launcher": { "type": "boolean" }
+        "launcher": { "type": "boolean" },
+        "secureStorage": { "type": "boolean" }
       }
     }
   }

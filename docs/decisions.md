@@ -15,8 +15,11 @@ Every architecture, tooling and dependency choice is recorded here. Agents add e
 | D9 | Install artifact | Decided 2026-10-13 | Gzipped tar of regular files only, built by CI, pinned in the catalog by SHA-256 and commit. The host verifies the digest, refuses links and paths outside the package, and checks the manifest id and version against the catalog. `file://` packages only in developer mode. |
 | D10 | Discovery and providers | Decided 2026-10-13 | One catalog `index.json` per product (`catalog.schema.json`), from the product config. Repository and release URLs must match `policy.allowedSources`. No provider adapters: any HTTPS release URL works. |
 | D11 | Versioning and updates | Decided 2026-10-13 | Semver releases on `stable` or `beta`; the product's `policy.channel` picks what users see. Current and previous versions stay on disk, so rollback needs no download. Updates are user-initiated in Phase 1. |
-| D12 | Signing | Pending | Sigstore or internal PKI; decide in Phase 2. |
-| D13 | Launcher app & shell screen customization | Pending | Allow apps declaring `role: "launcher"` to serve as alternative shell home screens, customize docking/wallpapers/theming, and launch installed apps via sandboxed bridge calls. Zero Node or host IPC access; fallback to native dashboard guaranteed. |
+| D12 | Signing | Decided 2026-10-15 | Option A: Ed25519 detached signatures (`.sig`) generated during release and verified using Node `crypto.verify()` against keys in `policy.trustedKeys` or catalog metadata. Zero new dependencies. |
+| D13 | Launcher app & shell screen customization | Decided 2026-10-15 | Apps declaring `capabilities.launcher` can query installed apps and widgets and launch apps. Standard sandboxed isolation (`app://<id>/`, no Node, no host IPC); emergency fallback `CommandOrControl+Shift+Escape` guaranteed. |
+| D14 | Multi-account identity management | Decided 2026-10-15 | Host manages multiple profiles (Google, Microsoft, Local) in encrypted host storage (0600). Active profile claims propagate into scoped 5-minute Ed25519 tokens via `identity.token`. |
+| D15 | Localization & internationalization | Decided 2026-10-15 | Platform detects system locale, allows user override in settings, and exposes `shell.getLocale` and `shell.localeChanged` event. Shell UI and apps support dynamic RTL and LTR text direction. |
+| D16 | Secure storage at rest | Decided 2026-10-15 | Apps declaring `capabilities.secureStorage` have their `storage.json` encrypted with authenticated AES-256-GCM using per-app keys derived via HKDF-SHA256 from host master secrets. Unencrypted plaintext never touches disk. |
 
 ## Dependencies
 

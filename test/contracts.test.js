@@ -178,4 +178,96 @@ test('backend network preload blocks undeclared network connections', async () =
   assert.equal(child.stdout, 'BLOCKED_ALL');
 });
 
+test('bridge supports shell.getLocale and reports system locale information', async (t) => {
+  const { mkdtempSync, rmSync } = await import('node:fs');
+  const { tmpdir } = await import('node:os');
+  const { join } = await import('node:path');
+  const { createServices } = await import('../packages/host/src/services.js');
+  const { createBridge } = await import('../packages/host/src/bridge.js');
+
+  const dir = mkdtempSync(join(tmpdir(), 'appshell-locale-'));
+  t.after(() => rmSync(dir, { recursive: true, force: true }));
+
+  const bridge = createBridge({
+    policy: {},
+    services: createServices(dir),
+    locale: 'ar-EG',
+    identity: /** @type {any} */ ({}),
+    hostLog: () => {},
+    backendFor: /** @type {any} */ (() => {}),
+    onTitle: () => {},
+    onWidget: () => {},
+    onCloseResponse: () => {},
+  });
+
+  const app = { manifest: { id: 'test-app', version: '1.0.0', title: 'Test', publisher: 'Test', engines: { appshell: '^0.1' }, entry: {} }, dir: '', protected: false };
+  const res = await bridge(app, 'shell.getLocale', {});
+  assert.equal(res.ok, true);
+  if (res.ok) {
+    const data = /** @type {any} */ (res.result);
+    assert.equal(data.locale, 'ar-EG');
+    assert.equal(data.direction, 'rtl');
+    assert.ok(Array.isArray(data.languages));
+    assert.ok(typeof data.timeZone === 'string');
+  }
+});
+
+test('secureStorage capability encrypts data at rest via authenticated AES-256-GCM', async (t) => {
+  const { mkdtempSync, rmSync, readFileSync } = await import('node:fs');
+  const { tmpdir } = await import('node:os');
+  const { join } = await import('node:path');
+  const { createServices } = await import('../packages/host/src/services.js');
+  const { createBridge } = await import('../packages/host/src/bridge.js');
+
+  const dir = mkdtempSync(join(tmpdir(), 'appshell-secstore-'));
+  t.after(() => rmSync(dir, { recursive: true, force: true }));
+
+  const services = createServices(dir);
+  let changedKey = '';
+  let changedVal = null;
+
+  const bridge = createBridge({
+    policy: {},
+    services,
+    identity: /** @type {any} */ ({}),
+    hostLog: () => {},
+    backendFor: /** @type {any} */ (() => {}),
+    onTitle: () => {},
+    onWidget: () => {},
+    onCloseResponse: () => {},
+    onStorageChanged: (_appId, key, val) => {
+      changedKey = key;
+      changedVal = val;
+    },
+  });
+
+  const secureApp = {
+    manifest: {
+      id: 'vault.app', version: '1.0.0', title: 'Vault', publisher: 'Security',
+      engines: { appshell: '^0.1' }, entry: {},
+      capabilities: { secureStorage: true },
+    },
+    dir: '',
+    protected: false,
+  };
+
+  // Set confidential data
+  const setRes = await bridge(secureApp, 'storage.set', { key: 'secret_token', value: { token: 'super-secret-xyz' } });
+  assert.equal(setRes.ok, true);
+  assert.equal(changedKey, 'secret_token');
+  assert.deepEqual(changedVal, { token: 'super-secret-xyz' });
+
+  // Verify file on disk is encrypted
+  const rawDisk = readFileSync(join(dir, 'apps', 'vault.app', 'storage.json'), 'utf8');
+  assert.ok(rawDisk.includes('__appshell_encrypted__'));
+  assert.ok(!rawDisk.includes('super-secret-xyz'));
+
+  // Verify transparent read through bridge returns decrypted data
+  const getRes = await bridge(secureApp, 'storage.get', { key: 'secret_token' });
+  assert.equal(getRes.ok, true);
+  if (getRes.ok) {
+    assert.deepEqual(getRes.result, { token: 'super-secret-xyz' });
+  }
+});
+
 
