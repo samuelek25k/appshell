@@ -102,7 +102,7 @@ Appshell can be branded as a distinct product via a single `product.json`:
 ## Documentation
 
 - **Platform Contract**: [`docs/contracts.md`](docs/contracts.md) (API methods, events, and schemas)
-- **Decision Register**: [`docs/decisions.md`](docs/decisions.md) (Architectural decisions D1–D12)
+- **Decision Register**: [`docs/decisions.md`](docs/decisions.md) (Architectural decisions D1–D21)
 - **Engineering Principles**: [`AGENTS.md`](AGENTS.md) (Rules, liability, and verification gates)
 - **App Store**: [samuelek25k.github.io/appshell-apps](https://samuelek25k.github.io/appshell-apps/)
 - **Product Site**: [samuelek25k.github.io/appshell](https://samuelek25k.github.io/appshell/)

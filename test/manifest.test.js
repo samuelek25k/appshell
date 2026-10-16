@@ -28,14 +28,6 @@ test('capability checks name what is missing', () => {
   assert.equal(METHODS['widgets.update'].requires(manifest, { id: 'nope' }), 'widgets:nope');
   assert.equal(METHODS['identity.token'].requires(manifest, {}), 'identity');
   assert.equal(METHODS['identity.token'].requires({ ...manifest, capabilities: { identity: true } }, {}), null);
-  assert.equal(METHODS['browser.navigate'].requires(manifest, { url: 'https://example.com' }), 'browser');
-  assert.equal(METHODS['browser.navigate'].requires({ ...manifest, capabilities: { browser: true } }, { url: 'https://example.com' }), null);
-  assert.equal(METHODS['browser.navigate'].requires({ ...manifest, capabilities: { browser: { allowedDomains: ['example.com'] } } }, { url: 'https://example.com' }), null);
-  assert.equal(METHODS['browser.navigate'].requires({ ...manifest, capabilities: { browser: { allowedDomains: ['example.com'] } } }, { url: 'https://sub.example.com' }), null);
-  assert.equal(METHODS['browser.navigate'].requires({ ...manifest, capabilities: { browser: { allowedDomains: ['example.com'] } } }, { url: 'https://other.com' }), 'browser:domain:other.com');
-  assert.equal(validate('manifest', { ...manifest, capabilities: { browser: true } }).ok, true);
-  assert.equal(validate('manifest', { ...manifest, capabilities: { browser: { allowedDomains: ['example.com'] } } }).ok, true);
-  assert.equal(validate('manifest', { ...manifest, capabilities: { browser: { allowedDomains: ['INVALID DOMAIN'] } } }).ok, false);
 });
 
 test('product schema validates governance policies and allows omitted capabilities', () => {

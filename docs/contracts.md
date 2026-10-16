@@ -62,13 +62,6 @@ UI: `await window.appshell.call(method, params)`; failures reject with `Error("<
 | `iac.publish` | `channel` (`[A-Za-z0-9_.-]{1,64}`), `data` | `capabilities.iac` (permitting `channel`) |
 | `iac.subscribe` | `channel` (`[A-Za-z0-9_.-]{1,64}`) | `capabilities.iac` (permitting `channel`) |
 | `iac.unsubscribe` | `channel` (`[A-Za-z0-9_.-]{1,64}`) | `capabilities.iac` (permitting `channel`) |
-| `browser.navigate` | `url` ≤ 2048 | `capabilities.browser` (matching domain if allowlist declared) |
-| `browser.act` | `action` (`click` \| `type` \| `press` \| `select`), `selector` ≤ 500, `value` | `capabilities.browser` |
-| `browser.extract` | `selector` ≤ 500 (optional), `format` (`text` \| `html`, optional) | `capabilities.browser` |
-| `browser.evaluate` | `script` ≤ 10000 | `capabilities.browser` |
-| `browser.screenshot` | | `capabilities.browser` |
-| `browser.status` | | `capabilities.browser` |
-| `browser.close` | | `capabilities.browser` |
 
 Limits: storage values ≤ 64 KB, ≤ 1 MB per app. Errors: `UNKNOWN_METHOD`, `INVALID_PARAMS`, `CAPABILITY_DENIED`, `BACKEND_UNAVAILABLE`, `BACKEND_TIMEOUT` (10 s), `BACKEND_ERROR`, `UNKNOWN_CALLER`, `INTERNAL`.
 `shell.getVersions` returns `{ current, previous, installedAt }` for version tracking, schema migration, and stale key pruning.
@@ -88,7 +81,6 @@ Limits: storage values ≤ 64 KB, ≤ 1 MB per app. Errors: `UNKNOWN_METHOD`, `I
 | `storage.changed` | `{ key, value }` | sent when app storage key is mutated |
 | `iac.message` | `{ from, action, payload, timestamp }` | sent when targeted IAC message arrives |
 | `iac.broadcast` | `{ channel, from, data, timestamp }` | sent when topic broadcast arrives |
-| `browser.navigated` | `{ url, title }` | sent when active browser automation session navigates |
 
 Back goes back in the app's history, or home when there is none. Home hides the app and keeps it running.
 
@@ -122,25 +114,3 @@ Host-mediated messaging and topic pub/sub broadcasting:
 - **Targeted Messaging (`iac.send`)**: Sends targeted actions/payloads from App A to App B (`iac.send({ to, action, payload, launchIfNeeded })`). Returns `{ delivered, targetRunning }`. Target app receives `iac.message`. `launchIfNeeded` is only permitted if the target explicitly allows receiving from the sender.
 - **Topic Pub/Sub (`iac.publish` / `iac.subscribe` / `iac.unsubscribe`)**: Apps subscribe to named channels and receive `iac.broadcast` events when another app publishes to that channel.
 - **Security & Audit**: The host verifies and stamps the caller's origin (`from: caller.id`). Unsolicited messages to apps that do not permit the sender are rejected with `CAPABILITY_DENIED`. Apps in `policy.blockedApps` cannot send or receive messages. Events are recorded in `logs/audit.log` (`IAC_MESSAGE_SENT`, `IAC_PUBLISHED`, `IAC_DENIED`).
-
- 
-## Browser Automation (D21)
- 
-Apps can declare `capabilities.browser` in `manifest.json` to automate web tasks on behalf of users:
-- **Capability Declaration**: May be boolean (`true` for unrestricted domain access) or scoped by domain allowlist: `{ allowedDomains: ['example.com'] }`. Subdomains (e.g. `api.example.com`) are permitted when parent domain is listed.
-- **Strict Isolation (Principle 1)**: External sites run in a dedicated, isolated session partition (`persist:browser:<id>`), separate from the app's own origin partition (`persist:app:<id>`). External pages run with `sandbox: true`, `contextIsolation: true`, `nodeIntegration: false`, and have **no Appshell preload** (`window.appshell` does not exist on external pages).
-- **Protocol Restrictions**: Navigation is strictly restricted to `https:` (`http:` permitted only when `developerMode: true`). Protocols like `file:`, `app:`, `javascript:`, `chrome:` are rejected.
-- **Permission & Window Sandboxing**: All Web API permission requests (geolocation, notifications, camera, microphone) are denied. `window.open` requests are denied.
-- **Host-Mediated Automation**:
-  - `browser.navigate({ url })`: loads the destination URL and awaits navigation completion.
-  - `browser.act({ action, selector, value })`: mediates UI actions (`click`, `type`, `press`, `select`).
-  - `browser.extract({ selector, format })`: extracts textual content (`text`) or serialized markup (`html`).
-  - `browser.evaluate({ script })`: executes JavaScript within the isolated context.
-  - `browser.screenshot()`: captures a rendered snapshot as a base64 PNG data URL.
-  - `browser.status()`: returns active session state (`{ active, url, title, loading }`).
-  - `browser.close()`: destroys the active browser session and frees resources.
-- **Audit Logging**: Sensitive navigation, UI actions, and session closures are recorded in `logs/audit.log` (`BROWSER_NAVIGATED`, `BROWSER_ACTION`, `BROWSER_CLOSED`). Session partition data is cleared when the app is uninstalled.
-
-
-
-

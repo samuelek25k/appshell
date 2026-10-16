@@ -60,18 +60,6 @@
               }
             }
           ]
-        },
-        "browser": {
-          "oneOf": [
-            { "type": "boolean" },
-            {
-              "type": "object",
-              "additionalProperties": false,
-              "properties": {
-                "allowedDomains": { "type": "array", "items": { "type": "string", "pattern": "^[a-z0-9.-]+$" } }
-              }
-            }
-          ]
         }
       }
     }
