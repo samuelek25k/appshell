@@ -45,12 +45,34 @@ export const ERRORS = /** @type {const} */ ({
  *   entry: { ui?: string, backend?: string },
  *   display?: 'shell' | 'standalone',
  *   widgets?: { id: string, title: string }[],
- *   capabilities?: { network?: string[], notifications?: boolean, secrets?: string[], identity?: boolean, iac?: boolean | { send?: string[], receive?: string[], channels?: string[] } }
+ *   capabilities?: { network?: string[], notifications?: boolean, secrets?: string[], identity?: boolean, iac?: boolean | { send?: string[], receive?: string[], channels?: string[] }, browser?: boolean | { allowedDomains?: string[] } }
  * }} Manifest
  */
 
 const str = (/** @type {unknown} */ v, max = 1000) => typeof v === 'string' && v.length > 0 && v.length <= max;
 const key = (/** @type {unknown} */ v) => typeof v === 'string' && /^[A-Za-z0-9_.-]{1,64}$/.test(v);
+
+/**
+ * @param {Manifest} m
+ * @param {string} [url]
+ */
+export function checkBrowserCapability(m, url) {
+  const browser = m.capabilities?.browser;
+  if (!browser) return 'browser';
+  if (browser === true) return null;
+  if (typeof browser === 'object') {
+    if (!url || !browser.allowedDomains || browser.allowedDomains.length === 0) return null;
+    let u;
+    try { u = new URL(url); } catch { return 'browser:invalid_url'; }
+    const host = u.hostname.toLowerCase();
+    const allowed = browser.allowedDomains.some((d) => {
+      const pattern = d.toLowerCase();
+      return host === pattern || host.endsWith('.' + pattern);
+    });
+    return allowed ? null : `browser:domain:${host}`;
+  }
+  return 'browser';
+}
 
 /**
  * @param {Manifest} m
@@ -148,6 +170,34 @@ export const METHODS = {
     params: (p) => key(p?.channel),
     requires: (m, p) => checkIacChannel(m, p.channel),
   },
+  'browser.navigate': {
+    params: (p) => str(p?.url, 2048),
+    requires: (m, p) => checkBrowserCapability(m, p?.url),
+  },
+  'browser.act': {
+    params: (p) => ['click', 'type', 'press', 'select'].includes(p?.action) && str(p?.selector, 500) && (p?.value === undefined || typeof p?.value === 'string'),
+    requires: (m) => checkBrowserCapability(m),
+  },
+  'browser.extract': {
+    params: (p) => (p?.selector === undefined || str(p?.selector, 500)) && (p?.format === undefined || ['text', 'html'].includes(p?.format)),
+    requires: (m) => checkBrowserCapability(m),
+  },
+  'browser.evaluate': {
+    params: (p) => str(p?.script, 10000),
+    requires: (m) => checkBrowserCapability(m),
+  },
+  'browser.screenshot': {
+    params: () => true,
+    requires: (m) => checkBrowserCapability(m),
+  },
+  'browser.status': {
+    params: () => true,
+    requires: (m) => checkBrowserCapability(m),
+  },
+  'browser.close': {
+    params: () => true,
+    requires: (m) => checkBrowserCapability(m),
+  },
 };
 
 export const EVENTS = /** @type {const} */ ([
@@ -158,6 +208,7 @@ export const EVENTS = /** @type {const} */ ([
   'storage.changed',
   'iac.message',
   'iac.broadcast',
+  'browser.navigated',
 ]);
 
 /**

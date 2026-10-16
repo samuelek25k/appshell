@@ -11,6 +11,7 @@ import { createServices } from './services.js';
 import { createBackend } from './backend.js';
 import { createBridge } from './bridge.js';
 import { createAppView } from './views.js';
+import { createBrowserManager } from './browser.js';
 
 const CHROME_HEIGHT = 48;
 const HOST_UI = fileURLToPath(new URL('../ui/index.html', import.meta.url));
@@ -135,11 +136,21 @@ const identity = createIdentity(join(dataRoot, 'identity'), product.dataDirector
 /** @type {Map<string, Set<string>>} */
 const channelSubscriptions = new Map();
 
+const browserManager = createBrowserManager({
+  developerMode: product.policy.developerMode,
+  hostLog,
+  audit: (entry) => services.audit(entry),
+  onNavigated(appId, info) {
+    running.get(appId)?.view.webContents.send('appshell:event', 'browser.navigated', info);
+  },
+});
+
 const bridge = createBridge({
   policy: product.policy,
   services,
   identity,
   hostLog,
+  browser: browserManager,
   locale: product.defaultLocale ?? 'en-US',
   getTheme: () => ({ source: nativeTheme.themeSource, dark: nativeTheme.shouldUseDarkColors }),
   getVersions: (appId) => {
@@ -344,6 +355,7 @@ function stop(appId) {
   widgets.delete(appId);
   backends.get(appId)?.stop();
   backends.delete(appId);
+  browserManager.close(appId);
   for (const [ch, set] of channelSubscriptions.entries()) {
     set.delete(appId);
     if (set.size === 0) channelSubscriptions.delete(ch);
@@ -420,6 +432,7 @@ ipcMain.handle('host:uninstall', (event, id) => fromHost(event) && manage(id, as
   services.removeAppData(id);
   services.removeAppLogs(id);
   await session.fromPartition(`persist:app:${id}`).clearStorageData();
+  await session.fromPartition(`persist:browser:${id}`).clearStorageData();
 }, 'APP_UNINSTALLED'));
 ipcMain.handle('host:open', (event, id) => fromHost(event) && open(id));
 ipcMain.handle('host:home', (event) => {

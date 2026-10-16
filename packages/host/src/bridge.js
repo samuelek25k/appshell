@@ -20,6 +20,7 @@ import { fail } from './services.js';
  *   canReceiveIac?: (targetId: string, fromId: string) => boolean,
  *   getTheme?: () => { source: 'system' | 'light' | 'dark', dark: boolean },
  *   getVersions?: (appId: string) => { current: string, previous: string | null, installedAt: string },
+ *   browser?: ReturnType<typeof import('./browser.js').createBrowserManager>,
  * }} BridgeDeps
  */
 
@@ -112,6 +113,13 @@ export function createBridge(deps) {
       const ok = deps.onIacUnsubscribe?.(id, p.channel) ?? true;
       return { channel: p.channel, unsubscribed: ok };
     },
+    'browser.navigate': (id, p, app) => deps.browser ? deps.browser.navigate(id, app.manifest, p.url) : Promise.reject(fail(ERRORS.CAPABILITY_DENIED, 'browser manager not available')),
+    'browser.act': (id, p) => deps.browser ? deps.browser.act(id, p) : Promise.reject(fail(ERRORS.CAPABILITY_DENIED, 'browser manager not available')),
+    'browser.extract': (id, p) => deps.browser ? deps.browser.extract(id, p) : Promise.reject(fail(ERRORS.CAPABILITY_DENIED, 'browser manager not available')),
+    'browser.evaluate': (id, p) => deps.browser ? deps.browser.evaluate(id, p) : Promise.reject(fail(ERRORS.CAPABILITY_DENIED, 'browser manager not available')),
+    'browser.screenshot': (id) => deps.browser ? deps.browser.screenshot(id) : Promise.reject(fail(ERRORS.CAPABILITY_DENIED, 'browser manager not available')),
+    'browser.status': (id) => deps.browser ? deps.browser.status(id) : Promise.resolve({ active: false }),
+    'browser.close': (id) => deps.browser ? deps.browser.close(id) : Promise.resolve({ closed: false }),
   };
 
   return async (app, method, params) => {

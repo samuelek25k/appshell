@@ -91,3 +91,50 @@ export const iac = {
    */
   onBroadcast: (fn) => bridge.on('iac.broadcast', fn),
 };
+
+export const browser = {
+  /**
+   * @param {string} url
+   * @returns {Promise<{ url: string, title: string }>}
+   */
+  navigate: (url) => call('browser.navigate', { url }),
+
+  /**
+   * @param {{ action: 'click' | 'type' | 'press' | 'select', selector: string, value?: string }} params
+   * @returns {Promise<{ action: string, selector: string, success: boolean }>}
+   */
+  act: (params) => call('browser.act', params),
+
+  /**
+   * @param {{ selector?: string, format?: 'text' | 'html' }} [params]
+   * @returns {Promise<{ value: string | null }>}
+   */
+  extract: (params = {}) => call('browser.extract', params),
+
+  /**
+   * @param {string} script
+   * @returns {Promise<{ result: unknown }>}
+   */
+  evaluate: (script) => call('browser.evaluate', { script }),
+
+  /**
+   * @returns {Promise<{ dataUrl: string }>}
+   */
+  screenshot: () => call('browser.screenshot'),
+
+  /**
+   * @returns {Promise<{ active: boolean, url: string | null, title: string | null, loading: boolean }>}
+   */
+  status: () => call('browser.status'),
+
+  /**
+   * @returns {Promise<{ closed: boolean }>}
+   */
+  close: () => call('browser.close'),
+
+  /**
+   * @param {(info: { url: string, title: string }) => void} fn
+   */
+  onNavigated: (fn) => bridge.on('browser.navigated', fn),
+};
+
