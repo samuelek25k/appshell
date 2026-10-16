@@ -185,6 +185,7 @@
         ],
         "properties": {
           "capabilities": {
+            "type": "object",
             "required": [
               "launcher"
             ],

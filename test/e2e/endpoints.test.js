@@ -3,12 +3,12 @@ import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { once } from 'node:events';
 import { createServer } from 'node:http';
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { accountRoot, evaluate, waitForPage } from './cdp.js';
+import { accountRoot, evaluate, readJsonFile, waitForPage } from './cdp.js';
 
 const root = fileURLToPath(new URL('../..', import.meta.url));
 const electron = /** @type {string} */ (createRequire(import.meta.url)('electron'));
@@ -52,8 +52,8 @@ test('an approved address works for that app only and stops working when removed
   const ui = (/** @type {string} */ js) => evaluate(port, 'file://', js);
   await ui("host.open('reach')");
   const store = join(accountRoot(userData), 'apps', 'reach', 'storage.json');
-  await until(() => existsSync(store) && 'report' in JSON.parse(readFileSync(store, 'utf8')));
-  const { report } = JSON.parse(readFileSync(store, 'utf8'));
+  await until(() => readJsonFile(store)?.report !== undefined);
+  const { report } = readJsonFile(store);
 
   assert.equal(report.before, 'blocked', 'nothing is reachable before approval');
   assert.deepEqual(report.grant, { approved: true, address: new URL(allowed.url).origin });
@@ -65,6 +65,6 @@ test('an approved address works for that app only and stops working when removed
 
   await ui(`host.removeEndpoint('reach', ${JSON.stringify(new URL(allowed.url).origin)})`);
   await evaluate(port, 'app://reach', "document.getElementById('again').click()");
-  await until(() => 'again' in JSON.parse(readFileSync(store, 'utf8')));
-  assert.equal(JSON.parse(readFileSync(store, 'utf8')).again, 'blocked', 'removal takes effect without a restart');
+  await until(() => readJsonFile(store)?.again !== undefined);
+  assert.equal(readJsonFile(store).again, 'blocked', 'removal takes effect without a restart');
 });
