@@ -20,8 +20,9 @@ Status on 2026-10-14. Update this file when work lands; delete items that are do
 - [ ] After merging, push tag `welcome-v0.1.0` in appshell-apps to publish the first catalog app.
 - [x] Confirm D8–D16 decisions.
 
-## Next: Phase 1 gate
+## Next: Phase 1 gate & UI streamlining
 
+- [ ] Streamline host UI: simplify heavy launcher concepts (drawer, gesture pill, dock, glance clock) into a lean, fast desktop layout for apps, widgets, and catalog matching `docs/contracts.md`.
 - [ ] Timed walkthrough: template to installed release in under 15 minutes, using the docs only.
 - [ ] Run the hostile-app gate against a packaged build, because hardened builds may drop `NODE_OPTIONS` (see Known risks in `docs/decisions.md`).
 
