@@ -186,6 +186,15 @@ test('builder config generates installer configuration for Windows, macOS and Li
   assert.equal(cfg.appId, 'dev.appshell.appshell');
   assert.equal(cfg.productName, 'Appshell');
   assert.equal(cfg.icon, 'products/appshell/assets/icon.png');
+  assert.deepEqual(cfg.extraMetadata, { name: 'appshell' });
+  assert.deepEqual(cfg.electronFuses, {
+    runAsNode: false,
+    enableCookieEncryption: true,
+    enableNodeOptionsEnvironmentVariable: true,
+    enableNodeCliInspectArguments: false,
+    enableEmbeddedAsarIntegrityValidation: true,
+    onlyLoadAppFromAsar: true,
+  });
 
   assert.deepEqual(cfg.win.target, [{ target: 'nsis', arch: ['x64'] }]);
   assert.equal(cfg.nsis.oneClick, false);

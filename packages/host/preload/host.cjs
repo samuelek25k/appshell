@@ -1,6 +1,7 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('host', {
+  sandboxed: Boolean(process.sandboxed),
   open: (appId) => ipcRenderer.invoke('host:open', String(appId)),
   home: () => ipcRenderer.invoke('host:home'),
   back: () => ipcRenderer.invoke('host:back'),
@@ -12,6 +13,7 @@ contextBridge.exposeInMainWorld('host', {
   uninstall: (appId) => ipcRenderer.invoke('host:uninstall', String(appId)),
   widgetAction: (appId, widgetId, actionId) => ipcRenderer.invoke('host:widgetAction', String(appId), String(widgetId), String(actionId)),
   setTheme: (theme) => ipcRenderer.invoke('host:setTheme', String(theme)),
+  setLocale: (locale) => ipcRenderer.invoke('host:setLocale', String(locale)),
   switchAccount: (id) => ipcRenderer.invoke('host:accounts:switch', String(id)),
   addAccount: (data) => ipcRenderer.invoke('host:accounts:add', data),
   removeAccount: (id) => ipcRenderer.invoke('host:accounts:remove', String(id)),

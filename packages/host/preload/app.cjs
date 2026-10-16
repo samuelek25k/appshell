@@ -7,6 +7,7 @@ ipcRenderer.on('appshell:event', (_event, name, payload) => {
 });
 
 contextBridge.exposeInMainWorld('appshell', {
+  sandboxed: Boolean(process.sandboxed),
   async call(method, params) {
     const reply = await ipcRenderer.invoke('appshell:call', String(method), params ?? {});
     if (!reply.ok) throw new Error(`${reply.error.code}: ${reply.error.message}`);

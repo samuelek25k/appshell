@@ -9,6 +9,70 @@ const IDLE_MS = 60_000;
 const MAX_RESTARTS = 3;
 const rawPreload = (realpathSync.native ?? realpathSync)(fileURLToPath(new URL('../preload/backend.cjs', import.meta.url)));
 const BACKEND_PRELOAD = rawPreload.startsWith('\\\\?\\') ? rawPreload.slice(4) : rawPreload;
+const rawProbe = (realpathSync.native ?? realpathSync)(fileURLToPath(new URL('./probe.cjs', import.meta.url)));
+const PROBE_FILE = rawProbe.startsWith('\\\\?\\') ? rawProbe.slice(4) : rawProbe;
+const rawProbeDir = (realpathSync.native ?? realpathSync)(resolve(PROBE_FILE, '..'));
+const PROBE_DIR = rawProbeDir.startsWith('\\\\?\\') ? rawProbeDir.slice(4) : rawProbeDir;
+
+/** @type {Promise<boolean> | null} */
+let probeVerification = null;
+
+/**
+ * @param {(level: string, message: string) => void} log
+ * @returns {Promise<boolean>}
+ */
+export function verifyBackendSecurity(log) {
+  if (probeVerification) return probeVerification;
+
+  probeVerification = new Promise((resolveVerification) => {
+    const env = {
+      NODE_OPTIONS: `--permission --allow-fs-read="${PROBE_DIR.replaceAll('\\', '\\\\')}" --allow-fs-read="${BACKEND_PRELOAD.replaceAll('\\', '\\\\')}" --require="${BACKEND_PRELOAD.replaceAll('\\', '\\\\')}"`,
+      APPSHELL_APP_ID: '_probe',
+      APPSHELL_ALLOWED_HOSTS: '',
+      ...(process.env.SystemRoot ? { SystemRoot: process.env.SystemRoot } : {}),
+    };
+
+    let settled = false;
+    const finish = (/** @type {boolean} */ ok, /** @type {string} */ reason) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      if (!ok) {
+        log('error', `backend security self-check failed: ${reason}`);
+      }
+      resolveVerification(ok);
+    };
+
+    const timer = setTimeout(() => finish(false, 'probe timed out'), 5_000);
+
+    try {
+      const proc = utilityProcess.fork(PROBE_FILE, [], {
+        serviceName: 'backend:probe',
+        stdio: 'pipe',
+        cwd: PROBE_DIR,
+        env,
+      });
+
+      proc.on('message', (msg) => {
+        if (msg && msg.ok) {
+          finish(true, '');
+        } else {
+          finish(false, String(msg?.error ?? 'probe reported failure'));
+        }
+      });
+
+      proc.on('exit', (code) => {
+        if (!settled) {
+          finish(code === 0, `probe exited with code ${code}`);
+        }
+      });
+    } catch (err) {
+      finish(false, err instanceof Error ? err.message : String(err));
+    }
+  });
+
+  return probeVerification;
+}
 
 /**
  * @param {import('./registry.js').InstalledApp} app
@@ -63,8 +127,10 @@ export function createBackend(app, log) {
 
   return {
     /** @param {string} method @param {unknown} params */
-    call(method, params) {
+    async call(method, params) {
       if (crashes > MAX_RESTARTS) return Promise.reject(fail('BACKEND_UNAVAILABLE', 'backend crashed too often'));
+      const secure = await verifyBackendSecurity(log);
+      if (!secure) return Promise.reject(fail('BACKEND_UNAVAILABLE', 'backend security validation failed'));
       child ??= start();
       clearTimeout(idle);
       idle = setTimeout(() => this.stop(), IDLE_MS);

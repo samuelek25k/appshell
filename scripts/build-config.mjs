@@ -33,11 +33,20 @@ export function generateBuildConfig(productPath, cwd = process.cwd()) {
     appId: `dev.appshell.${product.dataDirectory}`,
     productName: product.name,
     directories: { app: 'packages/host', output: 'dist' },
+    extraMetadata: { name: product.dataDirectory },
     extraResources: [{
       from: productDir,
       to: 'product',
       filter: ['product.json', 'assets{,/**}', ...(product.apps || []).flatMap((/** @type {any} */ a) => [`apps/${a.path}{,/**}`, `${a.path}{,/**}`])],
     }],
+    electronFuses: {
+      runAsNode: false,
+      enableCookieEncryption: true,
+      enableNodeOptionsEnvironmentVariable: true,
+      enableNodeCliInspectArguments: false,
+      enableEmbeddedAsarIntegrityValidation: true,
+      onlyLoadAppFromAsar: true,
+    },
     protocols: [{ name: product.name, schemes: [product.protocol] }],
     ...(relIcon ? { icon: relIcon } : {}),
     win: {

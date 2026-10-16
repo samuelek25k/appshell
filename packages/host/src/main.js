@@ -12,6 +12,12 @@ import { createBackend } from './backend.js';
 import { createBridge } from './bridge.js';
 import { createAppView } from './views.js';
 
+if (app.isPackaged && app.commandLine.hasSwitch('no-sandbox')) {
+  console.error('Running with --no-sandbox is refused in packaged builds');
+  app.exit(1);
+}
+app.enableSandbox();
+
 const CHROME_HEIGHT = 48;
 const HOST_UI = fileURLToPath(new URL('../ui/index.html', import.meta.url));
 const HOST_PRELOAD = fileURLToPath(new URL('../preload/host.cjs', import.meta.url));
@@ -152,6 +158,7 @@ function setLocale(loc) {
   for (const { view } of running.values()) {
     view.webContents.send('appshell:event', 'shell.localeChanged', payload);
   }
+  publish();
 }
 
 const bridge = createBridge({
@@ -265,6 +272,7 @@ function publish() {
   win.webContents.send('host:state', {
     product: product.name,
     brand: { logo: brandLogo, colors: brandColors },
+    locale: currentLocale,
     active,
     title: active ? running.get(active)?.title : product.name,
     theme: { source: nativeTheme.themeSource, dark: nativeTheme.shouldUseDarkColors },

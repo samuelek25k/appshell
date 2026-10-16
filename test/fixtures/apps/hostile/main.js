@@ -15,6 +15,7 @@ await new Promise((r) => setTimeout(r, 1500));
 
 await check('noNodeGlobals', () =>
   [typeof require, typeof process, typeof module, typeof Buffer].every((t) => t === 'undefined') ? 'blocked' : 'ESCAPED: Node globals present');
+await check('rendererSandboxed', () => (window.appshell?.sandboxed ? 'blocked' : 'ESCAPED: renderer not sandboxed'));
 await check('noElectronIpc', () => ('ipcRenderer' in window || 'electron' in window ? 'ESCAPED: IPC exposed' : 'blocked'));
 await check('crossAppFetch', () => fails(fetch('app://victim/main.js')));
 await check('undeclaredNetwork', () => fails(fetch('https://example.com/')));

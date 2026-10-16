@@ -10,6 +10,7 @@ const fallbackApi = {
   uninstall(/** @type {string} */ id) {},
   widgetAction(/** @type {string} */ appId, /** @type {string} */ widgetId, /** @type {string} */ actionId) {},
   setTheme(/** @type {string} */ _theme) {},
+  setLocale(/** @type {string} */ _loc) {},
   onState(/** @type {(s: any) => void} */ fn) {},
 };
 
@@ -222,6 +223,11 @@ function render(state) {
     if (dark) dark.hidden = themeSource !== 'dark';
   }
 
+  const localeSelect = /** @type {HTMLSelectElement | null} */ ($('locale-select'));
+  if (localeSelect && state.locale) {
+    localeSelect.value = state.locale;
+  }
+
   renderApps(state);
   renderWidgets(state);
   renderCatalog(state);
@@ -303,6 +309,10 @@ function wireEvents() {
     const current = currentState?.theme?.source ?? 'system';
     const next = current === 'system' ? 'light' : current === 'light' ? 'dark' : 'system';
     api.setTheme(next);
+  });
+  $('locale-select')?.addEventListener('change', (e) => {
+    const target = /** @type {HTMLSelectElement} */ (e.target);
+    api.setLocale(target.value);
   });
 
   $('apps')?.addEventListener('click', (e) => {
