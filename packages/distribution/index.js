@@ -133,16 +133,35 @@ export async function readUrl(/** @type {string} */ url, /** @type {typeof fetch
  */
 export function createStore(root) {
   const stateFile = join(root, 'installed.json');
+  /** @returns {{ ok: boolean, state: Record<string, { current: Provenance, previous: Provenance | null }> }} */
+  const readState = () => {
+    if (!existsSync(stateFile)) return { ok: true, state: {} };
+    try {
+      const parsed = JSON.parse(readFileSync(stateFile, 'utf8'));
+      if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+        return { ok: false, state: {} };
+      }
+      return { ok: true, state: parsed };
+    } catch {
+      return { ok: false, state: {} };
+    }
+  };
   /** @returns {Record<string, { current: Provenance, previous: Provenance | null }>} */
-  const read = () => { try { return JSON.parse(readFileSync(stateFile, 'utf8')); } catch { return {}; } };
-  const write = (/** @type {object} */ state) => { mkdirSync(root, { recursive: true }); writeFileSync(stateFile, JSON.stringify(state, null, 2)); };
+  const read = () => readState().state;
+  const write = (/** @type {object} */ state) => {
+    mkdirSync(root, { recursive: true });
+    const tmp = join(root, `.installed.${randomUUID()}.tmp`);
+    writeFileSync(tmp, JSON.stringify(state, null, 2));
+    renameSync(tmp, stateFile);
+  };
   const dirOf = (/** @type {Provenance} */ p) => join(root, p.id, p.version);
 
   const prune = () => {
     if (!existsSync(root)) return;
     const stagingDir = join(root, '.staging');
     if (existsSync(stagingDir)) rmSync(stagingDir, { recursive: true, force: true });
-    const state = read();
+    const { ok, state } = readState();
+    if (!ok) return;
     const installedIds = new Set(Object.keys(state));
     for (const name of readdirSync(root)) {
       if (name.startsWith('.') || name === 'installed.json') continue;
@@ -152,7 +171,7 @@ export function createStore(root) {
         continue;
       }
       const s = state[name];
-      const keep = new Set([s.current?.version, s.previous?.version].filter(Boolean));
+      const keep = new Set([s?.current?.version, s?.previous?.version].filter(Boolean));
       for (const ver of readdirSync(appRoot)) {
         if (!keep.has(ver)) rmSync(join(appRoot, ver), { recursive: true, force: true });
       }

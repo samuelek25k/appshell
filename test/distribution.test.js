@@ -158,6 +158,19 @@ test('store prunes staging directories, unlisted apps, and obsolete versions', a
   assert.equal(existsSync(join(installedDir, 'victim', '1.1.0')), true);
 });
 
+test('damaged installed.json skips prune and preserves installed apps', async (t) => {
+  const work = workspace(t);
+  const installedDir = join(work, 'installed');
+  const store = createStore(installedDir);
+  const v1 = await release(work, '1.0.0');
+  await store.install(entry([v1]), v1, { hostVersion: HOST, policy: devPolicy });
+  assert.equal(existsSync(join(installedDir, 'victim', '1.0.0')), true);
+
+  writeFileSync(join(installedDir, 'installed.json'), '{ invalid json truncation');
+  store.prune();
+  assert.equal(existsSync(join(installedDir, 'victim', '1.0.0')), true);
+});
+
 test('isInside validates nested paths and handles platform prefix and casing', () => {
   assert.equal(isInside('/app/dir', '/app/dir/index.html'), true);
   assert.equal(isInside('/app/dir', '/app/dir'), true);
