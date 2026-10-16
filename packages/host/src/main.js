@@ -1,6 +1,6 @@
-import { app, BrowserWindow, ipcMain, net, protocol, session } from 'electron';
+import { app, BrowserWindow, ipcMain, nativeTheme, net, protocol, session } from 'electron';
 import { randomUUID } from 'node:crypto';
-import { appendFileSync, existsSync, mkdirSync } from 'node:fs';
+import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { CLOSE_VETO_TIMEOUT_MS, allowsIacReceive } from '@appshell/contracts';
@@ -26,11 +26,64 @@ const flag = (name) => {
 
 const productFile = resolve(flag('--product') ?? join(process.resourcesPath, 'product', 'product.json'));
 const product = loadProduct(productFile);
-const appsRoot = resolve(flag('--apps') ?? join(dirname(productFile), 'apps'));
+const productDir = dirname(productFile);
+const assetsDir = join(productDir, 'assets');
+const appsRoot = resolve(flag('--apps') ?? join(productDir, 'apps'));
+
+/** @type {string | null} */
+let brandLogo = null;
+const markCandidate = [
+  join(assetsDir, 'mark.svg'),
+  join(productDir, 'mark.svg'),
+  join(process.resourcesPath, 'product', 'assets', 'mark.svg'),
+  join(process.resourcesPath, 'product', 'mark.svg'),
+].find((p) => existsSync(p));
+if (markCandidate) {
+  try {
+    const svgText = readFileSync(markCandidate, 'utf8');
+    brandLogo = `data:image/svg+xml;utf8,${encodeURIComponent(svgText)}`;
+  } catch {}
+}
+
+/** @type {Record<string, string>} */
+let brandColors = {};
+const brandFile = [
+  join(assetsDir, 'brand.json'),
+  join(productDir, 'brand.json'),
+  join(process.resourcesPath, 'product', 'assets', 'brand.json'),
+  join(process.resourcesPath, 'product', 'brand.json'),
+].find((p) => existsSync(p));
+if (brandFile) {
+  try {
+    brandColors = JSON.parse(readFileSync(brandFile, 'utf8'));
+  } catch {}
+}
 
 app.setName(product.name);
 app.setPath('userData', resolve(flag('--user-data') ?? join(app.getPath('appData'), product.dataDirectory)));
 const dataRoot = app.getPath('userData');
+
+const settingsFile = join(dataRoot, 'settings.json');
+/** @type {{ theme?: 'system' | 'light' | 'dark' }} */
+let settings = {};
+try {
+  settings = JSON.parse(readFileSync(settingsFile, 'utf8'));
+} catch {}
+if (settings.theme && ['system', 'light', 'dark'].includes(settings.theme)) {
+  nativeTheme.themeSource = settings.theme;
+}
+
+/** @param {'system' | 'light' | 'dark'} theme */
+function setTheme(theme) {
+  if (!['system', 'light', 'dark'].includes(theme)) return;
+  nativeTheme.themeSource = theme;
+  settings.theme = theme;
+  try {
+    writeFileSync(settingsFile, JSON.stringify(settings, null, 2), 'utf8');
+  } catch (error) {
+    hostLog(`failed to save settings: ${error instanceof Error ? error.message : String(error)}`);
+  }
+}
 
 /** @param {string} message */
 const hostLog = (message) => {
@@ -88,6 +141,16 @@ const bridge = createBridge({
   identity,
   hostLog,
   locale: product.defaultLocale ?? 'en-US',
+  getTheme: () => ({ source: nativeTheme.themeSource, dark: nativeTheme.shouldUseDarkColors }),
+  getVersions: (appId) => {
+    const prov = manager.provenance(appId);
+    const app = apps.get(appId);
+    return {
+      current: prov?.current.version ?? app?.manifest.version ?? '0.0.0',
+      previous: prov?.previous?.version ?? null,
+      installedAt: prov?.current.installedAt ?? new Date().toISOString(),
+    };
+  },
   onStorageChanged(appId, key, value) {
     running.get(appId)?.view.webContents.send('appshell:event', 'storage.changed', { key, value });
   },
@@ -182,8 +245,10 @@ function publish() {
   if (!win) return;
   win.webContents.send('host:state', {
     product: product.name,
+    brand: { logo: brandLogo, colors: brandColors },
     active,
     title: active ? running.get(active)?.title : product.name,
+    theme: { source: nativeTheme.themeSource, dark: nativeTheme.shouldUseDarkColors },
     apps: [...apps.values()].map(({ manifest, protected: isProtected }) => ({
       id: manifest.id,
       title: manifest.title,
@@ -218,6 +283,9 @@ async function manage(appId, action, eventType = 'APP_MANAGED') {
   stop(appId);
   try {
     await action();
+    if (eventType === 'APP_INSTALLED' || eventType === 'APP_ROLLEDBACK') {
+      try { await session.fromPartition(`persist:app:${appId}`).clearCache(); } catch {}
+    }
     services.audit({ event: eventType, actor: identity.getSubject(), target: appId });
     managerError = null;
   } catch (error) {
@@ -343,6 +411,7 @@ ipcMain.handle('host:rollback', (event, id) => fromHost(event) && manage(id, () 
 ipcMain.handle('host:uninstall', (event, id) => fromHost(event) && manage(id, async () => {
   manager.uninstall(id);
   services.removeAppData(id);
+  services.removeAppLogs(id);
   await session.fromPartition(`persist:app:${id}`).clearStorageData();
 }, 'APP_UNINSTALLED'));
 ipcMain.handle('host:open', (event, id) => fromHost(event) && open(id));
@@ -359,12 +428,24 @@ ipcMain.handle('host:back', (event) => {
   else { active = null; layout(); publish(); }
 });
 ipcMain.handle('host:close', (event) => fromHost(event) && active && requestClose(active));
+ipcMain.handle('host:setTheme', (event, theme) => {
+  if (fromHost(event) && ['system', 'light', 'dark'].includes(theme)) {
+    setTheme(/** @type {'system' | 'light' | 'dark'} */ (theme));
+  }
+});
 ipcMain.handle('host:widgetAction', (event, appId, widgetId, actionId) => {
   if (!fromHost(event)) return;
   const descriptor = /** @type {any} */ (widgets.get(appId)?.[widgetId]);
   const declared = descriptor?.blocks?.some((/** @type {any} */ b) => b.type === 'actions' && b.actions.some((/** @type {any} */ a) => a.id === actionId));
   if (!declared || !open(appId)) return;
   running.get(appId)?.view.webContents.send('appshell:event', 'widgets.action', { widget: widgetId, action: actionId });
+});
+nativeTheme.on('updated', () => {
+  publish();
+  const themePayload = { source: nativeTheme.themeSource, dark: nativeTheme.shouldUseDarkColors };
+  for (const { view } of running.values()) {
+    view.webContents.send('appshell:event', 'shell.themeChanged', themePayload);
+  }
 });
 app.on('second-instance', (_event, argv) => {
   links(argv).forEach(handleLink);
@@ -381,8 +462,12 @@ app.on('web-contents-created', (_event, contents) => {
 app.whenReady().then(async () => {
   if (app.isPackaged) app.setAsDefaultProtocolClient(product.protocol);
   const iconFile = [
-    join(dirname(productFile), 'icon.png'),
-    join(dirname(productFile), 'icon.ico'),
+    join(assetsDir, 'icon.png'),
+    join(assetsDir, 'icon.ico'),
+    join(productDir, 'icon.png'),
+    join(productDir, 'icon.ico'),
+    join(process.resourcesPath, 'product', 'assets', 'icon.png'),
+    join(process.resourcesPath, 'product', 'assets', 'icon.ico'),
     join(process.resourcesPath, 'product', 'icon.png'),
     join(process.resourcesPath, 'product', 'icon.ico'),
   ].find((p) => existsSync(p));

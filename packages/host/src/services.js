@@ -123,5 +123,7 @@ export function createServices(root) {
 
     /** @param {string} id */
     removeAppData: (id) => rmSync(join(root, 'apps', id), { recursive: true, force: true }),
+    /** @param {string} id */
+    removeAppLogs: (id) => rmSync(join(root, 'logs', `${id}.log`), { force: true }),
   };
 }

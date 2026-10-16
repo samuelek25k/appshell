@@ -130,3 +130,30 @@ test('symlinks in a package are not extracted', { skip: process.platform === 'wi
   await store.install(entry([evil]), evil, { hostVersion: HOST, policy: devPolicy });
   assert.equal(existsSync(join(work, 'installed', 'victim', '1.0.0', 'hosts-link')), false);
 });
+
+test('store prunes staging directories, unlisted apps, and obsolete versions', async (t) => {
+  const work = workspace(t);
+  const installedDir = join(work, 'installed');
+  const store = createStore(installedDir);
+  const v1 = await release(work, '1.0.0');
+  const v2 = await release(work, '1.1.0');
+  await store.install(entry([v1, v2]), v1, { hostVersion: HOST, policy: devPolicy });
+  await store.install(entry([v1, v2]), v2, { hostVersion: HOST, policy: devPolicy });
+
+  mkdirSync(join(installedDir, '.staging', 'orphan-stage'), { recursive: true });
+  writeFileSync(join(installedDir, '.staging', 'orphan-stage', 'junk.txt'), 'stale');
+  mkdirSync(join(installedDir, 'unlisted-app', '1.0.0'), { recursive: true });
+  mkdirSync(join(installedDir, 'victim', '0.0.1'), { recursive: true });
+
+  assert.equal(existsSync(join(installedDir, '.staging', 'orphan-stage')), true);
+  assert.equal(existsSync(join(installedDir, 'unlisted-app')), true);
+  assert.equal(existsSync(join(installedDir, 'victim', '0.0.1')), true);
+
+  store.prune();
+
+  assert.equal(existsSync(join(installedDir, '.staging')), false);
+  assert.equal(existsSync(join(installedDir, 'unlisted-app')), false);
+  assert.equal(existsSync(join(installedDir, 'victim', '0.0.1')), false);
+  assert.equal(existsSync(join(installedDir, 'victim', '1.0.0')), true);
+  assert.equal(existsSync(join(installedDir, 'victim', '1.1.0')), true);
+});

@@ -3,17 +3,21 @@ const net = require('node:net');
 const rawAllowed = process.env.APPSHELL_ALLOWED_HOSTS ?? '';
 delete process.env.APPSHELL_ALLOWED_HOSTS;
 
-const allowedHosts = new Set(
-  rawAllowed
-    .split(',')
-    .map((h) => h.trim().toLowerCase().split(':')[0])
-    .filter(Boolean)
-);
+const allowedEntries = rawAllowed
+  .split(',')
+  .map((h) => h.trim().toLowerCase())
+  .filter(Boolean);
+
+const allowedHosts = new Set(allowedEntries);
+const allowedHostnames = new Set(allowedEntries.map((h) => h.split(':')[0]));
 
 function isAllowed(host, port) {
   if (!host) return false;
   const clean = String(host).toLowerCase();
-  return allowedHosts.has(clean) || (port !== undefined && port !== '' && allowedHosts.has(`${clean}:${port}`));
+  if (port !== undefined && port !== '') {
+    return allowedHosts.has(clean) || allowedHosts.has(`${clean}:${port}`);
+  }
+  return allowedHosts.has(clean) || allowedHostnames.has(clean);
 }
 try {
   const dns = require('node:dns');

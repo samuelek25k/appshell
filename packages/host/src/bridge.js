@@ -18,6 +18,8 @@ import { fail } from './services.js';
  *   onIacSubscribe?: (appId: string, channel: string) => boolean,
  *   onIacUnsubscribe?: (appId: string, channel: string) => boolean,
  *   canReceiveIac?: (targetId: string, fromId: string) => boolean,
+ *   getTheme?: () => { source: 'system' | 'light' | 'dark', dark: boolean },
+ *   getVersions?: (appId: string) => { current: string, previous: string | null, installedAt: string },
  * }} BridgeDeps
  */
 
@@ -42,6 +44,14 @@ export function createBridge(deps) {
         direction: isRtl ? 'rtl' : 'ltr',
         timeZone: typeof Intl === 'object' ? Intl.DateTimeFormat().resolvedOptions().timeZone : 'UTC',
       };
+    },
+    'shell.getTheme': () => {
+      if (deps.getTheme) return deps.getTheme();
+      return { source: 'system', dark: false };
+    },
+    'shell.getVersions': (id, _p, app) => {
+      if (deps.getVersions) return deps.getVersions(id);
+      return { current: app.manifest.version, previous: null, installedAt: new Date().toISOString() };
     },
     'widgets.update': (id, p) => {
       const result = validate('widget', p.descriptor);

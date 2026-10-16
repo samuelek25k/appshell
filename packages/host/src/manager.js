@@ -62,5 +62,7 @@ export function createManager({ policy, catalogUrl, root, hostVersion, fetch }) 
     },
     rollback: (/** @type {string} */ id) => store.rollback(id),
     uninstall: (/** @type {string} */ id) => store.uninstall(id),
+    provenance: (/** @type {string} */ id) => store.list().find((s) => s.current.id === id),
+    prune: () => store.prune(),
   };
 }

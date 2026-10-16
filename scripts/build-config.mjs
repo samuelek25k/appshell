@@ -6,6 +6,8 @@ const product = JSON.parse(readFileSync(productFile, 'utf8'));
 const productDir = relative(process.cwd(), dirname(productFile));
 
 const iconCandidates = [
+  resolve(dirname(productFile), 'assets', 'icon.png'),
+  resolve(dirname(productFile), 'assets', 'icon.ico'),
   resolve(dirname(productFile), 'icon.png'),
   resolve(dirname(productFile), 'icon.ico'),
   resolve('site/icon-512.png'),

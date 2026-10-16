@@ -56,12 +56,15 @@ UI: `await window.appshell.call(method, params)`; failures reject with `Error("<
 | `identity.token` | | `capabilities.identity` |
 | `identity.publicKey` | | |
 | `shell.getLocale` | | |
+| `shell.getTheme` | | |
+| `shell.getVersions` | | |
 | `iac.send` | `to` ≤ 64, `action` ≤ 64, `payload`, `launchIfNeeded` (optional) | `capabilities.iac` (permitting `to`) |
 | `iac.publish` | `channel` (`[A-Za-z0-9_.-]{1,64}`), `data` | `capabilities.iac` (permitting `channel`) |
 | `iac.subscribe` | `channel` (`[A-Za-z0-9_.-]{1,64}`) | `capabilities.iac` (permitting `channel`) |
 | `iac.unsubscribe` | `channel` (`[A-Za-z0-9_.-]{1,64}`) | `capabilities.iac` (permitting `channel`) |
 
 Limits: storage values ≤ 64 KB, ≤ 1 MB per app. Errors: `UNKNOWN_METHOD`, `INVALID_PARAMS`, `CAPABILITY_DENIED`, `BACKEND_UNAVAILABLE`, `BACKEND_TIMEOUT` (10 s), `BACKEND_ERROR`, `UNKNOWN_CALLER`, `INTERNAL`.
+`shell.getVersions` returns `{ current, previous, installedAt }` for version tracking, schema migration, and stale key pruning.
 
 ## Identity
 
@@ -73,6 +76,7 @@ Limits: storage values ≤ 64 KB, ≤ 1 MB per app. Errors: `UNKNOWN_METHOD`, `I
 | --- | --- | --- |
 | `shell.closeRequested` | `{ nonce }` | `shell.closeResponse` within 600 ms, else the app closes |
 | `shell.deepLink` | `{ path }` | from `<protocol>://<app-id>/<path>`; one link per launch (Windows exits when given two), later launches hand theirs to the running host |
+| `shell.themeChanged` | `{ source, dark }` | sent when theme preference or system mode changes |
 | `widgets.action` | `{ widget, action }` | sent after the host brings the app to the front |
 | `storage.changed` | `{ key, value }` | sent when app storage key is mutated |
 | `iac.message` | `{ from, action, payload, timestamp }` | sent when targeted IAC message arrives |

@@ -43,6 +43,57 @@ test('bridge supports shell.getLocale and reports system locale information', as
   }
 });
 
+test('bridge supports shell.getTheme and reports active theme settings', async (t) => {
+  const dir = createTempWorkspace(t, 'appshell-theme-');
+
+  const bridge = createBridge({
+    policy: {},
+    services: createServices(dir),
+    identity: /** @type {any} */ ({}),
+    hostLog: () => {},
+    backendFor: /** @type {any} */ (() => {}),
+    onTitle: () => {},
+    onWidget: () => {},
+    onCloseResponse: () => {},
+    getTheme: () => ({ source: 'dark', dark: true }),
+  });
+
+  const app = { manifest: { id: 'test-app', version: '1.0.0', title: 'Test', publisher: 'Test', engines: { appshell: '^0.1' }, entry: {} }, dir: '', protected: false };
+  const res = await bridge(app, 'shell.getTheme', {});
+  assert.equal(res.ok, true);
+  if (res.ok) {
+    const data = /** @type {any} */ (res.result);
+    assert.equal(data.source, 'dark');
+    assert.equal(data.dark, true);
+  }
+});
+
+test('bridge supports shell.getVersions and reports provenance for migrations', async (t) => {
+  const dir = createTempWorkspace(t, 'appshell-versions-');
+
+  const bridge = createBridge({
+    policy: {},
+    services: createServices(dir),
+    identity: /** @type {any} */ ({}),
+    hostLog: () => {},
+    backendFor: /** @type {any} */ (() => {}),
+    onTitle: () => {},
+    onWidget: () => {},
+    onCloseResponse: () => {},
+    getVersions: () => ({ current: '2.0.0', previous: '1.0.0', installedAt: '2026-10-16T10:00:00.000Z' }),
+  });
+
+  const app = { manifest: { id: 'test-app', version: '2.0.0', title: 'Test', publisher: 'Test', engines: { appshell: '^0.1' }, entry: {} }, dir: '', protected: false };
+  const res = await bridge(app, 'shell.getVersions', {});
+  assert.equal(res.ok, true);
+  if (res.ok) {
+    const data = /** @type {any} */ (res.result);
+    assert.equal(data.current, '2.0.0');
+    assert.equal(data.previous, '1.0.0');
+    assert.equal(data.installedAt, '2026-10-16T10:00:00.000Z');
+  }
+});
+
 test('storage persists key-value data per app and notifies listeners', async (t) => {
   const dir = createTempWorkspace(t, 'appshell-storage-');
   const services = createServices(dir);

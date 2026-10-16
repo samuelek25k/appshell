@@ -8,6 +8,10 @@ export const shell = {
   getLocale: () => call('shell.getLocale'),
   onLocaleChanged: (/** @type {(locale: { locale: string, direction: 'ltr' | 'rtl', timeZone: string, languages: string[] }) => void} */ fn) =>
     bridge.on('shell.localeChanged', fn),
+  getTheme: () => call('shell.getTheme'),
+  onThemeChanged: (/** @type {(theme: { source: 'system' | 'light' | 'dark', dark: boolean }) => void} */ fn) =>
+    bridge.on('shell.themeChanged', fn),
+  getVersions: () => call('shell.getVersions'),
   onCloseRequested: (/** @type {() => boolean | Promise<boolean>} */ fn) =>
     bridge.on('shell.closeRequested', async (/** @type {{ nonce: string }} */ { nonce }) =>
       call('shell.closeResponse', { nonce, allow: (await fn()) !== false })),

@@ -9,6 +9,7 @@ const fallbackApi = {
   dismissInstall() {},
   uninstall(/** @type {string} */ id) {},
   widgetAction(/** @type {string} */ appId, /** @type {string} */ widgetId, /** @type {string} */ actionId) {},
+  setTheme(/** @type {string} */ _theme) {},
   onState(/** @type {(s: any) => void} */ fn) {},
 };
 
@@ -194,7 +195,32 @@ function render(state) {
   const back = /** @type {HTMLButtonElement | null} */ ($('back'));
   const close = /** @type {HTMLButtonElement | null} */ ($('close'));
   if (back) back.disabled = isHome;
-  if (close) close.disabled = isHome;
+  const themeSource = state.theme?.source ?? 'system';
+  document.documentElement.setAttribute('data-theme', themeSource);
+
+  const logo = /** @type {HTMLImageElement | null} */ ($('logo'));
+  const favicon = /** @type {HTMLLinkElement | null} */ ($('favicon'));
+  if (state.brand?.logo) {
+    if (logo && logo.src !== state.brand.logo) logo.src = state.brand.logo;
+    if (favicon && favicon.href !== state.brand.logo) favicon.href = state.brand.logo;
+  }
+  if (state.brand?.colors) {
+    for (const [key, value] of Object.entries(state.brand.colors)) {
+      const prop = key.startsWith('--') ? key : `--${key.replace(/([A-Z])/g, '-$1').toLowerCase()}`;
+      document.documentElement.style.setProperty(prop, String(value));
+    }
+  }
+
+  const themeToggle = $('theme-toggle');
+  if (themeToggle) {
+    themeToggle.title = `Theme: ${themeSource}`;
+    const sys = $('theme-icon-system');
+    const light = $('theme-icon-light');
+    const dark = $('theme-icon-dark');
+    if (sys) sys.hidden = themeSource !== 'system';
+    if (light) light.hidden = themeSource !== 'light';
+    if (dark) dark.hidden = themeSource !== 'dark';
+  }
 
   renderApps(state);
   renderWidgets(state);
@@ -273,6 +299,11 @@ function wireEvents() {
   $('home')?.addEventListener('click', () => api.home());
   $('close')?.addEventListener('click', () => api.close());
   $('refresh')?.addEventListener('click', () => api.refreshCatalog());
+  $('theme-toggle')?.addEventListener('click', () => {
+    const current = currentState?.theme?.source ?? 'system';
+    const next = current === 'system' ? 'light' : current === 'light' ? 'dark' : 'system';
+    api.setTheme(next);
+  });
 
   $('apps')?.addEventListener('click', (e) => {
     const target = /** @type {HTMLElement} */ (e.target);

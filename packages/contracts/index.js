@@ -104,6 +104,8 @@ export const METHODS = {
   'shell.setTitle': { params: (p) => str(p?.title, 60), requires: () => null },
   'shell.closeResponse': { params: (p) => str(p?.nonce, 64) && typeof p?.allow === 'boolean', requires: () => null },
   'shell.getLocale': { params: () => true, requires: () => null },
+  'shell.getTheme': { params: () => true, requires: () => null },
+  'shell.getVersions': { params: () => true, requires: () => null },
   'widgets.update': {
     params: (p) => str(p?.id, 32) && typeof p?.descriptor === 'object' && p.descriptor !== null,
     requires: (m, p) => (m.widgets ?? []).some((w) => w.id === p.id) ? null : `widgets:${p.id}`,

@@ -124,7 +124,31 @@ export function createStore(root) {
   const write = (/** @type {object} */ state) => { mkdirSync(root, { recursive: true }); writeFileSync(stateFile, JSON.stringify(state, null, 2)); };
   const dirOf = (/** @type {Provenance} */ p) => join(root, p.id, p.version);
 
+  const prune = () => {
+    if (!existsSync(root)) return;
+    const stagingDir = join(root, '.staging');
+    if (existsSync(stagingDir)) rmSync(stagingDir, { recursive: true, force: true });
+    const state = read();
+    const installedIds = new Set(Object.keys(state));
+    for (const name of readdirSync(root)) {
+      if (name.startsWith('.') || name === 'installed.json') continue;
+      const appRoot = join(root, name);
+      if (!installedIds.has(name)) {
+        rmSync(appRoot, { recursive: true, force: true });
+        continue;
+      }
+      const s = state[name];
+      const keep = new Set([s.current?.version, s.previous?.version].filter(Boolean));
+      for (const ver of readdirSync(appRoot)) {
+        if (!keep.has(ver)) rmSync(join(appRoot, ver), { recursive: true, force: true });
+      }
+    }
+  };
+
+  prune();
+
   return {
+    prune,
     list: () => Object.values(read()).map((s) => ({ ...s, dir: dirOf(s.current) })),
 
     /**
@@ -170,12 +194,9 @@ export function createStore(root) {
         mkdirSync(join(root, entry.id), { recursive: true });
         renameSync(out, target);
         const previous = before && before.current.version !== release.version ? before.current : before?.previous ?? null;
-        const keep = new Set([current.version, previous?.version]);
-        for (const version of readdirSync(join(root, entry.id))) {
-          if (!keep.has(version)) rmSync(join(root, entry.id, version), { recursive: true, force: true });
-        }
         state[entry.id] = { current, previous };
         write(state);
+        prune();
         return current;
       } finally {
         rmSync(staging, { recursive: true, force: true });
@@ -189,6 +210,7 @@ export function createStore(root) {
       if (!s?.previous) throw fail('NO_PREVIOUS_VERSION', `${id} has no previous version`);
       state[id] = { current: s.previous, previous: s.current };
       write(state);
+      prune();
       return state[id].current;
     },
 
@@ -199,6 +221,7 @@ export function createStore(root) {
       delete state[id];
       write(state);
       rmSync(join(root, id), { recursive: true, force: true });
+      prune();
     },
   };
 }

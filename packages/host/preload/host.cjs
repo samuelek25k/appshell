@@ -11,6 +11,7 @@ contextBridge.exposeInMainWorld('host', {
   dismissInstall: () => ipcRenderer.invoke('host:dismissInstall'),
   uninstall: (appId) => ipcRenderer.invoke('host:uninstall', String(appId)),
   widgetAction: (appId, widgetId, actionId) => ipcRenderer.invoke('host:widgetAction', String(appId), String(widgetId), String(actionId)),
+  setTheme: (theme) => ipcRenderer.invoke('host:setTheme', String(theme)),
   switchAccount: (id) => ipcRenderer.invoke('host:accounts:switch', String(id)),
   addAccount: (data) => ipcRenderer.invoke('host:accounts:add', data),
   removeAccount: (id) => ipcRenderer.invoke('host:accounts:remove', String(id)),
