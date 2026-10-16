@@ -314,7 +314,14 @@ function open(appId) {
     return false;
   }
   const installed = apps.get(appId);
-  if (!installed || !win) return false;
+  if (!installed) {
+    hostLog(`cannot open ${appId}: not in apps (${[...apps.keys()].join(', ')})`);
+    return false;
+  }
+  if (!win) {
+    hostLog(`cannot open ${appId}: win is null`);
+    return false;
+  }
   if (!running.has(appId)) {
     const view = createAppView(installed, appLog(appId));
     running.set(appId, { view, title: installed.manifest.title });

@@ -28,8 +28,11 @@ const csp = (m) => {
 /** @type {Set<string>} */
 const prepared = new Set();
 
-/** @param {import('./registry.js').InstalledApp} app */
-function prepareSession(app) {
+/**
+ * @param {import('./registry.js').InstalledApp} app
+ * @param {(level: string, message: string) => void} log
+ */
+function prepareSession(app, log) {
   const { id } = app.manifest;
   const ses = session.fromPartition(`persist:app:${id}`);
   if (prepared.has(id)) return ses;
@@ -37,7 +40,10 @@ function prepareSession(app) {
 
   ses.protocol.handle('app', async (request) => {
     const url = new URL(request.url);
-    if (url.host !== id) return new Response('Not found', { status: 404 });
+    if (url.host !== id) {
+      log('error', `protocol 404 for ${request.url}: host !== ${id}`);
+      return new Response('Not found', { status: 404 });
+    }
     let file;
     try {
       if (url.pathname === '/__appshell/sdk.js') file = SDK_FILE;
@@ -46,10 +52,14 @@ function prepareSession(app) {
         const resolved = await realpath(resolve(baseDir, '.' + decodeURIComponent(url.pathname)));
         file = resolved.startsWith('\\\\?\\') ? resolved.slice(4) : resolved;
       }
-    } catch {
+    } catch (err) {
+      log('error', `protocol 404 resolving ${request.url}: ${err instanceof Error ? err.message : String(err)}`);
       return new Response('Not found', { status: 404 });
     }
-    if (file !== SDK_FILE && !isInside(app.dir, file)) return new Response('Forbidden', { status: 403 });
+    if (file !== SDK_FILE && !isInside(app.dir, file)) {
+      log('error', `protocol 403 forbidden ${request.url}: file ${file} outside app.dir ${app.dir}`);
+      return new Response('Forbidden', { status: 403 });
+    }
     try {
       return new Response(await readFile(file), {
         headers: {
@@ -58,7 +68,8 @@ function prepareSession(app) {
           'x-content-type-options': 'nosniff',
         },
       });
-    } catch {
+    } catch (err) {
+      log('error', `protocol 404 reading ${file}: ${err instanceof Error ? err.message : String(err)}`);
       return new Response('Not found', { status: 404 });
     }
   });
@@ -77,7 +88,7 @@ export function createAppView(app, log) {
   const { id, entry } = app.manifest;
   const view = new WebContentsView({
     webPreferences: {
-      session: prepareSession(app),
+      session: prepareSession(app, log),
       preload: APP_PRELOAD,
       sandbox: true,
       contextIsolation: true,
@@ -91,6 +102,9 @@ export function createAppView(app, log) {
   view.setBackgroundColor('#00000000');
   const wc = view.webContents;
   wc.setWindowOpenHandler(() => ({ action: 'deny' }));
+  wc.on('did-fail-load', (_e, code, desc, url) => log('error', `did-fail-load ${code}: ${desc} (${url})`));
+  wc.on('preload-error', (_e, file, err) => log('error', `preload-error in ${file}: ${err.message}`));
+  wc.on('console-message', (e) => { if (e.level === 'error') log('error', `console: ${e.message}`); });
   const stayHome = (/** @type {Electron.Event} */ event, /** @type {string} */ url) => {
     const u = new URL(url);
     if (u.protocol !== 'app:' || u.host !== id) {
@@ -101,6 +115,6 @@ export function createAppView(app, log) {
   wc.on('will-navigate', stayHome);
   wc.on('will-redirect', stayHome);
   wc.on('will-attach-webview', (event) => event.preventDefault());
-  wc.loadURL(`app://${id}/${entry.ui ?? ''}`);
+  wc.loadURL(`app://${id}/${entry.ui ?? ''}`).catch((err) => log('error', `loadURL rejected: ${err.message}`));
   return view;
 }

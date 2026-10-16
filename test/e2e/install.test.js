@@ -26,11 +26,16 @@ test('catalog apps install, run and uninstall; tampered packages are refused', {
   writeFileSync(catalogFile, JSON.stringify({ format: 1, apps: [app('victim', 'victim.tgz', victim.sha256), app('hostile', 'hostile.tgz', 'f'.repeat(64))] }));
 
   const port = 9400 + Math.floor(Math.random() * 400);
-  const launch = (/** @type {string[]} */ extra) => spawn(electron, [
-    join(root, 'packages/host'), '--product', join(root, 'test/fixtures/product-catalog.json'),
-    `--catalog=${pathToFileURL(catalogFile).href}`, '--user-data', userData,
-    ...extra, ...(process.getuid?.() === 0 ? ['--no-sandbox'] : []),
-  ], { stdio: 'ignore' });
+  let childStderr = '';
+  const launch = (/** @type {string[]} */ extra) => {
+    const proc = spawn(electron, [
+      join(root, 'packages/host'), '--product', join(root, 'test/fixtures/product-catalog.json'),
+      `--catalog=${pathToFileURL(catalogFile).href}`, '--user-data', userData,
+      ...extra, ...(process.getuid?.() === 0 ? ['--no-sandbox'] : []),
+    ], { stdio: ['ignore', 'pipe', 'pipe'] });
+    proc.stderr?.on('data', (d) => { childStderr += d; });
+    return proc;
+  };
   const child = launch([`--remote-debugging-port=${port}`]);
   t.after(async () => {
     if (child.exitCode === null) { child.kill(); await once(child, 'exit'); }
@@ -46,10 +51,12 @@ test('catalog apps install, run and uninstall; tampered packages are refused', {
   assert.equal(installed.victim.current.sha256, victim.sha256);
   assert.equal(installed.victim.current.commit, 'abc1234');
 
-  await ui("host.open('victim')");
+  const opened = await ui("host.open('victim')");
+  assert.equal(opened, true, 'host.open returned true');
   const storage = join(userData, 'apps', 'victim', 'storage.json');
   for (let i = 0; i < 80 && !existsSync(storage); i++) await new Promise((r) => setTimeout(r, 250));
-  assert.ok(existsSync(storage), 'installed app ran and used its storage');
+  const readLog = (/** @type {string} */ name) => { try { return readFileSync(join(userData, 'logs', name), 'utf8'); } catch { return '<none>'; } };
+  assert.ok(existsSync(storage), `installed app ran and used its storage.\nHost log:\n${readLog('host.log')}\nVictim log:\n${readLog('victim.log')}\nChild stderr:\n${childStderr}`);
 
   await ui("host.install('hostile')");
   assert.match(await ui("document.getElementById('manager-error').textContent"), /expected f{64}/);

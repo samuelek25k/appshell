@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync, spawn } from 'node:child_process';
 import { once } from 'node:events';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -22,10 +22,12 @@ test('a new app from the template runs with its sandboxed backend', { timeout: 9
     policy: { capabilities: 'enforce', developerMode: true },
   }));
   const port = 9800 + Math.floor(Math.random() * 100);
+  let childStderr = '';
   const child = spawn(electron, [
     join(root, 'packages/host'), '--product', join(work, 'product.json'), '--user-data', join(work, 'data'),
     `--remote-debugging-port=${port}`, 'appshelltemplate://hello/', ...(process.getuid?.() === 0 ? ['--no-sandbox'] : []),
-  ], { stdio: 'ignore' });
+  ], { stdio: ['ignore', 'pipe', 'pipe'] });
+  child.stderr?.on('data', (d) => { childStderr += d; });
   t.after(async () => {
     if (child.exitCode === null) { child.kill(); await once(child, 'exit'); }
     rmSync(work, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
@@ -33,11 +35,17 @@ test('a new app from the template runs with its sandboxed backend', { timeout: 9
 
   await waitForPage(port, 'app://hello');
   let greeting = '';
+  let evalError = '';
   for (let i = 0; i < 40 && !greeting.startsWith('Hello from the backend'); i++) {
     await new Promise((r) => setTimeout(r, 250));
     try {
       greeting = (await evaluate(port, 'app://hello', "document.getElementById('greeting')?.textContent")) ?? '';
-    } catch {}
+    } catch (e) {
+      evalError = String(e);
+    }
   }
-  assert.equal(greeting, 'Hello from the backend. Visit 1.');
+  let pageHtml = '';
+  try { pageHtml = await evaluate(port, 'app://hello', 'document.body.innerHTML'); } catch {}
+  const readLog = (/** @type {string} */ name) => { try { return readFileSync(join(work, 'data', 'logs', name), 'utf8'); } catch { return '<none>'; } };
+  assert.equal(greeting, 'Hello from the backend. Visit 1.', `Greeting mismatch.\nPage HTML: ${pageHtml}\nEval error: ${evalError}\nHost log:\n${readLog('host.log')}\nHello log:\n${readLog('hello.log')}\nChild stderr:\n${childStderr}`);
 });
