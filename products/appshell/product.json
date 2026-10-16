@@ -9,12 +9,7 @@
   },
   "maintainer": "samuelek25k <samuelek25k@users.noreply.github.com>",
   "catalog": "https://raw.githubusercontent.com/samuelek25k/appshell-apps/main/index.json",
-  "apps": [
-    {
-      "path": "profile",
-      "protected": true
-    }
-  ],
+  "apps": [],
   "policy": {
     "capabilities": "enforce",
     "developerMode": false,
