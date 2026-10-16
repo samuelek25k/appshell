@@ -36,3 +36,17 @@ Every architecture, tooling and dependency choice is recorded here. Agents add e
 
 - **Backend permission flags travel through `NODE_OPTIONS`.** `utilityProcess` ignores `execArgv` permission flags. Hardened packaged builds that disable the `NODE_OPTIONS` fuse may drop them; run the hostile app against a packaged build before Phase 3 closes.
 - **Local runs as root need `--no-sandbox`.** That disables Chromium's OS sandbox, not the per-view `sandbox` preference. CI runs unprivileged with the OS sandbox on.
+
+## Constraints the code relies on
+
+The code carries no comments, so non-obvious reasons live here.
+
+- **Backend sandbox (`backend.js`).**
+  - `NODE_OPTIONS` treats a backslash inside quotes as an escape, so Windows paths are doubled.
+  - `cwd` must be the app folder, because the permission model also grants read access to the working directory.
+  - The host environment is not inherited.
+- **App origin checks (`views.js`).** `URL.origin` is `"null"` for custom schemes, so navigation checks compare protocol and host.
+- **Secrets (`services.js`).** On Linux without a keyring, `safeStorage` only obfuscates, so secrets need developer mode there.
+- **Ubuntu 24 CI.** The runner blocks the unprivileged user namespaces Chromium's sandbox needs, so `ci.yml` turns them on before e2e.
+- **CI job logs** are not always reachable, so `ci.yml` puts e2e failures in annotations.
+- **ajv** ships CommonJS; under NodeNext its default import is the module object.

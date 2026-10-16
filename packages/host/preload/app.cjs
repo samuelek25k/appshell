@@ -1,4 +1,3 @@
-// Preload for app views: exposes window.appshell and nothing else.
 const { contextBridge, ipcRenderer } = require('electron');
 
 /** @type {Map<string, Set<(payload: unknown) => void>>} */
@@ -8,7 +7,6 @@ ipcRenderer.on('appshell:event', (_event, name, payload) => {
 });
 
 contextBridge.exposeInMainWorld('appshell', {
-  /** Rejects with an Error whose message starts with the error code, e.g. "CAPABILITY_DENIED: ...". */
   async call(method, params) {
     const reply = await ipcRenderer.invoke('appshell:call', String(method), params ?? {});
     if (!reply.ok) throw new Error(`${reply.error.code}: ${reply.error.message}`);

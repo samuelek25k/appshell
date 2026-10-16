@@ -1,4 +1,3 @@
-// Preload for the host UI (trusted, but still sandboxed and isolated).
 const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('host', {

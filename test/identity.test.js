@@ -41,14 +41,12 @@ test('multi-account management supports switching, google/microsoft providers, a
   t.after(() => rmSync(dir, { recursive: true, force: true }));
   const identity = createIdentity(dir, 'appshell');
 
-  // Initial account is default local owner
   const initialAccounts = identity.listAccounts();
   assert.equal(initialAccounts.length, 1);
   assert.equal(initialAccounts[0].provider, 'local');
   assert.equal(initialAccounts[0].active, true);
   assert.equal(identity.getActiveAccount().id, initialAccounts[0].id);
 
-  // Add Google account
   const googleAcc = identity.addAccount({
     name: 'Ada Lovelace',
     email: 'ada@google.internal',
@@ -60,7 +58,6 @@ test('multi-account management supports switching, google/microsoft providers, a
   assert.equal(identity.getActiveAccount().id, googleAcc.id);
   assert.equal(identity.listAccounts().length, 2);
 
-  // Mint token for Google account
   const { token: googleToken } = identity.mint('notes.app', 2000);
   const googleClaims = verifyToken(googleToken, identity.publicJwk(), 'app:notes.app', 2001);
   assert.equal(googleClaims.sub, googleAcc.id);
@@ -68,7 +65,6 @@ test('multi-account management supports switching, google/microsoft providers, a
   assert.equal(googleClaims.email, 'ada@google.internal');
   assert.equal(googleClaims.provider, 'google');
 
-  // Add Microsoft account
   const msAcc = identity.addAccount({
     name: 'Alan Turing',
     email: 'alan@microsoft.com',
@@ -78,16 +74,13 @@ test('multi-account management supports switching, google/microsoft providers, a
   assert.equal(msAcc.provider, 'microsoft');
   assert.equal(identity.getActiveAccount().id, msAcc.id);
 
-  // Switch back to initial local account
   identity.switchAccount(initialAccounts[0].id);
   assert.equal(identity.getActiveAccount().id, initialAccounts[0].id);
 
-  // Remove Microsoft account
   identity.removeAccount(msAcc.id);
   assert.equal(identity.listAccounts().length, 2);
   assert.throws(() => identity.switchAccount(msAcc.id), /account not found/);
 
-  // Cannot remove last account if down to 1
   identity.removeAccount(googleAcc.id);
   assert.equal(identity.listAccounts().length, 1);
   assert.throws(() => identity.removeAccount(initialAccounts[0].id), /cannot remove last account/);

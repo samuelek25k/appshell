@@ -1,6 +1,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 import { check, checkMessage, strip } from '../scripts/hygiene.mjs';
+
+test('the repository has no comments outside type tags', () => {
+  const out = execFileSync('node', ['scripts/hygiene.mjs'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+  assert.equal(out, '');
+});
 
 test('comments are found in each language, strings and regexes are not', () => {
   assert.equal(check('a.js', 'const u = "http://x"; const r = /\\/*x/; const t = `//${a}//`;').length, 0);

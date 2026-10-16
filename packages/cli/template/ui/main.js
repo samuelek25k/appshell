@@ -1,4 +1,3 @@
-// The host serves the SDK that matches it; see docs/contracts.md in the appshell repo.
 import { backend, storage, widgets } from '/__appshell/sdk.js';
 
 const visits = ((await storage.get('visits')) ?? 0) + 1;

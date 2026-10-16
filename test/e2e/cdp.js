@@ -1,6 +1,9 @@
-// Minimal DevTools protocol client for e2e tests: evaluate an expression in a page.
 
-/** @param {number} port @param {string} prefix page URL prefix, e.g. file:// or app://<id> @param {string} expression */
+/**
+ * @param {number} port
+ * @param {string} prefix
+ * @param {string} expression
+ */
 export async function evaluate(port, prefix, expression) {
   const targets = await (await fetch(`http://127.0.0.1:${port}/json`)).json();
   const target = targets.find((/** @type {{ url: string }} */ t) => t.url.startsWith(prefix));
@@ -16,15 +19,15 @@ export async function evaluate(port, prefix, expression) {
 }
 
 /**
- * Waits until a page with the prefix is listed and `ready` evaluates truthy in it.
- * A page is listed before its preload runs, so callers pass a readiness check.
- * @param {number} port @param {string} prefix @param {string} ready
+ * @param {number} port
+ * @param {string} prefix
+ * @param {string} ready
  */
 export async function waitForPage(port, prefix, ready = "document.readyState === 'complete'", timeoutMs = 30_000) {
   for (let waited = 0; waited < timeoutMs; waited += 250) {
     try {
       if (await evaluate(port, prefix, ready)) return;
-    } catch { /* not up yet */ }
+    } catch {}
     await new Promise((r) => setTimeout(r, 250));
   }
   throw new Error(`timed out waiting for ${prefix}`);

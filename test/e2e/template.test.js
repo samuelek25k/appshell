@@ -1,4 +1,3 @@
-// Phase 1: an app made by `appshell create` runs in the host, backend included.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync, spawn } from 'node:child_process';

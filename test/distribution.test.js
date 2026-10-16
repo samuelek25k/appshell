@@ -14,8 +14,8 @@ const devPolicy = { developerMode: true, allowedSources: ['https://github.com/ex
 /** @typedef {import('../packages/distribution/index.js').Release} Release */
 
 /**
- * Copies the fixture app at a given version and packs it.
- * @param {string} work @param {string} version
+ * @param {string} work
+ * @param {string} version
  * @returns {Promise<Release>}
  */
 async function release(work, version) {
@@ -116,7 +116,6 @@ test('sources outside the allowlist are refused before download', async (t) => {
   await assert.rejects(store.install(entry([v1]), v1, { hostVersion: HOST, policy: { allowedSources: ['https://github.com/example/'] } }), { code: 'SOURCE_NOT_ALLOWED' }, 'file:// needs developer mode');
 });
 
-// Creating symlinks on Windows needs extra privileges; the extraction filter is platform-independent.
 test('symlinks in a package are not extracted', { skip: process.platform === 'win32' }, async (t) => {
   const work = workspace(t);
   const src = join(work, 'src');
@@ -124,7 +123,7 @@ test('symlinks in a package are not extracted', { skip: process.platform === 'wi
   symlinkSync('/etc/hosts', join(src, 'hosts-link'));
   mkdirSync(join(work, 'out'));
   const file = join(work, 'evil.tgz');
-  await tar.c({ gzip: true, file, cwd: src, portable: true }, ['.']); // raw tar keeps the link
+  await tar.c({ gzip: true, file, cwd: src, portable: true }, ['.']);
   /** @type {Release} */
   const evil = { version: '1.0.0', channel: 'stable', url: pathToFileURL(file).href, sha256: sha256(readFileSync(file)), commit: 'abc1234' };
   const store = createStore(join(work, 'installed'));

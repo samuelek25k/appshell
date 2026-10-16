@@ -1,5 +1,3 @@
-// Supervises one sandboxed backend process per app: started on first call,
-// stopped when idle, restarted after a crash at most MAX_RESTARTS times.
 import { utilityProcess } from 'electron';
 import { realpathSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -29,9 +27,6 @@ export function createBackend(app, log) {
 
   const networkHosts = (app.manifest.capabilities?.network ?? []).join(',');
   const env = {
-    // Node permission model: read only the app folder and the preload guard; no writes, child processes or workers.
-    // utilityProcess ignores permission flags in execArgv, so they go through NODE_OPTIONS.
-    // NODE_OPTIONS treats backslash as an escape inside quotes, so Windows paths need doubling.
     NODE_OPTIONS: `--permission --allow-fs-read="${app.dir.replaceAll('\\', '\\\\')}" --allow-fs-read="${BACKEND_PRELOAD.replaceAll('\\', '\\\\')}" --require="${BACKEND_PRELOAD.replaceAll('\\', '\\\\')}"`,
     APPSHELL_APP_ID: id,
     APPSHELL_ALLOWED_HOSTS: networkHosts,
@@ -39,7 +34,6 @@ export function createBackend(app, log) {
   };
 
   function start() {
-    // cwd must be the app folder: the permission model also grants read access to the working directory.
     const proc = utilityProcess.fork(file, [], { serviceName: `app:${id}`, stdio: 'pipe', cwd: app.dir, env });
     proc.stdout?.on('data', (d) => log('info', String(d).trimEnd()));
     proc.stderr?.on('data', (d) => log('error', String(d).trimEnd()));

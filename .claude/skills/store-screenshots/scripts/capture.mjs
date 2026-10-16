@@ -1,6 +1,3 @@
-// Captures store screenshots of an app: its own view, and the dashboard with its widgets.
-// Usage (from an appshell checkout, under a display or xvfb-run):
-//   node .claude/skills/store-screenshots/scripts/capture.mjs <app-dir> <out-dir>
 import { spawn } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
@@ -45,8 +42,7 @@ const shot = async (prefix, file) => {
 try {
   mkdirSync(outDir, { recursive: true });
   for (let i = 0; i < 60; i++) { try { await send(`app://${id}`, 'Runtime.evaluate', { expression: '1' }); break; } catch { await sleep(500); } }
-  await sleep(2500); // let the app render and publish widgets
-  // Optional <app>/store/prepare.js runs in the app page first, to show realistic content.
+  await sleep(2500);
   const prepare = join(appDir, 'store', 'prepare.js');
   if (existsSync(prepare)) {
     await send(`app://${id}`, 'Runtime.evaluate', { expression: readFileSync(prepare, 'utf8'), awaitPromise: true });

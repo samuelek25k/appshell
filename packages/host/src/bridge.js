@@ -1,5 +1,3 @@
-// The only path from app code to platform services. The caller is identified by the
-// webContents that sent the message; nothing in the message can change that.
 import { METHODS, ERRORS, SHELL_PROTOCOL, validate } from '@appshell/contracts';
 import { fail } from './services.js';
 

@@ -1,6 +1,3 @@
-// Writes electron-builder config for one product, so names, protocol and package
-// extension come from product.json instead of framework code.
-// Usage: node scripts/build-config.mjs products/<name>/product.json
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, relative, resolve } from 'node:path';
 

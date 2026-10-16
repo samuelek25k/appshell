@@ -1,8 +1,3 @@
-// Evaluates JavaScript in a running Electron page through the DevTools protocol.
-// Start Electron with --remote-debugging-port=<port>, then:
-//   node cdp-eval.mjs <port> <url-prefix> "<expression>"
-// url-prefix picks the page (e.g. file:// for a host UI, app://<id> for an app); prefixes avoid
-// matching two pages that share a file name.
 const [port, prefix, expression] = process.argv.slice(2);
 const targets = await (await fetch(`http://127.0.0.1:${port}/json`)).json();
 const target = targets.find((t) => t.url.startsWith(prefix));

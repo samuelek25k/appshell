@@ -16,7 +16,7 @@ const CHROME_HEIGHT = 48;
 const HOST_UI = fileURLToPath(new URL('../ui/index.html', import.meta.url));
 const HOST_PRELOAD = fileURLToPath(new URL('../preload/host.cjs', import.meta.url));
 
-/** Reads `--name value` or `--name=value`. @param {string} name */
+/** @param {string} name */
 const flag = (name) => {
   const joined = process.argv.find((a) => a.startsWith(`${name}=`));
   if (joined) return joined.slice(name.length + 1);
@@ -44,7 +44,6 @@ protocol.registerSchemesAsPrivileged([
 
 if (!app.requestSingleInstanceLock()) app.exit(0);
 
-// A --catalog override is for app authors only.
 const catalogFlag = flag('--catalog');
 if (catalogFlag && !product.policy.developerMode) throw new Error('--catalog needs policy.developerMode');
 const manager = createManager({
@@ -58,7 +57,7 @@ let apps = loadApps(product, appsRoot, manager.installed(), hostLog);
 const services = createServices(dataRoot);
 /** @type {string | null} */
 let managerError = null;
-/** App id awaiting the user's confirmation after an install link. @type {string | null} */
+/** @type {string | null} */
 let pendingInstall = null;
 
 /** @typedef {{ view: Electron.WebContentsView, title: string }} Running */
@@ -154,8 +153,6 @@ function publish() {
 }
 
 /**
- * Runs an install, update, rollback or removal: the app is stopped first, so it never
- * runs from files that are being replaced, and the app list is reloaded afterwards.
  * @param {string} appId
  * @param {() => unknown} action
  * @param {string} [eventType]
@@ -227,7 +224,7 @@ function stop(appId) {
   publish();
 }
 
-/** Asks the app first; it may veto within CLOSE_VETO_TIMEOUT_MS. @param {string} appId */
+/** @param {string} appId */
 async function requestClose(appId) {
   const entry = running.get(appId);
   if (!entry) return;
@@ -241,12 +238,11 @@ async function requestClose(appId) {
   if (allow) stop(appId);
 }
 
-/** Opens `<protocol>://<app-id>/<path>` links. @param {string} link */
+/** @param {string} link */
 function handleLink(link) {
   let url;
   try { url = new URL(link); } catch { return; }
   if (url.protocol !== `${product.protocol}:`) return;
-  // `_` is the shell itself (never a valid app id): <protocol>://_/install/<app-id>
   const install = url.host === '_' && /^\/install\/([a-z][a-z0-9.-]{0,63})$/.exec(url.pathname);
   if (install) { requestInstall(install[1]); return; }
   if (!open(url.host)) return;
@@ -256,8 +252,6 @@ function handleLink(link) {
 }
 
 /**
- * Install links (e.g. from a store web page) only ask: the user confirms in the host,
- * and only apps from the product's own catalog can be installed.
  * @param {string} appId
  */
 async function requestInstall(appId) {
@@ -274,7 +268,7 @@ async function requestInstall(appId) {
 
 const links = (/** @type {string[]} */ argv) => argv.filter((a) => a.startsWith(`${product.protocol}://`));
 
-/** Accepts host IPC only from the host UI. @param {Electron.IpcMainInvokeEvent} event */
+/** @param {Electron.IpcMainInvokeEvent} event */
 const fromHost = (event) => event.sender === win?.webContents;
 
 ipcMain.handle('appshell:call', (event, method, params) => {
@@ -369,7 +363,6 @@ app.whenReady().then(async () => {
   manager.refresh().then(publish);
   links(process.argv).forEach(handleLink);
 
-  // D13: Guaranteed fallback emergency hotkey to restore default shell dashboard
   globalShortcut.register('CommandOrControl+Shift+Escape', () => {
     active = null;
     layout();
@@ -378,6 +371,5 @@ app.whenReady().then(async () => {
     win?.focus();
   });
 
-  // Phase 2: Automatic periodic background catalog update checks
   setInterval(() => manager.refresh().then(publish), 60 * 60 * 1000).unref();
 });

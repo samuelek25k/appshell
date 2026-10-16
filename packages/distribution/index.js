@@ -1,5 +1,3 @@
-// App packages, catalog resolution and the installed-app store. Plain Node, no Electron,
-// so the CLI, the host and tests share one implementation.
 import { createHash, randomUUID } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, readdirSync, realpathSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
@@ -25,7 +23,6 @@ export const isInside = (parent, child) => child === parent || child.startsWith(
 export const sha256 = (bytes) => createHash('sha256').update(bytes).digest('hex');
 
 /**
- * Validates an app folder: manifest schema, engine range, entries inside the folder.
  * @param {string} where
  * @param {string} hostVersion
  * @returns {{ dir: string, manifest: Manifest }}
@@ -46,7 +43,6 @@ export function checkAppDir(where, hostVersion) {
 }
 
 /**
- * Packs an app folder into a gzipped tar of regular files. Returns the package digest.
  * @param {string} appDir
  * @param {string} outFile
  * @param {string} hostVersion
@@ -64,7 +60,6 @@ export async function pack(appDir, outFile, hostVersion) {
 }
 
 /**
- * Picks the newest release a channel may see. Beta sees stable and beta.
  * @param {CatalogEntry} entry
  * @param {'stable' | 'beta'} channel
  * @returns {Release | undefined}
@@ -74,7 +69,10 @@ export function latestRelease(entry, channel) {
   return allowed.sort((a, b) => compareVersions(b.version, a.version))[0];
 }
 
-/** Semver precedence: numbers, then a prerelease sorts before its release. @param {string} a @param {string} b */
+/**
+ * @param {string} a
+ * @param {string} b
+ */
 export function compareVersions(a, b) {
   const [ca, pa = ''] = a.split('-', 2);
   const [cb, pb = ''] = b.split('-', 2);
@@ -88,7 +86,6 @@ export function compareVersions(a, b) {
 }
 
 /**
- * True when a URL may be used as a package source under the product policy.
  * @param {string} url
  * @param {{ allowedSources?: string[], developerMode?: boolean }} policy
  */
@@ -98,7 +95,6 @@ export function sourceAllowed(url, policy) {
 }
 
 /**
- * Parses and validates a catalog document.
  * @param {string} text
  * @returns {CatalogEntry[]}
  */
@@ -109,7 +105,6 @@ export function parseCatalog(text) {
   return catalog.apps;
 }
 
-/** Reads a URL as bytes; file:// via the filesystem, anything else via the given fetch. */
 export async function readUrl(/** @type {string} */ url, /** @type {typeof fetch} */ fetchImpl = fetch) {
   if (url.startsWith('file://')) return new Uint8Array(await readFile(fileURLToPath(url)));
   const response = await fetchImpl(url);
@@ -120,8 +115,6 @@ export async function readUrl(/** @type {string} */ url, /** @type {typeof fetch
 }
 
 /**
- * Installed apps live in <root>/<id>/<version>/ with provenance in <root>/installed.json.
- * The previous version stays on disk so a rollback needs no download.
  * @param {string} root
  */
 export function createStore(root) {
@@ -135,7 +128,6 @@ export function createStore(root) {
     list: () => Object.values(read()).map((s) => ({ ...s, dir: dirOf(s.current) })),
 
     /**
-     * Downloads, verifies and unpacks a release, then makes it current.
      * @param {CatalogEntry} entry
      * @param {Release} release
      * @param {{ hostVersion: string, policy: { allowedSources?: string[], developerMode?: boolean }, fetch?: typeof fetch }} options
@@ -159,7 +151,6 @@ export function createStore(root) {
         let total = 0;
         await tar.x({
           file: archive, cwd: out, strict: true, preservePaths: false, noChmod: true,
-          // Regular files and folders only: no links, devices or absolute paths.
           filter: (_path, entry) => {
             total += /** @type {any} */ (entry).size ?? 0;
             const type = /** @type {any} */ (entry).type;
@@ -191,7 +182,7 @@ export function createStore(root) {
       }
     },
 
-    /** Swaps current and previous versions. @param {string} id */
+    /** @param {string} id */
     rollback(id) {
       const state = read();
       const s = state[id];
@@ -201,7 +192,7 @@ export function createStore(root) {
       return state[id].current;
     },
 
-    /** Removes every installed version of an app. @param {string} id */
+    /** @param {string} id */
     uninstall(id) {
       const state = read();
       if (!state[id]) throw fail('NOT_INSTALLED', `${id} is not installed`);
