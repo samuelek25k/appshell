@@ -41,7 +41,10 @@ function prepareSession(app) {
     let file;
     try {
       if (url.pathname === '/__appshell/sdk.js') file = SDK_FILE;
-      else file = await realpath(resolve(app.dir, '.' + decodeURIComponent(url.pathname)));
+      else {
+        const resolved = await realpath(resolve(app.dir, '.' + decodeURIComponent(url.pathname)));
+        file = resolved.startsWith('\\\\?\\') ? resolved.slice(4) : resolved;
+      }
     } catch {
       return new Response('Not found', { status: 404 });
     }

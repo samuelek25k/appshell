@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import * as tar from 'tar';
-import { createStore, latestRelease, pack, sha256, sourceAllowed, compareVersions, parseCatalog } from '../packages/distribution/index.js';
+import { createStore, latestRelease, pack, sha256, sourceAllowed, compareVersions, parseCatalog, isInside } from '../packages/distribution/index.js';
 
 const HOST = '0.1.0';
 const fixture = fileURLToPath(new URL('./fixtures/apps/victim', import.meta.url));
@@ -157,3 +157,13 @@ test('store prunes staging directories, unlisted apps, and obsolete versions', a
   assert.equal(existsSync(join(installedDir, 'victim', '1.0.0')), true);
   assert.equal(existsSync(join(installedDir, 'victim', '1.1.0')), true);
 });
+
+test('isInside validates nested paths and handles platform prefix and casing', () => {
+  assert.equal(isInside('/app/dir', '/app/dir/index.html'), true);
+  assert.equal(isInside('/app/dir', '/app/dir'), true);
+  assert.equal(isInside('/app/dir', '/app/other'), false);
+  assert.equal(isInside('/app/dir', '/app/dir-evil'), false);
+  assert.equal(isInside('\\\\?\\C:\\app\\dir', 'C:\\app\\dir\\file.txt'), true);
+  assert.equal(isInside('C:\\app\\dir', '\\\\?\\C:\\app\\dir\\file.txt'), true);
+});
+

@@ -16,8 +16,21 @@ const MAX_PACKAGE_BYTES = 100 * 1024 * 1024;
 /** @param {string} code @param {string} message */
 const fail = (code, message) => Object.assign(new Error(message), { code });
 
+/** @param {string} p */
+const normalizePath = (p) => {
+  const stripped = p.startsWith('\\\\?\\') ? p.slice(4) : p;
+  return (process.platform === 'win32' || stripped.includes('\\'))
+    ? stripped.replaceAll('/', '\\').toLowerCase()
+    : stripped;
+};
+
 /** @param {string} parent @param {string} child */
-export const isInside = (parent, child) => child === parent || child.startsWith(parent.endsWith(sep) ? parent : parent + sep);
+export const isInside = (parent, child) => {
+  const p = normalizePath(parent);
+  const c = normalizePath(child);
+  const s = p.includes('\\') ? '\\' : sep;
+  return c === p || c.startsWith(p.endsWith(s) ? p : p + s);
+};
 
 /** @param {Uint8Array} bytes */
 export const sha256 = (bytes) => createHash('sha256').update(bytes).digest('hex');

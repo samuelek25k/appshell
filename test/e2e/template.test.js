@@ -35,7 +35,9 @@ test('a new app from the template runs with its sandboxed backend', { timeout: 9
   let greeting = '';
   for (let i = 0; i < 40 && !greeting.startsWith('Hello from the backend'); i++) {
     await new Promise((r) => setTimeout(r, 250));
-    greeting = await evaluate(port, 'app://hello', "document.getElementById('greeting').textContent");
+    try {
+      greeting = (await evaluate(port, 'app://hello', "document.getElementById('greeting')?.textContent")) ?? '';
+    } catch {}
   }
   assert.equal(greeting, 'Hello from the backend. Visit 1.');
 });
