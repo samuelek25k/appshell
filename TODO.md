@@ -13,6 +13,7 @@ Status on 2026-10-16. Update this file when work lands; delete items that are do
   - **Strict Update Lifecycle, Stale Pruning & Migration (D20):** Automated prune pass unlinks stale .staging/ remnants, untracked app folders, and obsolete versions; web session cache purged on update; uninstaller purges storage and app logs; apps inspect shell.getVersions() for deterministic schema migrations.
   - **Desktop Host UI:** Clean, lightweight desktop layout for installed apps, host-rendered widgets, and catalog management matching contracts.md.
   - **Localization & Internationalization (D15):** Platform locale detection, LTR/RTL text direction, and `shell.getLocale`.
+  - **Accounts, launchers and user-approved addresses (D24, D25, D26):** several local accounts and a Guest with per-account app data, home-screen launcher apps (Grid Home, Search Home) that can also set theme colours, and addresses the user approves per app, such as a local model server.
   - **Platform Hardening & Low-Maintenance Architecture:** Fixed backend network preload (UDP, DNS, port stripping), capped audit logs with rotation, built-in Node 22 test coverage (`pnpm test:coverage`), dependency audit (`pnpm audit`), pinned GitHub Actions, and community health assets (`LICENSE`, `SECURITY.md`, `CONTRIBUTING.md`, `CODEOWNERS`, Renovate).
 
 
@@ -21,11 +22,13 @@ Status on 2026-10-16. Update this file when work lands; delete items that are do
 - [ ] Decide D12 (app package signing), D22 (installer signing) and D23 (product and engine versions).
 - [ ] Sign and merge the release workflow change (`.github/` is protected).
 
-## Next: v0.3.0
+## Next: v0.4.0
 
 - [ ] Run the release workflow by hand for a release candidate on all three platforms.
 - [ ] On the candidate: run the hostile-app gate against the packaged build, install a catalog app, uninstall and check nothing is left behind.
-- [ ] Tag `v0.3.0`. Release notes state that installers are unsigned until D22.
+- [ ] Release the apps that need this host: `launcher-grid`, `launcher-list`, `resume-builder` 0.2.0.
+- [ ] Tag `v0.4.0`. Release notes state that installers are unsigned until D22.
+- [ ] Verified sign-in (Google, Microsoft, custom OIDC, GitHub), the second part of D24; it needs client IDs from the owner.
 
 ## Phase 1 gate
 
