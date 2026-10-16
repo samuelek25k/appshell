@@ -30,21 +30,6 @@
   </header>
 
   <main id="dashboard">
-    <section class="clock-section" id="header-clock">
-      <div class="clock-wrapper">
-        <span id="glance-time" class="clock-time">09:41</span>
-        <div class="clock-meta">
-          <span id="glance-date" class="clock-date">Thursday, Oct 15</span>
-        </div>
-      </div>
-      <div class="clock-actions">
-        <button id="btn-open-drawer" class="action-btn" title="Open App Drawer">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="icon"><circle cx="5" cy="5" r="2"/><circle cx="12" cy="5" r="2"/><circle cx="19" cy="5" r="2"/><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/><circle cx="5" cy="19" r="2"/><circle cx="12" cy="19" r="2"/><circle cx="19" cy="19" r="2"/></svg>
-          <span>All Apps</span>
-        </button>
-      </div>
-    </section>
-
     <div class="search-bar">
       <div class="search-input-wrapper">
         <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -98,34 +83,6 @@
       <ul id="catalog" class="catalog"></ul>
       <p id="no-catalog" class="empty">No apps in the catalog.</p>
     </section>
-
-    <div class="dock-wrapper">
-      <div id="dock" class="dock" role="toolbar" aria-label="Quick Launch Dock"></div>
-      <div class="gesture-pill-wrapper">
-        <button id="gesture-pill" class="gesture-pill" title="Toggle App Drawer" aria-label="Toggle App Drawer"></button>
-      </div>
-    </div>
-
-    <aside id="app-drawer" class="app-drawer" hidden>
-      <div class="drawer-header">
-        <div class="drawer-handle" id="drawer-handle"></div>
-        <div class="drawer-search-bar">
-          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input type="search" id="drawer-search-input" placeholder="Search installed apps…" autocomplete="off">
-          <button id="drawer-close-btn" class="drawer-close" aria-label="Close Drawer">✕</button>
-        </div>
-        <div class="drawer-categories">
-          <button class="cat-pill active" data-cat="all">All</button>
-          <button class="cat-pill" data-cat="productivity">Productivity</button>
-          <button class="cat-pill" data-cat="utilities">Utilities</button>
-          <button class="cat-pill" data-cat="dev">Developer</button>
-          <button class="cat-pill" data-cat="system">System</button>
-        </div>
-      </div>
-      <div class="drawer-body">
-        <ul id="drawer-apps" class="drawer-apps-grid"></ul>
-      </div>
-    </aside>
   </main>
 </body>
 </html>

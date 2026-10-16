@@ -8,7 +8,7 @@ Status on 2026-10-14. Update this file when work lands; delete items that are do
 - **Phase 1 (on `main`):** catalog installs (D9–D11), developer CLI & template, app-scoped identity tokens (D8), store install links with confirmation, and the Appshell product page.
 - **Phase 2 & Hardening (Completed):**
   - **Inter-App Communication (IAC) (D17):** Host-mediated messaging and pub/sub topic broadcasting with declarative permissions, strict isolation, and audit logging.
-  - **Android-Inspired Home Screen Experience:** Clean, responsive At-a-Glance smart header, app drawer with categories and search, adaptive icon squircle styling with zero CSP violations.
+  - **Desktop Host UI:** Clean, lightweight desktop layout for installed apps, host-rendered widgets, and catalog management matching contracts.md.
   - **Localization & Internationalization (D15):** Platform locale detection, LTR/RTL text direction, and `shell.getLocale`.
   - **Platform Hardening & Low-Maintenance Architecture:** Fixed backend network preload (UDP, DNS, port stripping), capped audit logs with rotation, built-in Node 22 test coverage (`pnpm test:coverage`), dependency audit (`pnpm audit`), pinned GitHub Actions, and community health assets (`LICENSE`, `SECURITY.md`, `CONTRIBUTING.md`, `CODEOWNERS`, Renovate).
 
@@ -20,9 +20,9 @@ Status on 2026-10-14. Update this file when work lands; delete items that are do
 - [ ] After merging, push tag `welcome-v0.1.0` in appshell-apps to publish the first catalog app.
 - [x] Confirm D8–D16 decisions.
 
-## Next: Phase 1 gate & UI streamlining
+## Next: Phase 1 gate
 
-- [ ] Streamline host UI: simplify heavy launcher concepts (drawer, gesture pill, dock, glance clock) into a lean, fast desktop layout for apps, widgets, and catalog matching `docs/contracts.md`.
+- [x] Streamline host UI: removed mobile launcher concepts (drawer, gesture pill, dock, glance clock) in favor of a lean, fast desktop layout for apps, widgets, and catalog matching `docs/contracts.md`.
 - [ ] Timed walkthrough: template to installed release in under 15 minutes, using the docs only.
 - [ ] Run the hostile-app gate against a packaged build, because hardened builds may drop `NODE_OPTIONS` (see Known risks in `docs/decisions.md`).
 

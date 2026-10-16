@@ -18,8 +18,6 @@ const $ = (/** @type {string} */ id) => /** @type {HTMLElement} */ (document.get
 /** @type {any} */
 let currentState = null;
 let searchQuery = '';
-let drawerCategory = 'all';
-let drawerQuery = '';
 
 /**
  * @param {string} tag
@@ -47,12 +45,12 @@ function hashColor(str) {
 
 /**
  * @param {any} app
- * @param {'normal' | 'small' | 'dock'} [size]
+ * @param {'normal' | 'small'} [size]
  * @returns {HTMLElement}
  */
 function createAppIcon(app, size = 'normal') {
   const bg = hashColor(app.id || app.title || 'app');
-  const className = size === 'small' ? 'cat-icon' : size === 'dock' ? 'dock-icon' : 'app-icon';
+  const className = size === 'small' ? 'cat-icon' : 'app-icon';
   const icon = el('div', { class: className });
   icon.style.setProperty('background', bg);
 
@@ -83,31 +81,6 @@ function renderAppItem(app) {
     el('span', { class: 'app-title' }, [app.title]),
   ]);
   return el('li', { class: 'app-item' }, [btn]);
-}
-
-/**
- * @param {any} app
- * @returns {HTMLElement}
- */
-function renderDockItem(app) {
-  return el('button', {
-    class: `dock-btn${app.running ? ' running' : ''}`,
-    'data-id': app.id,
-    title: app.title,
-    'aria-label': app.title,
-  }, [createAppIcon(app, 'dock')]);
-}
-
-/**
- * @param {any} app
- * @returns {HTMLElement}
- */
-function renderDrawerItem(app) {
-  const btn = el('button', { class: 'drawer-app-btn', 'data-id': app.id }, [
-    createAppIcon(app, 'normal'),
-    el('span', { class: 'drawer-app-title' }, [app.title]),
-  ]);
-  return el('li', { class: 'drawer-app-item' }, [btn]);
 }
 
 /**
@@ -224,8 +197,6 @@ function render(state) {
   if (close) close.disabled = isHome;
 
   renderApps(state);
-  renderDock(state);
-  renderDrawer(state, drawerCategory, drawerQuery);
   renderWidgets(state);
   renderCatalog(state);
   renderConfirm(state);
@@ -277,33 +248,6 @@ function renderCatalog(state) {
 }
 
 /** @param {any} state */
-function renderDock(state) {
-  const dock = $('dock');
-  if (!dock) return;
-  const apps = state.apps ?? [];
-  dock.replaceChildren(...apps.slice(0, 6).map((/** @type {any} */ a) => renderDockItem(a)));
-}
-
-/**
- * @param {any} state
- * @param {string} cat
- * @param {string} query
- */
-function renderDrawer(state, cat, query) {
-  const grid = $('drawer-apps');
-  if (!grid) return;
-
-  const q = query.trim().toLowerCase();
-  const filtered = (state.apps ?? []).filter((/** @type {any} */ a) => {
-    const matchCat = cat === 'all' || (a.categories && a.categories.includes(cat));
-    const matchQuery = !q || a.title.toLowerCase().includes(q) || a.id.toLowerCase().includes(q);
-    return matchCat && matchQuery;
-  });
-
-  grid.replaceChildren(...filtered.map((/** @type {any} */ a) => renderDrawerItem(a)));
-}
-
-/** @param {any} state */
 function renderConfirm(state) {
   const panel = $('install-confirm');
   if (!panel) return;
@@ -324,18 +268,6 @@ function renderConfirm(state) {
   if (source) source.textContent = `Source: ${row.repository}`;
 }
 
-function updateClock() {
-  const time = $('glance-time');
-  const date = $('glance-date');
-  const now = new Date();
-  if (time) {
-    time.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-  }
-  if (date) {
-    date.textContent = now.toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' });
-  }
-}
-
 function wireEvents() {
   $('back')?.addEventListener('click', () => api.back());
   $('home')?.addEventListener('click', () => api.home());
@@ -348,28 +280,6 @@ function wireEvents() {
     if (btn) {
       const id = btn.getAttribute('data-id');
       if (id) api.open(id);
-    }
-  });
-
-  $('dock')?.addEventListener('click', (e) => {
-    const target = /** @type {HTMLElement} */ (e.target);
-    const btn = target.closest('button[data-id]');
-    if (btn) {
-      const id = btn.getAttribute('data-id');
-      if (id) api.open(id);
-    }
-  });
-
-  $('drawer-apps')?.addEventListener('click', (e) => {
-    const target = /** @type {HTMLElement} */ (e.target);
-    const btn = target.closest('button[data-id]');
-    if (btn) {
-      const id = btn.getAttribute('data-id');
-      if (id) {
-        api.open(id);
-        const drawer = $('app-drawer');
-        if (drawer) drawer.hidden = true;
-      }
     }
   });
 
@@ -419,44 +329,6 @@ function wireEvents() {
     if (currentState) renderApps(currentState);
   });
 
-  $('gesture-pill')?.addEventListener('click', () => {
-    const drawer = $('app-drawer');
-    if (drawer) {
-      drawer.hidden = !drawer.hidden;
-      if (!drawer.hidden && currentState) renderDrawer(currentState, drawerCategory, drawerQuery);
-    }
-  });
-
-  $('btn-open-drawer')?.addEventListener('click', () => {
-    const drawer = $('app-drawer');
-    if (drawer) {
-      drawer.hidden = false;
-      if (currentState) renderDrawer(currentState, drawerCategory, drawerQuery);
-    }
-  });
-
-  $('drawer-close-btn')?.addEventListener('click', () => {
-    const drawer = $('app-drawer');
-    if (drawer) drawer.hidden = true;
-  });
-
-  $('.drawer-categories')?.addEventListener('click', (e) => {
-    const target = /** @type {HTMLElement} */ (e.target);
-    const pill = target.closest('.cat-pill');
-    if (pill) {
-      document.querySelectorAll('.cat-pill').forEach((p) => p.classList.remove('active'));
-      pill.classList.add('active');
-      drawerCategory = pill.getAttribute('data-cat') || 'all';
-      if (currentState) renderDrawer(currentState, drawerCategory, drawerQuery);
-    }
-  });
-
-  $('drawer-search-input')?.addEventListener('input', (e) => {
-    const input = /** @type {HTMLInputElement} */ (e.target);
-    drawerQuery = input.value;
-    if (currentState) renderDrawer(currentState, drawerCategory, drawerQuery);
-  });
-
   $('install-yes')?.addEventListener('click', () => {
     const pendingId = currentState?.manager?.pendingInstall;
     if (pendingId) {
@@ -470,11 +342,6 @@ function wireEvents() {
 
   window.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
-      const drawer = $('app-drawer');
-      if (drawer && !drawer.hidden) {
-        drawer.hidden = true;
-        return;
-      }
       if (currentState?.manager?.pendingInstall) {
         api.dismissInstall();
         return;
@@ -489,7 +356,5 @@ function wireEvents() {
   });
 }
 
-updateClock();
-setInterval(updateClock, 1000);
 wireEvents();
 api.onState(render);
