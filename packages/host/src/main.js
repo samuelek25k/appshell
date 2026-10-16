@@ -90,6 +90,7 @@ function setTheme(theme) {
   } catch (error) {
     hostLog(`failed to save settings: ${error instanceof Error ? error.message : String(error)}`);
   }
+  publish();
 }
 
 /** @param {string} message */

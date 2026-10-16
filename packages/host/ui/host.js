@@ -215,12 +215,9 @@ function render(state) {
   const themeToggle = $('theme-toggle');
   if (themeToggle) {
     themeToggle.title = `Theme: ${themeSource}`;
-    const sys = $('theme-icon-system');
-    const light = $('theme-icon-light');
-    const dark = $('theme-icon-dark');
-    if (sys) sys.hidden = themeSource !== 'system';
-    if (light) light.hidden = themeSource !== 'light';
-    if (dark) dark.hidden = themeSource !== 'dark';
+    for (const source of ['system', 'light', 'dark']) {
+      $(`theme-icon-${source}`)?.toggleAttribute('hidden', themeSource !== source);
+    }
   }
 
   const localeSelect = /** @type {HTMLSelectElement | null} */ ($('locale-select'));

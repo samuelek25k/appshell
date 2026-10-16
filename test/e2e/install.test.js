@@ -44,6 +44,16 @@ test('catalog apps install, run and uninstall; tampered packages are refused', {
 
   await waitForPage(port, 'file://', "typeof host === 'object' && document.readyState === 'complete'");
   const ui = (/** @type {string} */ js) => evaluate(port, 'file://', js);
+
+  const visibleThemeIcons = "[...document.querySelectorAll('#theme-toggle svg')].filter((i) => getComputedStyle(i).display !== 'none').map((i) => i.id).join()";
+  assert.equal(await ui(visibleThemeIcons), 'theme-icon-system');
+  for (const source of ['light', 'dark', 'system']) {
+    await ui("document.getElementById('theme-toggle').click()");
+    let title = '';
+    for (let i = 0; i < 20 && title !== `Theme: ${source}`; i++) { await new Promise((r) => setTimeout(r, 100)); title = await ui("document.getElementById('theme-toggle').title"); }
+    assert.equal(title, `Theme: ${source}`);
+    assert.equal(await ui(visibleThemeIcons), `theme-icon-${source}`);
+  }
   await ui('host.refreshCatalog()');
 
   await ui("host.install('victim')");
