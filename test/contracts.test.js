@@ -176,6 +176,27 @@ test('backend network preload blocks undeclared network connections', async () =
   assert.equal(child.stdout, 'BLOCKED_ALL');
 });
 
+test('backend network preload honours ports on declared hosts', async () => {
+  const { spawnSync } = await import('node:child_process');
+  const { fileURLToPath } = await import('node:url');
+  const { realpathSync } = await import('node:fs');
+  const preload = realpathSync(fileURLToPath(new URL('../packages/host/preload/backend.cjs', import.meta.url)));
+  const script = `
+    const net = require('node:net');
+    const denied = (port) => new Promise((resolve) => {
+      const s = net.connect({ host: 'api.example.com', port });
+      s.on('connect', () => { s.destroy(); resolve(false); });
+      s.on('error', (e) => resolve(e.message.includes('denied by Appshell')));
+    });
+    Promise.all([denied(8443), denied(80)]).then(([declared, other]) => process.stdout.write(JSON.stringify({ declared, other })));
+  `;
+  const child = spawnSync(process.execPath, ['--permission', `--allow-fs-read=${preload}`, `--require=${preload}`, '-e', script], {
+    env: { ...process.env, APPSHELL_ALLOWED_HOSTS: 'api.example.com:8443' },
+    encoding: 'utf8',
+  });
+  assert.deepEqual(JSON.parse(child.stdout), { declared: false, other: true });
+});
+
 test('bridge supports shell.getLocale and reports system locale information', async (t) => {
   const { mkdtempSync, rmSync } = await import('node:fs');
   const { tmpdir } = await import('node:os');
