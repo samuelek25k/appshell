@@ -36,7 +36,9 @@ Status on 2026-10-16. Update this file when work lands; delete items that are do
 
 ## Later
 
+- [ ] Issue triaging and fixing agent: inspects incoming issues, reproduces bugs with isolated tests, drafts minimal fixes conforming to contracts and hygiene, and verifies gates.
 - [ ] Ratings and reviews in the store. Skipped for now; they need a backend the static store does not have.
+
 
 ## Known limitations
 
