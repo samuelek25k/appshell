@@ -19,6 +19,8 @@
     "dist:mac": "node scripts/build-config.mjs && electron-builder --mac --publish never",
     "dist:linux": "node scripts/build-config.mjs && electron-builder --linux --publish never",
     "dist": "node scripts/build-config.mjs && electron-builder --publish never",
+    "build:releases": "node scripts/build-releases.mjs",
+    "build:site": "node scripts/build-releases.mjs",
     "pages:preview": "wrangler pages dev site",
     "pages:deploy": "wrangler pages deploy site",
     "start": "electron packages/host --product products/appshell/product.json --apps ../appshell-apps",

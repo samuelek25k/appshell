@@ -153,7 +153,7 @@
       </p>
 
       <div class="pt-4 flex flex-wrap items-center justify-center gap-3">
-        <a id="hero-win-btn" href="https://github.com/samuelek25k/appshell/releases/latest/download/Appshell-Setup.exe" class="inline-flex items-center justify-center gap-2 px-5 py-3 text-sm font-bold bg-brand-600 hover:bg-brand-500 text-white shadow-lg shadow-brand-500/20 hover:shadow-brand-500/30 transition-all">
+        <a id="hero-win-btn" href="https://github.com/samuelek25k/appshell/releases/download/v0.2.0/Appshell.Setup.0.1.0.exe" class="inline-flex items-center justify-center gap-2 px-5 py-3 text-sm font-bold bg-brand-600 hover:bg-brand-500 text-white shadow-lg shadow-brand-500/20 hover:shadow-brand-500/30 transition-all">
           <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           <span>Windows (.exe)</span>
         </a>
@@ -189,7 +189,7 @@
           </p>
         </div>
         <div class="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800 space-y-2">
-          <a id="card-win-link" href="https://github.com/samuelek25k/appshell/releases/latest/download/Appshell-Setup.exe" class="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-600 dark:text-brand-400 hover:underline">
+          <a id="card-win-link" href="https://github.com/samuelek25k/appshell/releases/download/v0.2.0/Appshell.Setup.0.1.0.exe" class="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-600 dark:text-brand-400 hover:underline">
             Download Appshell-Setup.exe →
           </a>
           <div class="text-[11px] text-slate-500 dark:text-slate-400 font-mono">Local build: <code class="bg-slate-100 dark:bg-slate-900 px-1 py-0.5">pnpm dist:win</code></div>
@@ -656,17 +656,29 @@ pnpm dist          <span class="text-slate-500"># Package all target installers<
         updatePage(cachedData);
       }
 
-      fetch('https://api.github.com/repos/samuelek25k/appshell/releases')
-        .then((res) => (res.ok ? res.json() : null))
-        .then((releases) => {
-          if (Array.isArray(releases) && releases.length > 0) {
-            try {
-              localStorage.setItem(CACHE_KEY, JSON.stringify({ releases, time: Date.now() }));
-            } catch {}
-            updatePage(releases);
-          }
-        })
-        .catch(() => {});
+      async function loadReleases() {
+        let releases = null;
+        try {
+          const staticRes = await fetch('./releases.json');
+          if (staticRes.ok) releases = await staticRes.json();
+        } catch {}
+
+        if (!Array.isArray(releases) || releases.length === 0) {
+          try {
+            const apiRes = await fetch('https://api.github.com/repos/samuelek25k/appshell/releases');
+            if (apiRes.ok) releases = await apiRes.json();
+          } catch {}
+        }
+
+        if (Array.isArray(releases) && releases.length > 0) {
+          try {
+            localStorage.setItem(CACHE_KEY, JSON.stringify({ releases, time: Date.now() }));
+          } catch {}
+          updatePage(releases);
+        }
+      }
+
+      loadReleases().catch(() => {});
     })();
   </script>
 
