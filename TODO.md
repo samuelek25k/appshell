@@ -19,7 +19,7 @@ Status on 2026-10-16. Update this file when work lands; delete items that are do
 
 ## Needs the repo owner
 
-- [ ] Decide D12 (app package signing), D22 (installer signing) and D23 (product and engine versions).
+- [ ] Decide D12 (app package signing), D22 (installer signing), D23 (product and engine versions) and D27 (Cloudflare Edge CDN).
 - [ ] Sign and merge the release workflow change (`.github/` is protected).
 
 ## Next: v0.4.0
