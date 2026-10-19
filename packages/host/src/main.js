@@ -426,7 +426,7 @@ function layout() {
   const { width, height } = win.getContentBounds();
   for (const [id, { view }] of running) {
     view.setBounds({ x: 0, y: CHROME_HEIGHT, width, height: Math.max(0, height - CHROME_HEIGHT) });
-    view.setVisible(id === (active ?? (overlay ? null : homeId())));
+    view.setVisible(!overlay && id === (active ?? homeId()));
   }
 }
 
@@ -528,7 +528,11 @@ function handleLink(link) {
  */
 async function requestInstall(appId) {
   if (accounts.active().type === 'guest') { managerError = 'Guests cannot install or remove apps'; publish(); return; }
-  await manager.refresh();
+  if (apps.has(appId)) {
+    pendingInstall = null;
+    open(appId);
+    return;
+  }
   const row = manager.rows().rows.find((r) => r.id === appId);
   pendingInstall = row?.latest ? appId : null;
   managerError = row?.latest ? null : `${appId}: not in this product's catalog`;
