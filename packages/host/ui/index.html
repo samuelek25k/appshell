@@ -52,6 +52,64 @@
     </div>
   </header>
 
+  <section id="settings-dialog" class="confirm" role="dialog" aria-labelledby="settings-title" hidden>
+    <div class="confirm-content settings-content">
+      <h2 id="settings-title">Settings</h2>
+      <label class="setting">
+        <span>Home screen</span>
+        <select id="launcher-select" aria-label="Home screen"></select>
+      </label>
+      <div id="endpoints-section">
+        <h3>Network access you approved</h3>
+        <ul id="endpoints" class="catalog"></ul>
+      </div>
+      <div class="shelf-header">
+        <h3>Manage apps</h3>
+        <button id="refresh" class="link">↻ Refresh</button>
+      </div>
+      <p id="manager-error" class="error" role="alert" hidden></p>
+      <ul id="catalog" class="catalog"></ul>
+      <p id="no-catalog" class="empty">No apps in the catalog.</p>
+      <div class="actions">
+        <button id="settings-close" type="button" class="primary">Done</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="account-dialog" class="confirm" role="dialog" aria-labelledby="account-title" hidden>
+    <form id="account-form" class="confirm-content">
+      <h2 id="account-title"></h2>
+      <p id="account-detail" class="quiet"></p>
+      <input id="account-name-input" type="text" maxlength="40" placeholder="Name" autocomplete="off" aria-label="Name">
+      <input id="account-pin-input" type="password" minlength="4" maxlength="64" placeholder="PIN" autocomplete="off" aria-label="PIN">
+      <p id="account-error" class="error" role="alert"></p>
+      <div class="actions">
+        <button id="account-submit" type="submit" class="primary"></button>
+        <button id="account-cancel" type="button">Cancel</button>
+      </div>
+    </form>
+  </section>
+
+  <section id="install-confirm" class="confirm" role="dialog" aria-labelledby="install-title" hidden>
+    <div class="confirm-content">
+      <div class="confirm-badge">
+        <span class="badge-dot"></span>
+        <span>Verified Package</span>
+      </div>
+      <h2 id="install-title">Install app?</h2>
+      <p id="install-detail"></p>
+      <p id="install-source" class="quiet"></p>
+      <div class="install-caps">
+        <h4>Declared Capabilities & Governance</h4>
+        <div id="install-caps-list" class="cap-pills"></div>
+      </div>
+      <div class="actions">
+        <button id="install-yes" class="primary">Install & Trust</button>
+        <button id="install-no">Cancel</button>
+      </div>
+    </div>
+  </section>
+
   <main id="dashboard">
     <div class="search-bar">
       <div class="search-input-wrapper">
@@ -60,64 +118,6 @@
         <span id="search-clear" class="search-clear" hidden>✕</span>
       </div>
     </div>
-
-    <section id="settings-dialog" class="confirm" role="dialog" aria-labelledby="settings-title" hidden>
-      <div class="confirm-content settings-content">
-        <h2 id="settings-title">Settings</h2>
-        <label class="setting">
-          <span>Home screen</span>
-          <select id="launcher-select" aria-label="Home screen"></select>
-        </label>
-        <div id="endpoints-section">
-          <h3>Network access you approved</h3>
-          <ul id="endpoints" class="catalog"></ul>
-        </div>
-        <div class="shelf-header">
-          <h3>Manage apps</h3>
-          <button id="refresh" class="link">↻ Refresh</button>
-        </div>
-        <p id="manager-error" class="error" role="alert" hidden></p>
-        <ul id="catalog" class="catalog"></ul>
-        <p id="no-catalog" class="empty">No apps in the catalog.</p>
-        <div class="actions">
-          <button id="settings-close" type="button" class="primary">Done</button>
-        </div>
-      </div>
-    </section>
-
-    <section id="account-dialog" class="confirm" role="dialog" aria-labelledby="account-title" hidden>
-      <form id="account-form" class="confirm-content">
-        <h2 id="account-title"></h2>
-        <p id="account-detail" class="quiet"></p>
-        <input id="account-name-input" type="text" maxlength="40" placeholder="Name" autocomplete="off" aria-label="Name">
-        <input id="account-pin-input" type="password" minlength="4" maxlength="64" placeholder="PIN" autocomplete="off" aria-label="PIN">
-        <p id="account-error" class="error" role="alert"></p>
-        <div class="actions">
-          <button id="account-submit" type="submit" class="primary"></button>
-          <button id="account-cancel" type="button">Cancel</button>
-        </div>
-      </form>
-    </section>
-
-    <section id="install-confirm" class="confirm" role="dialog" aria-labelledby="install-title" hidden>
-      <div class="confirm-content">
-        <div class="confirm-badge">
-          <span class="badge-dot"></span>
-          <span>Verified Package</span>
-        </div>
-        <h2 id="install-title">Install app?</h2>
-        <p id="install-detail"></p>
-        <p id="install-source" class="quiet"></p>
-        <div class="install-caps">
-          <h4>Declared Capabilities & Governance</h4>
-          <div id="install-caps-list" class="cap-pills"></div>
-        </div>
-        <div class="actions">
-          <button id="install-yes" class="primary">Install & Trust</button>
-          <button id="install-no">Cancel</button>
-        </div>
-      </div>
-    </section>
 
     <section class="shelf-section">
       <div class="shelf-header">

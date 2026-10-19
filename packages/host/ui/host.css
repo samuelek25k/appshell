@@ -747,6 +747,9 @@ body.app-open #dashboard {
   align-items: center;
   gap: 8px;
   flex: 1;
+  width: 100%;
+  height: auto;
+  min-height: 32px;
   padding: 8px 10px;
   border: 0;
   border-radius: 8px;
@@ -754,6 +757,7 @@ body.app-open #dashboard {
   color: var(--ink);
   font-size: 13px;
   text-align: left;
+  white-space: nowrap;
   cursor: pointer;
 }
 
@@ -767,6 +771,8 @@ body.app-open #dashboard {
 
 .account-menu .account-remove {
   flex: none;
+  width: auto;
+  height: auto;
   color: var(--critical);
   font-size: 12px;
 }
