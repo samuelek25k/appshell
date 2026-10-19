@@ -22,12 +22,12 @@ Status on 2026-10-16. Update this file when work lands; delete items that are do
 - [ ] Decide D12 (app package signing), D22 (installer signing) and D23 (product and engine versions).
 - [ ] Sign and merge the release workflow change (`.github/` is protected).
 
-## Next: v0.4.0
+## Next: v0.4.1
 
 - [x] Run the release workflow by hand for a release candidate on all three platforms.
 - [ ] On the candidate: run the hostile-app gate against the packaged build, install a catalog app, uninstall and check nothing is left behind.
 - [ ] Release the apps that need this host: `launcher-grid`, `launcher-list`, `resume-builder` 0.2.0.
-- [x] Tag `v0.4.0`. Release notes state that installers are unsigned until D22.
+- [x] Tag `v0.4.1`. Release notes state that installers are unsigned until D22.
 - [ ] Verified sign-in (Google, Microsoft, custom OIDC, GitHub), the second part of D24; it needs client IDs from the owner.
 
 ## Phase 1 gate
