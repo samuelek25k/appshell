@@ -41,7 +41,8 @@
                 "channel": { "enum": ["stable", "beta"] },
                 "url": { "type": "string", "pattern": "^(https|file)://" },
                 "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
-                "commit": { "type": "string", "pattern": "^[0-9a-f]{7,40}$" }
+                "commit": { "type": "string", "pattern": "^[0-9a-f]{7,40}$" },
+                "signature": { "description": "Base64 Ed25519 signature over the package bytes.", "type": "string", "pattern": "^[A-Za-z0-9+/]{86}==$" }
               }
             }
           }
