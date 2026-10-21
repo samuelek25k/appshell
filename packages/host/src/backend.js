@@ -2,10 +2,10 @@ import { utilityProcess } from 'electron';
 import { realpathSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { DEFAULT_LIMITS } from '@appshell/contracts';
 import { fail } from './services.js';
 
 const CALL_TIMEOUT_MS = 10_000;
-const IDLE_MS = 60_000;
 const MAX_RESTARTS = 3;
 const rawPreload = (realpathSync.native ?? realpathSync)(fileURLToPath(new URL('../preload/backend.cjs', import.meta.url)));
 const BACKEND_PRELOAD = rawPreload.startsWith('\\\\?\\') ? rawPreload.slice(4) : rawPreload;
@@ -78,7 +78,7 @@ export function verifyBackendSecurity(log) {
  * @param {import('./registry.js').InstalledApp} app
  * @param {(level: string, message: string) => void} log
  */
-export function createBackend(app, log) {
+export function createBackend(app, log, idleMs = DEFAULT_LIMITS.backendIdleMs) {
   const rawAppDir = (realpathSync.native ?? realpathSync)(app.dir);
   const appDir = rawAppDir.startsWith('\\\\?\\') ? rawAppDir.slice(4) : rawAppDir;
   const { id, entry } = app.manifest;
@@ -133,7 +133,7 @@ export function createBackend(app, log) {
       if (!secure) return Promise.reject(fail('BACKEND_UNAVAILABLE', 'backend security validation failed'));
       child ??= start();
       clearTimeout(idle);
-      idle = setTimeout(() => this.stop(), IDLE_MS);
+      idle = setTimeout(() => this.stop(), idleMs);
       const callId = ++nextId;
       const proc = child;
       return new Promise((resolve, reject) => {

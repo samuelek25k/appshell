@@ -4,8 +4,8 @@ import { validate } from '@appshell/contracts';
 import { checkAppDir, isInside } from '@appshell/distribution';
 
 /** @typedef {import('@appshell/contracts').Manifest} Manifest */
-/** @typedef {{ name: string, protocol: string, dataDirectory: string, package: { extension: string, displayName: string }, catalog?: string, defaultLocale?: string, supportedLocales?: string[], apps: { path: string, protected?: boolean }[], policy: { capabilities?: 'warn' | 'enforce', developerMode?: boolean, allowedSources?: string[], channel?: 'stable' | 'beta', blockedApps?: string[], requireReview?: boolean, allowGuest?: boolean, allowUserEndpoints?: boolean } }} Product */
-/** @typedef {{ manifest: Manifest, dir: string, protected: boolean }} InstalledApp */
+/** @typedef {{ name: string, protocol: string, dataDirectory: string, package: { extension: string, displayName: string }, catalog?: string, defaultLocale?: string, supportedLocales?: string[], apps: { path: string, protected?: boolean }[], policy: { capabilities?: 'warn' | 'enforce', developerMode?: boolean, allowedSources?: string[], channel?: 'stable' | 'beta', grants?: import('@appshell/contracts').Grant[], blockedApps?: string[], requireReview?: boolean, allowGuest?: boolean, allowUserEndpoints?: boolean } }} Product */
+/** @typedef {{ manifest: Manifest, dir: string, protected: boolean, source?: 'bundled' | 'catalog' }} InstalledApp */
 
 const ENGINE_VERSION = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')).appshell.engine;
 
@@ -33,17 +33,17 @@ export function loadProduct(productFile) {
 export function loadApps(product, appsRoot, installed, report) {
   /** @type {Map<string, InstalledApp>} */
   const apps = new Map();
-  const add = (/** @type {string} */ where, /** @type {boolean} */ isProtected) => {
+  const add = (/** @type {string} */ where, /** @type {boolean} */ isProtected, /** @type {'bundled' | 'catalog'} */ source) => {
     try {
       const { dir, manifest } = checkAppDir(where, ENGINE_VERSION);
       if (apps.has(manifest.id)) throw new Error(`duplicate app id ${manifest.id}`);
-      apps.set(manifest.id, { manifest, dir, protected: isProtected });
+      apps.set(manifest.id, { manifest, dir, protected: isProtected, source });
     } catch (error) {
       report(`Skipped app at ${where}: ${error instanceof Error ? error.message : error}`);
     }
   };
-  for (const entry of product.apps) add(resolve(appsRoot, entry.path), entry.protected === true);
-  for (const entry of installed) add(entry.dir, false);
+  for (const entry of product.apps) add(resolve(appsRoot, entry.path), entry.protected === true, 'bundled');
+  for (const entry of installed) add(entry.dir, false, 'catalog');
   return apps;
 }
 

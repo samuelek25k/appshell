@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { CLOSE_VETO_TIMEOUT_MS, allowsIacReceive } from '@appshell/contracts';
+import { CLOSE_VETO_TIMEOUT_MS, allowsIacReceive, limitsFor } from '@appshell/contracts';
 import { loadProduct, loadApps, ENGINE_VERSION } from './registry.js';
 import { createManager } from './manager.js';
 import { userInfo } from 'node:os';
@@ -124,7 +124,18 @@ const manager = createManager({
   fetch: /** @type {typeof globalThis.fetch} */ ((input, init) => net.fetch(/** @type {any} */ (input), init)),
 });
 let apps = loadApps(product, appsRoot, manager.installed(), hostLog);
-const services = createServices(() => accounts.root(accounts.active()), dataRoot);
+const grantAudited = new Set();
+/** @param {string} appId */
+function limitsOf(appId) {
+  const app = apps.get(appId);
+  const limits = limitsFor(product.policy.grants, { id: appId, source: app?.source });
+  if (limits.granted && !grantAudited.has(appId)) {
+    grantAudited.add(appId);
+    services.audit({ event: 'GRANT_APPLIED', actor: accounts.active().id, target: appId, details: { source: app?.source, storageBytes: limits.storageBytes, backendIdleMs: limits.backendIdleMs } });
+  }
+  return limits;
+}
+const services = createServices(() => accounts.root(accounts.active()), dataRoot, limitsOf);
 const endpointStore = createEndpoints(() => accounts.root(accounts.active()));
 const autoApproveEndpoints = process.argv.includes('--approve-endpoints');
 if (autoApproveEndpoints && !product.policy.developerMode) throw new Error('--approve-endpoints needs policy.developerMode');
@@ -246,7 +257,7 @@ const bridge = createBridge({
   backendFor(appId) {
     let backend = backends.get(appId);
     if (!backend) {
-      backend = createBackend(/** @type {import('./registry.js').InstalledApp} */ (apps.get(appId)), appLog(appId));
+      backend = createBackend(/** @type {import('./registry.js').InstalledApp} */ (apps.get(appId)), appLog(appId), limitsOf(appId).backendIdleMs);
       backends.set(appId, backend);
     }
     return backend;
