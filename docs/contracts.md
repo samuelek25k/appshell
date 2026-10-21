@@ -63,7 +63,7 @@ UI: `await window.appshell.call(method, params)`; failures reject with `Error("<
 | `iac.subscribe` | `channel` (`[A-Za-z0-9_.-]{1,64}`) | `capabilities.iac` (permitting `channel`) |
 | `iac.unsubscribe` | `channel` (`[A-Za-z0-9_.-]{1,64}`) | `capabilities.iac` (permitting `channel`) |
 
-Limits: storage values ≤ 64 KB, ≤ 1 MB per app. Errors: `UNKNOWN_METHOD`, `INVALID_PARAMS`, `CAPABILITY_DENIED`, `BACKEND_UNAVAILABLE`, `BACKEND_TIMEOUT` (10 s), `BACKEND_ERROR`, `UNKNOWN_CALLER`, `INTERNAL`.
+Limits: storage values ≤ 64 KB, ≤ 1 MB per app unless a grant raises it (see Grants). Errors: `UNKNOWN_METHOD`, `INVALID_PARAMS`, `CAPABILITY_DENIED`, `BACKEND_UNAVAILABLE`, `BACKEND_TIMEOUT` (10 s), `BACKEND_ERROR`, `UNKNOWN_CALLER`, `INTERNAL`.
 `shell.getVersions` returns `{ current, previous, installedAt }` for version tracking, schema migration, and stale key pruning.
 
 ## Identity
@@ -88,6 +88,14 @@ An app with `capabilities.userEndpoints: true` may ask for one extra address at 
 | `network.endpoints` | the addresses already approved for this app |
 
 `address` is `https://host[:port]` or `http://host[:port]`; paths are ignored and `ws`/`wss` follow `http`/`https`. Plain `http` and `ws` are accepted only for this computer (`localhost`, `127.0.0.0/8`, `::1`) and private networks (`10/8`, `172.16/12`, `192.168/16`, `169.254/16`, `fc00::/7`); anything else must be `https`. An approval covers exactly that scheme family, host and port, for that app and account. It is listed in Settings, where it can be removed and takes effect at once, and is deleted with the app. Every approval, denial and removal is audited. `policy.allowUserEndpoints: false` turns the feature off. These apps get a broad `connect-src` in their CSP; the host's request filter is what enforces the list. Backend processes are not extended: they keep only the hosts in `capabilities.network`. In developer mode `--approve-endpoints` approves without a prompt. Proved by `test/endpoints.test.js` and `test/e2e/endpoints.test.js`.
+
+## Grants (D27)
+
+`policy.grants` is a build-time list in `product.json` that raises resource limits for apps from a named source. Each grant has `from` (`bundled` for apps in `product.apps`, `catalog` for apps installed from the product catalog), an optional `apps` list that narrows it to those IDs, and at least one of `storageMb` (app storage) and `backendIdleMinutes` (how long an idle backend keeps running). There is no wildcard and no source for sideloaded apps, so an app that matches no grant keeps the defaults: 1 MB and 60 seconds.
+
+A grant only widens: when several match, the largest value wins, and a value below the default changes nothing. The platform ceilings are 32 MB and 1440 minutes; the schema rejects larger values and the host clamps them again. Grants change no isolation rule: apps still get no Node, no host IPC and no other app's origin, and they cannot read or write the product configuration. The first time a grant is applied to an app in a run, the host audits `GRANT_APPLIED` with the source and the limits. Proved by `test/grants.test.js`.
+
+A source is trusted only as far as its catalog is: the host checks the release address against `policy.allowedSources` and the package against its checksum, not who built it. Package signing (D12) is what would prove that.
 
 ## Launchers (D25)
 
@@ -129,6 +137,7 @@ Descriptors (`widget.schema.json`) hold up to 8 blocks: `text`, `metric`, `list`
 
 Product policies govern app permissions, life cycle, and administrative control (`product.schema.json`):
 - `policy.capabilities`: defaults to `'enforce'` (rejections throw `CAPABILITY_DENIED`), or `'warn'`.
+- `policy.grants`: see Grants (D27).
 - `policy.blockedApps`: array of prohibited app IDs blocked from installation, launch, and IAC messaging.
 - **Audit Log (`logs/audit.log`)**: append-only JSONL log recording sensitive life cycle events (`APP_STARTED`, `APP_INSTALLED`, `APP_ROLLEDBACK`, `APP_UNINSTALLED`, `APP_LAUNCH_BLOCKED`, `APP_INSTALL_BLOCKED`, `CAPABILITY_DENIED`, `TOKEN_ISSUED`, `IAC_MESSAGE_SENT`, `IAC_PUBLISHED`, `IAC_DENIED`) with ISO timestamp, actor, target app, and details. Capped with log rotation at 2 MB.
 

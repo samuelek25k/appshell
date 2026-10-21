@@ -1,6 +1,7 @@
 import { mkdirSync, readFileSync, writeFileSync, appendFileSync, rmSync, existsSync, statSync, renameSync } from 'node:fs';
 import { join } from 'node:path';
 import { createCipheriv, createDecipheriv, randomBytes, hkdfSync } from 'node:crypto';
+import { DEFAULT_LIMITS } from '@appshell/contracts';
 const electron = process.versions.electron
   ? await import('electron').then((m) => m.default ?? m).catch(() => null)
   : null;
@@ -24,7 +25,6 @@ const Notification = typeof electron === 'object' && electron !== null && 'Notif
   });
 
 const MAX_VALUE_BYTES = 64 * 1024;
-const MAX_STORE_BYTES = 1024 * 1024;
 const MAX_LOG_BYTES = 2 * 1024 * 1024;
 
 /** @param {string} file @param {string} line */
@@ -51,8 +51,9 @@ export const fail = (code, message) => Object.assign(new Error(message), { code 
 /**
  * @param {string | (() => string)} rootOf
  * @param {string} [auditRoot]
+ * @param {(appId: string) => { storageBytes: number }} [limitsOf]
  */
-export function createServices(rootOf, auditRoot) {
+export function createServices(rootOf, auditRoot, limitsOf = () => ({ storageBytes: DEFAULT_LIMITS.storageBytes })) {
   const root = () => (typeof rootOf === 'function' ? rootOf() : rootOf);
   const storeFile = (/** @type {string} */ id) => join(appDir(root(), id), 'storage.json');
   const secretFile = (/** @type {string} */ id) => join(appDir(root(), id), 'secrets.json');
@@ -68,7 +69,8 @@ export function createServices(rootOf, auditRoot) {
   /** @param {string} id @param {Record<string, unknown>} store */
   const writeStore = (id, store) => {
     const next = JSON.stringify(store);
-    if (next.length > MAX_STORE_BYTES) throw fail('INVALID_PARAMS', 'app storage is limited to 1 MB');
+    const limit = limitsOf(id).storageBytes;
+    if (next.length > limit) throw fail('INVALID_PARAMS', `app storage is limited to ${limit / 1024 / 1024} MB`);
     writeFileSync(storeFile(id), next);
   };
 
