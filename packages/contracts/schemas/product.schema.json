@@ -65,6 +65,20 @@
             }
           }
         },
+        "trustedKeys": {
+          "description": "Ed25519 public keys (base64, 32 bytes). When set, every catalog install must carry a signature from one of them.",
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "key"],
+            "properties": {
+              "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+              "key": { "type": "string", "pattern": "^[A-Za-z0-9+/]{43}=$" }
+            }
+          }
+        },
         "blockedApps": {
           "description": "App IDs prohibited from installation or execution under administrator governance.",
           "type": "array",
