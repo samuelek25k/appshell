@@ -829,3 +829,9 @@ body.app-open #dashboard {
   background: var(--panel-hover);
   color: var(--ink);
 }
+
+.tile-menu {
+  position: fixed;
+  right: auto;
+  min-width: 160px;
+}

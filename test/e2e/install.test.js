@@ -88,6 +88,15 @@ test('catalog apps install, run and uninstall; tampered packages are refused', {
   for (let i = 0; i < 40 && !(await ui(listed)); i++) await new Promise((r) => setTimeout(r, 250));
   assert.ok(existsSync(join(userData, 'installed', 'victim', '1.0.0')), 'installed after confirmation');
 
+  await ui("host.setDisabled('victim', true)");
+  for (let i = 0; i < 40 && (await ui(listed)); i++) await new Promise((r) => setTimeout(r, 250));
+  assert.equal(await ui(listed), false, 'a disabled app leaves the dashboard');
+  assert.equal(await ui("host.open('victim')"), false, 'a disabled app does not open');
+  assert.deepEqual(JSON.parse(readFileSync(join(accountRoot, 'disabled.json'), 'utf8')), ['victim']);
+  await ui("host.setDisabled('victim', false)");
+  for (let i = 0; i < 40 && !(await ui(listed)); i++) await new Promise((r) => setTimeout(r, 250));
+  assert.equal(await ui(listed), true, 'an enabled app returns');
+
   await once(launch(['appshellcatalog://_/install/not-listed']), 'exit');
   let error = '';
   for (let i = 0; i < 40 && !error; i++) { await new Promise((r) => setTimeout(r, 250)); error = await ui("document.getElementById('manager-error').textContent"); }

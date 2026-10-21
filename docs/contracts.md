@@ -97,13 +97,17 @@ A grant only widens: when several match, the largest value wins, and a value bel
 
 A source is trusted only as far as its catalog is: the host checks the release address against `policy.allowedSources` and the package against its checksum, not who built it. Package signing (D12) is what would prove that.
 
+## Disabled apps
+
+A user can disable an installed app from the tile menu or Manage apps. The choice is stored per account in `disabled.json`. A disabled app is stopped, hidden from the dashboard, `launcher.apps` and widgets, and refuses to open until enabled; its files, data and approvals stay. Core apps and launchers cannot be disabled. Uninstalling clears the setting in every account. Changes are audited as `APP_DISABLED` and `APP_ENABLED`.
+
 ## Launchers (D25)
 
 An app with `"kind": "launcher"` and `capabilities.launcher: true` can be chosen per account (Settings, Home screen) to fill the home area in place of the built-in dashboard. A launcher is never opened as an ordinary app and never gets back or close controls. Calls, all needing the capability:
 
 | Method | Result |
 | --- | --- |
-| `launcher.apps` | installed non-launcher apps not blocked by policy: `id`, `title`, `publisher`, `running` |
+| `launcher.apps` | installed non-launcher, non-disabled apps not blocked by policy: `id`, `title`, `publisher`, `running` |
 | `launcher.widgets` | the widgets apps have published |
 | `launcher.open` `{ id }` | opens an app; `false` for launchers and unknown ids |
 | `launcher.setTheme` `{ source?, colors? }` | `source` is `system`, `light` or `dark`; `colors` may set only `brand`, `panel` and `ink` as `#rrggbb` |
