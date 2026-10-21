@@ -89,13 +89,17 @@ An app with `capabilities.userEndpoints: true` may ask for one extra address at 
 
 `address` is `https://host[:port]` or `http://host[:port]`; paths are ignored and `ws`/`wss` follow `http`/`https`. Plain `http` and `ws` are accepted only for this computer (`localhost`, `127.0.0.0/8`, `::1`) and private networks (`10/8`, `172.16/12`, `192.168/16`, `169.254/16`, `fc00::/7`); anything else must be `https`. An approval covers exactly that scheme family, host and port, for that app and account. It is listed in Settings, where it can be removed and takes effect at once, and is deleted with the app. Every approval, denial and removal is audited. `policy.allowUserEndpoints: false` turns the feature off. These apps get a broad `connect-src` in their CSP; the host's request filter is what enforces the list. Backend processes are not extended: they keep only the hosts in `capabilities.network`. In developer mode `--approve-endpoints` approves without a prompt. Proved by `test/endpoints.test.js` and `test/e2e/endpoints.test.js`.
 
+## Disabled apps
+
+A user can disable an installed app from the tile menu or Manage apps. The choice is stored per account in `disabled.json`. A disabled app is stopped, hidden from the dashboard, `launcher.apps` and widgets, and refuses to open until enabled; its files, data and approvals stay. Core apps and launchers cannot be disabled. Uninstalling clears the setting in every account. Changes are audited as `APP_DISABLED` and `APP_ENABLED`.
+
 ## Launchers (D25)
 
 An app with `"kind": "launcher"` and `capabilities.launcher: true` can be chosen per account (Settings, Home screen) to fill the home area in place of the built-in dashboard. A launcher is never opened as an ordinary app and never gets back or close controls. Calls, all needing the capability:
 
 | Method | Result |
 | --- | --- |
-| `launcher.apps` | installed non-launcher apps not blocked by policy: `id`, `title`, `publisher`, `running` |
+| `launcher.apps` | installed non-launcher, non-disabled apps not blocked by policy: `id`, `title`, `publisher`, `running` |
 | `launcher.widgets` | the widgets apps have published |
 | `launcher.open` `{ id }` | opens an app; `false` for launchers and unknown ids |
 | `launcher.setTheme` `{ source?, colors? }` | `source` is `system`, `light` or `dark`; `colors` may set only `brand`, `panel` and `ink` as `#rrggbb` |

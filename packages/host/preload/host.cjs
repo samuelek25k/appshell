@@ -11,6 +11,7 @@ contextBridge.exposeInMainWorld('host', {
   rollback: (appId) => ipcRenderer.invoke('host:rollback', String(appId)),
   dismissInstall: () => ipcRenderer.invoke('host:dismissInstall'),
   uninstall: (appId) => ipcRenderer.invoke('host:uninstall', String(appId)),
+  setDisabled: (appId, disabled) => ipcRenderer.invoke('host:setDisabled', String(appId), disabled === true),
   widgetAction: (appId, widgetId, actionId) => ipcRenderer.invoke('host:widgetAction', String(appId), String(widgetId), String(actionId)),
   setTheme: (theme) => ipcRenderer.invoke('host:setTheme', String(theme)),
   setLocale: (locale) => ipcRenderer.invoke('host:setLocale', String(locale)),
