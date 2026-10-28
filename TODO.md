@@ -1,6 +1,6 @@
 # TODO
 
-Status on 2026-10-16. Update this file when work lands; delete items that are done.
+Status on 2026-10-28. Update this file when work lands; delete items that are done.
 
 ## Where things stand
 
@@ -17,9 +17,23 @@ Status on 2026-10-16. Update this file when work lands; delete items that are do
   - **Platform Hardening & Low-Maintenance Architecture:** Fixed backend network preload (UDP, DNS, port stripping), capped audit logs with rotation, built-in Node 22 test coverage (`pnpm test:coverage`), dependency audit (`pnpm audit`), pinned GitHub Actions, and community health assets (`LICENSE`, `SECURITY.md`, `CONTRIBUTING.md`, `CODEOWNERS`, Renovate).
 
 
+## Roadmap: platform for many developers
+
+Decisions D28 to D37 hold the options. Order:
+
+1. **Foundation:** split `packages/host/src/main.js`; kinds table instead of `kind ===` checks; settle D28.
+2. **Shell UI:** top bar with tabs for running apps, tab overflow menu, Settings sections (General, Home screen, Apps, Accounts, Network access, Activity), update dialog that shows newly requested capabilities, store page with what an app can and cannot do, command palette, crash and load-failure states, keyboard and screen-reader support.
+3. **Launcher:** layout editing (pages, folders, dock, widget sizes, wallpaper) as a launcher app; kiosk lock (D35).
+4. **UI kit and apps:** D34; restyle the 11 apps in appshell-apps.
+5. **Developer tools:** D33 and the docs quickstart.
+6. **Trust at scale:** D31, D32, revocation list.
+7. **Capabilities:** D30 file, print and clipboard; D36 device services; D37 search.
+8. **Store:** enable `trustedKeys` once the apps are re-released with signatures; shop network and printer grants.
+
 ## Needs the repo owner
 
-- [ ] Decide D12 (app package signing), D22 (installer signing) and D23 (product and engine versions).
+- [ ] Decide D22 (installer signing), D23 (product and engine versions, see D28), D27 (grants) and D28 to D37.
+- [ ] Merge the grants and package signing PRs. Generate the signing key, set it as a release secret and sign the apps repository releases (protected workflow change).
 - [ ] Sign and merge the release workflow change (`.github/` is protected).
 
 ## Next: v0.4.1
