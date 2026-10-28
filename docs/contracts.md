@@ -121,6 +121,10 @@ An app with `"kind": "launcher"` and `capabilities.launcher: true` can be chosen
 
 The host sends `launcher.changed` when apps or widgets change. Colours are stored with the account and cleared when another launcher or the dashboard is chosen. If a launcher fails to load or its process dies, the host shows the dashboard for the rest of the session. The host hides the launcher while its own menus and dialogs are open. Proved by `test/launcher.test.js` and `test/e2e/launcher.test.js`.
 
+### Kiosk mode
+
+A local account with a PIN can start kiosk mode from Settings, General. The host then replaces its top bar with a slim bar holding only Exit kiosk, shows the home screen, and refuses installing, removing, turning apps on or off, rolling back, changing the home screen, removing network approvals, and adding, switching or starting accounts. Exit kiosk needs the account's PIN, with the same lockout as switching accounts. The setting is stored with the account, so kiosk mode returns after a restart once the PIN unlocks the account. Starting and ending are audited as `KIOSK_STARTED` and `KIOSK_ENDED`. Kiosk mode restricts the host's own controls; it does not stop someone with access to the computer from quitting the app or using the operating system. Proved by `test/launcher.test.js` and `test/e2e/kiosk.test.js`.
+
 ## Events (host to app, `appshell.on(name, fn)`)
 
 | Event | Payload | Expected reply |

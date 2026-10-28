@@ -32,6 +32,14 @@
     </div>
   </header>
 
+  <div id="kiosk-bar" class="kiosk-bar" hidden>
+    <span id="kiosk-name" class="name"></span>
+    <button id="kiosk-exit" class="btn small" type="button">
+      <svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 11h12v9H6z M8.5 11V8a3.5 3.5 0 0 1 7 0v3"/></svg>
+      Exit kiosk
+    </button>
+  </div>
+
   <div id="account-menu" class="menu menu-account" role="menu" aria-label="Accounts" hidden></div>
   <div id="tabs-menu" class="menu menu-tabs" role="menu" aria-label="Open apps" hidden></div>
   <div id="tile-menu" class="menu menu-tile" role="menu" hidden></div>
@@ -124,6 +132,10 @@
             <div class="row">
               <div class="row-text"><div class="row-title">Home screen</div><div class="row-meta">Install more home screens from the Store.</div></div>
               <select id="launcher-select" class="select" aria-label="Home screen"></select>
+            </div>
+            <div class="row">
+              <div class="row-text"><div class="row-title">Kiosk mode</div><div id="kiosk-meta" class="row-meta"></div></div>
+              <button id="kiosk-start" class="btn" type="button">Start kiosk</button>
             </div>
             <div class="row">
               <div class="row-text"><div class="row-title">Language</div><div class="row-meta">Apps follow this setting.</div></div>

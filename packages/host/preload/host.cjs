@@ -21,6 +21,7 @@ contextBridge.exposeInMainWorld('host', {
   removeAccount: (id, pin) => ipcRenderer.invoke('host:accounts:remove', String(id), pin === undefined ? undefined : String(pin)),
   setLauncher: (id) => ipcRenderer.invoke('host:launcher:set', id === null ? null : String(id)),
   removeEndpoint: (appId, address) => ipcRenderer.invoke('host:endpoints:remove', String(appId), String(address)),
+  setKiosk: (on, pin) => ipcRenderer.invoke('host:kiosk', on === true, pin === undefined || pin === '' ? undefined : String(pin)),
   setOverlay: (open) => ipcRenderer.invoke('host:overlay', open === true),
   onState(fn) {
     ipcRenderer.on('host:state', (_event, state) => fn(state));

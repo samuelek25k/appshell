@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { THEME_COLOR_KEYS } from '@appshell/contracts';
 import { isHome } from './kinds.js';
 
-/** @typedef {{ launcher: string | null, colors: Record<string, string> }} Preferences */
+/** @typedef {{ launcher: string | null, colors: Record<string, string>, kiosk: boolean }} Preferences */
 
 /** @param {unknown} colors */
 function cleanColors(colors) {
@@ -25,9 +25,9 @@ export function createLauncherPreferences(rootOf) {
   function read() {
     try {
       const raw = JSON.parse(readFileSync(file(), 'utf8'));
-      return { launcher: typeof raw.launcher === 'string' ? raw.launcher : null, colors: cleanColors(raw.colors) };
+      return { launcher: typeof raw.launcher === 'string' ? raw.launcher : null, colors: cleanColors(raw.colors), kiosk: raw.kiosk === true };
     } catch {
-      return { launcher: null, colors: {} };
+      return { launcher: null, colors: {}, kiosk: false };
     }
   }
 
@@ -48,6 +48,11 @@ export function createLauncherPreferences(rootOf) {
     /** @param {Record<string, string>} colors */
     setColors(colors) {
       write({ ...read(), colors: { ...read().colors, ...cleanColors(colors) } });
+    },
+
+    /** @param {boolean} kiosk */
+    setKiosk(kiosk) {
+      write({ ...read(), kiosk: kiosk === true });
     },
 
     resetColors() {
