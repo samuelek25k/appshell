@@ -442,14 +442,16 @@ function renderStore(state) {
 /** @param {any} state */
 function renderConfirm(state) {
   const panel = $('install-confirm');
-  const id = state.manager?.pendingInstall ?? confirmInstallId;
+  const update = state.manager?.pendingUpdate ?? null;
+  const id = update?.id ?? state.manager?.pendingInstall ?? confirmInstallId;
   const row = id ? rowById(id) : null;
   panel.hidden = !row;
   syncOverlay();
   if (!row) return;
   $('install-icon').textContent = initials(row.title);
-  $('install-title').textContent = `Install ${row.title}?`;
-  $('install-detail').textContent = `Version ${row.latest} · ${row.publisher}`;
+  $('install-title').textContent = update ? `Update ${row.title}?` : `Install ${row.title}?`;
+  $('install-yes').textContent = update ? 'Update' : 'Install';
+  $('install-detail').textContent = update ? `Version ${row.latest} asks for more access: ${update.added.join(', ')}` : `Version ${row.latest} · ${row.publisher}`;
   const description = $('install-description');
   description.hidden = !row.description;
   description.textContent = row.description;
@@ -709,9 +711,10 @@ function wireStore() {
     if (update) await api.install(update);
   });
   $('install-yes').addEventListener('click', () => {
-    const id = currentState?.manager?.pendingInstall ?? confirmInstallId;
+    const update = currentState?.manager?.pendingUpdate ?? null;
+    const id = update?.id ?? currentState?.manager?.pendingInstall ?? confirmInstallId;
     confirmInstallId = null;
-    if (id) api.install(id);
+    if (id) api.install(id, update !== null);
   });
   $('install-no').addEventListener('click', () => {
     confirmInstallId = null;

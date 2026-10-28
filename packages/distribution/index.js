@@ -33,6 +33,23 @@ export const isInside = (parent, child) => {
   return c === p || c.startsWith(p.endsWith(s) ? p : p + s);
 };
 
+/**
+ * @param {Manifest['capabilities']} before
+ * @param {Manifest['capabilities']} after
+ * @returns {string[]}
+ */
+export function addedCapabilities(before, after) {
+  /** @param {Record<string, unknown> | undefined} caps */
+  const flat = (caps) => new Set(Object.entries(caps ?? {}).flatMap(([key, value]) => {
+    if (Array.isArray(value)) return value.map((v) => `${key}: ${v}`);
+    if (value === true) return [key];
+    if (value && typeof value === 'object') return [`${key}: ${JSON.stringify(value)}`];
+    return [];
+  }));
+  const had = flat(before);
+  return [...flat(after)].filter((c) => !had.has(c));
+}
+
 /** @param {Uint8Array} bytes */
 export const sha256 = (bytes) => createHash('sha256').update(bytes).digest('hex');
 
@@ -225,7 +242,7 @@ export function createStore(root) {
     /**
      * @param {CatalogEntry} entry
      * @param {Release} release
-     * @param {{ hostVersion: string, policy: { allowedSources?: string[], developerMode?: boolean, trustedKeys?: TrustedKey[] }, fetch?: typeof fetch }} options
+     * @param {{ hostVersion: string, policy: { allowedSources?: string[], developerMode?: boolean, trustedKeys?: TrustedKey[] }, fetch?: typeof fetch, approveAdded?: boolean }} options
      */
     async install(entry, release, options) {
       for (const url of [entry.repository, release.url]) {
@@ -266,6 +283,11 @@ export function createStore(root) {
         }
         const state = read();
         const before = state[entry.id];
+        if (before && !options.approveAdded) {
+          const installed = JSON.parse(readFileSync(join(dirOf(before.current), 'manifest.json'), 'utf8'));
+          const added = addedCapabilities(effectiveCapabilities(installed), manifest.capabilities);
+          if (added.length) throw Object.assign(fail('CAPABILITIES_ADDED', `${entry.id}@${release.version} asks for more access`), { added });
+        }
         /** @type {Provenance} */
         const current = { id: entry.id, version: release.version, repository: entry.repository, url: release.url, sha256: digest, commit: release.commit, installedAt: new Date().toISOString(), ...(signedBy ? { signedBy } : {}) };
         const target = dirOf(current);

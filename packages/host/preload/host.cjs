@@ -7,7 +7,7 @@ contextBridge.exposeInMainWorld('host', {
   back: () => ipcRenderer.invoke('host:back'),
   close: (appId) => ipcRenderer.invoke('host:close', appId === undefined || appId === null ? undefined : String(appId)),
   refreshCatalog: () => ipcRenderer.invoke('host:refreshCatalog'),
-  install: (appId) => ipcRenderer.invoke('host:install', String(appId)),
+  install: (appId, approveAdded) => ipcRenderer.invoke('host:install', String(appId), approveAdded === true),
   rollback: (appId) => ipcRenderer.invoke('host:rollback', String(appId)),
   dismissInstall: () => ipcRenderer.invoke('host:dismissInstall'),
   uninstall: (appId) => ipcRenderer.invoke('host:uninstall', String(appId)),
