@@ -32,7 +32,7 @@ Decisions D28 to D37 hold the options. Order:
 
 ## Needs the repo owner
 
-- [ ] Decide D27 (grants, scope to confirm) and D28 to D37. D22 and D23 are decided.
+- [ ] Decide D28 to D37. D22, D23 and D27 are decided.
 - [ ] Merge the grants and package signing PRs. Generate the signing key, set it as a release secret and sign the apps repository releases (protected workflow change).
 - [ ] Sign and merge the release workflow change (`.github/` is protected).
 
