@@ -48,10 +48,17 @@ try {
     await send(`app://${id}`, 'Runtime.evaluate', { expression: readFileSync(prepare, 'utf8'), awaitPromise: true });
     await sleep(1000);
   }
-  await shot(`app://${id}`, 'screenshot-1.png');
-  await send('file://', 'Runtime.evaluate', { expression: 'host.home()', awaitPromise: true });
-  await sleep(800);
-  await shot('file://', 'screenshot-2.png');
+  for (const theme of ['light', 'dark']) {
+    const suffix = theme === 'dark' ? '-dark' : '';
+    await send('file://', 'Runtime.evaluate', { expression: `host.setTheme('${theme}')`, awaitPromise: true });
+    await sleep(1000);
+    await send('file://', 'Runtime.evaluate', { expression: `host.open('${id}')`, awaitPromise: true });
+    await sleep(800);
+    await shot(`app://${id}`, `screenshot-1${suffix}.png`);
+    await send('file://', 'Runtime.evaluate', { expression: 'host.home()', awaitPromise: true });
+    await sleep(800);
+    await shot('file://', `screenshot-2${suffix}.png`);
+  }
 } finally {
   child.kill();
 }
