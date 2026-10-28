@@ -80,15 +80,19 @@ test('launcher preferences persist per account root and drop invalid colours', (
   const second = workspace(t);
   let current = first;
   const prefs = createLauncherPreferences(() => current);
-  assert.deepEqual(prefs.get(), { launcher: null, colors: {} });
+  assert.deepEqual(prefs.get(), { launcher: null, colors: {}, kiosk: false });
   prefs.setLauncher('tiles');
   prefs.setColors({ brand: '#112233', ink: 'nope', shadow: '#ffffff' });
-  assert.deepEqual(prefs.get(), { launcher: 'tiles', colors: { brand: '#112233' } });
+  assert.deepEqual(prefs.get(), { launcher: 'tiles', colors: { brand: '#112233' }, kiosk: false });
+  prefs.setKiosk(true);
+  assert.equal(prefs.get().kiosk, true);
   current = second;
-  assert.deepEqual(prefs.get(), { launcher: null, colors: {} });
+  assert.deepEqual(prefs.get(), { launcher: null, colors: {}, kiosk: false });
   current = first;
   prefs.resetColors();
-  assert.deepEqual(prefs.get(), { launcher: 'tiles', colors: {} });
+  assert.deepEqual(prefs.get(), { launcher: 'tiles', colors: {}, kiosk: true });
+  prefs.setKiosk(false);
+  assert.equal(prefs.get().kiosk, false);
 });
 
 test('home launcher is chosen only when it exists, is a launcher and is not blocked', () => {

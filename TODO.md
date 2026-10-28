@@ -23,7 +23,7 @@ Decisions D28 to D37 hold the options. Order:
 
 1. **Foundation:** split `packages/host/src/main.js`; kinds table instead of `kind ===` checks; settle D28.
 2. **Shell UI:** top bar with tabs, tab overflow menu, Home, Store with categories and install confirmation, Settings (General, Apps, Accounts, Network access), account menu and tile menu are built and checked at 800, 1024, 1280 and 1920 wide in light and dark. Still to build: Activity log (needs an audit-read host API), capability diff in the update dialog (needs capabilities in the catalog), app glyph icons, Lock button, command palette, crash and load-failure states.
-3. **Launcher:** layout editing (pages, folders, dock, widget sizes, wallpaper) as a launcher app; kiosk lock (D35).
+3. **Launcher:** kiosk lock is built (D35). Still to build: layout editing (pages, folders, dock, widget sizes, wallpaper) as a launcher app.
 4. **UI kit and apps:** D34; restyle the 11 apps in appshell-apps.
 5. **Developer tools:** D33 and the docs quickstart.
 6. **Trust at scale:** D31, D32, revocation list.

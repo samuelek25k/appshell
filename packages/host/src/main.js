@@ -31,6 +31,7 @@ if (app.isPackaged && app.commandLine.hasSwitch('no-sandbox')) {
 app.enableSandbox();
 
 const CHROME_HEIGHT = 48;
+const KIOSK_BAR_HEIGHT = 28;
 const HOST_UI = fileURLToPath(new URL('../ui/index.html', import.meta.url));
 const HOST_PRELOAD = fileURLToPath(new URL('../preload/host.cjs', import.meta.url));
 
@@ -50,6 +51,13 @@ const accounts = createAccounts(dataRoot, userInfo().username);
 let unlocked = !accounts.activeView().locked;
 /** @type {string | null} */
 let accountError = null;
+/** @type {{ id: string | null, on: boolean }} */
+let kioskCache = { id: null, on: false };
+const kioskOn = () => {
+  const id = accounts.active().id;
+  if (kioskCache.id !== id) kioskCache = { id, on: launcherPrefs.get().kiosk };
+  return kioskCache.on;
+};
 
 /** @param {string} message */
 const hostLog = (message) => {
@@ -273,6 +281,7 @@ function publish() {
     product: product.name,
     brand: { logo: branding.logo, colors: { ...branding.colors, ...launcherPrefs.get().colors } },
     locale: currentLocale,
+    kiosk: kioskOn(),
     active,
     title: active ? running.get(active)?.title : product.name,
     theme: { source: nativeTheme.themeSource, dark: nativeTheme.shouldUseDarkColors },
@@ -338,8 +347,9 @@ function layout() {
   if (!win) return;
   if (active === null) ensureHome();
   const { width, height } = win.getContentBounds();
+  const top = kioskOn() ? KIOSK_BAR_HEIGHT : CHROME_HEIGHT;
   for (const [id, { view }] of running) {
-    view.setBounds({ x: 0, y: CHROME_HEIGHT, width, height: Math.max(0, height - CHROME_HEIGHT) });
+    view.setBounds({ x: 0, y: top, width, height: Math.max(0, height - top) });
     view.setVisible(!overlay && id === (active ?? homeId()));
   }
 }
@@ -426,6 +436,7 @@ async function requestClose(appId) {
  * @param {string} appId
  */
 async function requestInstall(appId) {
+  if (kioskOn()) return;
   if (accounts.active().type === 'guest') { managerError = 'Guests cannot install or remove apps'; publish(); return; }
   if (apps.has(appId)) {
     pendingInstall = null;
@@ -447,6 +458,9 @@ const links = createLinks({ protocol: product.protocol, open: (id) => open(id), 
 /** @param {Electron.IpcMainInvokeEvent} event */
 const fromHost = (event) => event.sender === win?.webContents;
 
+/** @param {Electron.IpcMainInvokeEvent} event */
+const fromHostUnlocked = (event) => fromHost(event) && !kioskOn();
+
 ipcMain.handle('appshell:call', (event, method, params) => {
   for (const [id, { view }] of running) {
     if (view.webContents === event.sender) return bridge(/** @type {import('./registry.js').InstalledApp} */ (apps.get(id)), method, params);
@@ -454,15 +468,15 @@ ipcMain.handle('appshell:call', (event, method, params) => {
   return { ok: false, error: { code: 'UNKNOWN_CALLER', message: 'caller is not a running app' } };
 });
 ipcMain.handle('host:ready', (event) => { if (fromHost(event)) publish(); });
-ipcMain.handle('host:refreshCatalog', async (event) => { if (fromHost(event)) { await manager.refresh(); publish(); } });
+ipcMain.handle('host:refreshCatalog', async (event) => { if (fromHostUnlocked(event)) { await manager.refresh(); publish(); } });
 ipcMain.handle('host:install', (event, id) => {
-  if (!fromHost(event)) return;
+  if (!fromHostUnlocked(event)) return;
   if (pendingInstall === id) pendingInstall = null;
   return manage(id, () => manager.install(id), 'APP_INSTALLED');
 });
 ipcMain.handle('host:dismissInstall', (event) => { if (fromHost(event)) { pendingInstall = null; publish(); } });
-ipcMain.handle('host:rollback', (event, id) => fromHost(event) && manage(id, () => manager.rollback(id), 'APP_ROLLEDBACK'));
-ipcMain.handle('host:uninstall', (event, id) => fromHost(event) && manage(id, async () => {
+ipcMain.handle('host:rollback', (event, id) => fromHostUnlocked(event) && manage(id, () => manager.rollback(id), 'APP_ROLLEDBACK'));
+ipcMain.handle('host:uninstall', (event, id) => fromHostUnlocked(event) && manage(id, async () => {
   manager.uninstall(id);
   services.removeAppData(id, accounts.roots());
   services.removeAppLogs(id, accounts.roots());
@@ -471,7 +485,7 @@ ipcMain.handle('host:uninstall', (event, id) => fromHost(event) && manage(id, as
   for (const name of accounts.partitions(id)) await session.fromPartition(name).clearStorageData();
 }, 'APP_UNINSTALLED'));
 ipcMain.handle('host:setDisabled', (event, id, disabled) => {
-  if (!fromHost(event) || typeof id !== 'string' || typeof disabled !== 'boolean') return;
+  if (!fromHostUnlocked(event) || typeof id !== 'string' || typeof disabled !== 'boolean') return;
   const installed = apps.get(id);
   if (!installed || installed.protected || !isOpenable(installed.manifest)) return;
   disabledApps.set(id, disabled);
@@ -527,6 +541,7 @@ function accountChange(event, change) {
 ipcMain.handle('host:accounts:switch', (event, id, pin) => accountChange(event, () => {
   const target = String(id);
   const secret = pin === undefined ? undefined : String(pin);
+  if (kioskOn() && (unlocked || target !== accounts.active().id)) throw new Error('Exit kiosk mode first');
   accounts.verify(target, secret);
   if (target !== accounts.active().id) {
     stopAll();
@@ -535,16 +550,18 @@ ipcMain.handle('host:accounts:switch', (event, id, pin) => accountChange(event, 
   unlocked = true;
 }));
 ipcMain.handle('host:accounts:guest', (event) => accountChange(event, () => {
+  if (kioskOn()) throw new Error('Exit kiosk mode first');
   if (product.policy.allowGuest === false) throw new Error('Guest accounts are disabled');
   stopAll();
   accounts.startGuest();
   unlocked = true;
 }));
 ipcMain.handle('host:accounts:add', (event, name, pin) => accountChange(event, () => {
+  if (kioskOn()) throw new Error('Exit kiosk mode first');
   accounts.createLocal(String(name), pin === undefined ? undefined : String(pin));
 }));
 ipcMain.handle('host:accounts:remove', async (event, id, pin) => {
-  if (!fromHost(event)) return;
+  if (!fromHostUnlocked(event)) return;
   const target = String(id);
   const names = [...apps.keys()].map((appId) => accounts.partition(appId, target));
   accountChange(event, () => {
@@ -554,9 +571,31 @@ ipcMain.handle('host:accounts:remove', async (event, id, pin) => {
   if (!accountError) for (const name of names) await session.fromPartition(name).clearStorageData();
 });
 ipcMain.handle('host:endpoints:remove', (event, appId, address) => {
-  if (!fromHost(event)) return;
+  if (!fromHostUnlocked(event)) return;
   endpointStore.remove(String(appId), String(address));
   services.audit({ event: 'ENDPOINT_REMOVED', actor: accounts.active().id, target: String(appId), details: { address: String(address) } });
+  publish();
+});
+ipcMain.handle('host:kiosk', (event, on, pin) => {
+  if (!fromHost(event)) return;
+  const account = accounts.active();
+  try {
+    if (on === true) {
+      if (account.type !== 'local' || !accounts.activeView().locked) throw new Error('Set a PIN on this account before starting kiosk mode');
+      if (kioskOn()) return;
+    } else {
+      accounts.verify(account.id, pin === undefined ? undefined : String(pin));
+    }
+    launcherPrefs.setKiosk(on === true);
+    kioskCache = { id: account.id, on: on === true };
+    services.audit({ event: on === true ? 'KIOSK_STARTED' : 'KIOSK_ENDED', actor: account.id });
+    accountError = null;
+  } catch (error) {
+    accountError = messageOf(error);
+  }
+  pendingInstall = null;
+  active = null;
+  layout();
   publish();
 });
 ipcMain.handle('host:overlay', (event, open) => {
@@ -565,7 +604,7 @@ ipcMain.handle('host:overlay', (event, open) => {
   layout();
 });
 ipcMain.handle('host:launcher:set', (event, id) => {
-  if (!fromHost(event)) return;
+  if (!fromHostUnlocked(event)) return;
   const next = id === null ? null : String(id);
   if (next !== null && !homeLauncher(apps, next, product.policy.blockedApps)) return;
   const previous = homeId();

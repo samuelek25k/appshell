@@ -18,6 +18,7 @@ const fallbackApi = {
   removeAccount(/** @type {string} */ _id, /** @type {string | undefined} */ _pin) {},
   setLauncher(/** @type {string | null} */ _id) {},
   removeEndpoint(/** @type {string} */ _appId, /** @type {string} */ _address) {},
+  setKiosk(/** @type {boolean} */ _on, /** @type {string | undefined} */ _pin) {},
   setOverlay(/** @type {boolean} */ _open) {},
   onState(/** @type {(s: any) => void} */ _fn) {},
 };
@@ -60,7 +61,7 @@ let armedUninstall = null;
 let armedTimer;
 /** @type {string | null} */
 let confirmInstallId = null;
-/** @type {{ mode: 'pin' | 'add' | 'remove', id?: string, name?: string, locked?: boolean, unlock?: boolean } | null} */
+/** @type {{ mode: 'pin' | 'add' | 'remove' | 'kiosk', id?: string, name?: string, locked?: boolean, unlock?: boolean } | null} */
 let accountDialog = null;
 /** @type {Set<string>} */
 let appliedColors = new Set();
@@ -342,7 +343,7 @@ function renderAccountDialog() {
   syncOverlay();
   if (!accountDialog) return;
   const { mode, name, locked, unlock } = accountDialog;
-  $('account-title').textContent = mode === 'add' ? 'Add local account' : mode === 'remove' ? `Remove ${name}?` : unlock ? `Unlock ${name}` : `Switch to ${name}`;
+  $('account-title').textContent = mode === 'kiosk' ? 'Exit kiosk mode' : mode === 'add' ? 'Add local account' : mode === 'remove' ? `Remove ${name}?` : unlock ? `Unlock ${name}` : `Switch to ${name}`;
   $('account-detail').textContent = mode === 'add'
     ? 'A local account keeps its own app data on this computer. The PIN only controls who can open it here; it does not encrypt your data.'
     : mode === 'remove' ? 'Its app data on this computer is deleted.' : 'Enter the PIN for this account.';
@@ -350,7 +351,7 @@ function renderAccountDialog() {
   const pin = /** @type {HTMLInputElement} */ ($('account-pin-input'));
   pin.hidden = mode === 'remove' && !locked;
   pin.placeholder = mode === 'add' ? 'PIN (optional)' : 'PIN';
-  $('account-submit').textContent = mode === 'add' ? 'Add account' : mode === 'remove' ? 'Remove' : 'Continue';
+  $('account-submit').textContent = mode === 'kiosk' ? 'Exit kiosk' : mode === 'add' ? 'Add account' : mode === 'remove' ? 'Remove' : 'Continue';
   $('account-cancel').textContent = unlock ? 'Choose another account' : 'Cancel';
 }
 
@@ -370,6 +371,7 @@ async function submitAccountDialog(event) {
   const pin = /** @type {HTMLInputElement} */ ($('account-pin-input')).value || undefined;
   if (mode === 'add') await api.addAccount(name, pin);
   else if (mode === 'remove') await api.removeAccount(id, pin);
+  else if (mode === 'kiosk') await api.setKiosk(false, pin);
   else await api.switchAccount(id, pin);
   const error = currentState?.accounts?.error;
   if (error) $('account-error').textContent = error;
@@ -463,6 +465,9 @@ function renderSettings(state) {
   const options = state.launcher?.options ?? [];
   select.replaceChildren(el('option', { value: '' }, ['Built-in dashboard']), ...options.map((/** @type {any} */ o) => el('option', { value: o.id }, [o.title])));
   select.value = state.launcher?.active ?? '';
+  const kioskReady = state.accounts?.list?.some((/** @type {any} */ a) => a.id === state.accounts.activeId && a.type === 'local' && a.locked) === true;
+  $('kiosk-meta').textContent = kioskReady ? 'Hides this bar and the Store. Leaving needs this account\'s PIN.' : 'Needs a local account with a PIN. Add one in Accounts.';
+  /** @type {HTMLButtonElement} */ ($('kiosk-start')).disabled = !kioskReady;
   const locale = /** @type {HTMLSelectElement} */ ($('locale-select'));
   if (state.locale) locale.value = state.locale;
   const list = state.endpoints ?? [];
@@ -510,6 +515,12 @@ function render(state) {
   document.title = state.product;
   $('title').textContent = state.product;
   document.body.classList.toggle('app-open', state.active !== null);
+  document.body.setAttribute('data-kiosk', String(state.kiosk === true));
+  $('kiosk-bar').hidden = state.kiosk !== true;
+  if (state.kiosk) {
+    $('kiosk-name').textContent = state.product;
+    if (page !== 'home') setPage('home');
+  }
   document.documentElement.setAttribute('data-theme', state.theme?.source ?? 'system');
   if (state.active !== null && state.active !== lastActive && page !== 'home') setPage('home');
   lastActive = state.active;
@@ -548,6 +559,8 @@ function wireNavigation() {
   $('store-btn').addEventListener('click', () => { closeMenus(); setPage(page === 'store' ? 'home' : 'store'); });
   $('settings-btn').addEventListener('click', () => { closeMenus(); setPage(page === 'settings' ? 'home' : 'settings'); });
   $('welcome-store').addEventListener('click', () => setPage('store'));
+  $('kiosk-start').addEventListener('click', () => api.setKiosk(true));
+  $('kiosk-exit').addEventListener('click', () => { accountDialog = { mode: 'kiosk' }; renderAccountDialog(); });
   $('settings-nav').addEventListener('click', (e) => {
     const b = /** @type {HTMLElement} */ (e.target).closest('button[data-section]');
     if (b) setSection(b.getAttribute('data-section') ?? 'general');
@@ -637,6 +650,7 @@ function wireHome() {
 
   const tile = $('tile-menu');
   $('apps').addEventListener('contextmenu', (e) => {
+    if (currentState?.kiosk) return;
     const id = /** @type {HTMLElement} */ (e.target).closest('.app-btn')?.getAttribute('data-id');
     const app = id ? appById(id) : null;
     if (!app) return;
