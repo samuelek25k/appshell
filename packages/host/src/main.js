@@ -9,6 +9,7 @@ import { createManager } from './manager.js';
 import { userInfo } from 'node:os';
 import { createAccounts } from './accounts.js';
 import { createEndpoints, forgetApp } from './endpoints.js';
+import { createDisabledApps, forgetDisabled } from './disabled.js';
 import { createLauncherPreferences, homeLauncher } from './launcher.js';
 import { createIdentity } from './identity.js';
 import { createServices, appendWithRotation } from './services.js';
@@ -137,6 +138,7 @@ function limitsOf(appId) {
 }
 const services = createServices(() => accounts.root(accounts.active()), dataRoot, limitsOf);
 const endpointStore = createEndpoints(() => accounts.root(accounts.active()));
+const disabledApps = createDisabledApps(() => accounts.root(accounts.active()));
 const autoApproveEndpoints = process.argv.includes('--approve-endpoints');
 if (autoApproveEndpoints && !product.policy.developerMode) throw new Error('--approve-endpoints needs policy.developerMode');
 /** @type {Set<string>} */
@@ -233,10 +235,10 @@ const bridge = createBridge({
   endpoints: { request: requestEndpoint, list: (appId) => endpointStore.list(appId) },
   launcher: {
     apps: () => [...apps.values()]
-      .filter(({ manifest }) => manifest.kind !== 'launcher' && !product.policy.blockedApps?.includes(manifest.id))
+      .filter(({ manifest }) => manifest.kind !== 'launcher' && !product.policy.blockedApps?.includes(manifest.id) && !disabledApps.has(manifest.id))
       .map(({ manifest }) => ({ id: manifest.id, title: manifest.title, publisher: manifest.publisher, running: running.has(manifest.id) })),
     widgets: () => widgetList(),
-    open: (id) => apps.get(id)?.manifest.kind !== 'launcher' && open(id),
+    open: (id) => apps.get(id)?.manifest.kind !== 'launcher' && !disabledApps.has(id) && open(id),
     setTheme({ source, colors }) {
       if (colors) launcherPrefs.setColors(colors);
       if (source) setTheme(source); else publish();
@@ -342,7 +344,7 @@ const bridge = createBridge({
 });
 
 function widgetList() {
-  return [...apps.values()].flatMap(({ manifest }) =>
+  return [...apps.values()].filter(({ manifest }) => !disabledApps.has(manifest.id)).flatMap(({ manifest }) =>
     (manifest.widgets ?? []).flatMap((w) => {
       const descriptor = widgets.get(manifest.id)?.[w.id];
       return descriptor ? [{ appId: manifest.id, widgetId: w.id, title: w.title, descriptor }] : [];
@@ -380,6 +382,7 @@ function publish() {
       publisher: manifest.publisher,
       protected: isProtected,
       running: running.has(manifest.id),
+      disabled: disabledApps.has(manifest.id),
       capabilities: manifest.capabilities ?? {},
       kind: manifest.kind ?? 'app',
       categories: (/** @type {any} */ (manifest)).categories ?? [],
@@ -468,6 +471,7 @@ function open(appId) {
   }
   const installed = apps.get(appId);
   if (installed?.manifest.kind === 'launcher') return false;
+  if (disabledApps.has(appId)) return false;
   if (!installed) {
     hostLog(`cannot open ${appId}: not in apps (${[...apps.keys()].join(', ')})`);
     return false;
@@ -579,8 +583,18 @@ ipcMain.handle('host:uninstall', (event, id) => fromHost(event) && manage(id, as
   services.removeAppData(id, accounts.roots());
   services.removeAppLogs(id, accounts.roots());
   forgetApp(accounts.roots(), id);
+  forgetDisabled(accounts.roots(), id);
   for (const name of accounts.partitions(id)) await session.fromPartition(name).clearStorageData();
 }, 'APP_UNINSTALLED'));
+ipcMain.handle('host:setDisabled', (event, id, disabled) => {
+  if (!fromHost(event) || typeof id !== 'string' || typeof disabled !== 'boolean') return;
+  const installed = apps.get(id);
+  if (!installed || installed.protected || installed.manifest.kind === 'launcher') return;
+  disabledApps.set(id, disabled);
+  services.audit({ event: disabled ? 'APP_DISABLED' : 'APP_ENABLED', actor: accounts.active().id, target: id });
+  if (disabled) stop(id);
+  publish();
+});
 ipcMain.handle('host:open', (event, id) => fromHost(event) && open(id));
 ipcMain.handle('host:home', (event) => {
   if (!fromHost(event)) return;

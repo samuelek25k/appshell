@@ -8,6 +8,7 @@ const fallbackApi = {
   rollback(/** @type {string} */ id) {},
   dismissInstall() {},
   uninstall(/** @type {string} */ id) {},
+  setDisabled(/** @type {string} */ _id, /** @type {boolean} */ _disabled) {},
   widgetAction(/** @type {string} */ appId, /** @type {string} */ widgetId, /** @type {string} */ actionId) {},
   setTheme(/** @type {string} */ _theme) {},
   setLocale(/** @type {string} */ _loc) {},
@@ -179,6 +180,14 @@ function renderCatalogItem(r) {
       'data-id': r.id,
     }, [`Roll back to ${r.previous}`]));
   }
+  const installedApp = (currentState?.apps ?? []).find((/** @type {any} */ a) => a.id === r.id);
+  if (r.installed && installedApp && !installedApp.protected) {
+    actions.appendChild(el('button', {
+      class: 'btn-action btn-toggle',
+      'data-action': installedApp.disabled ? 'enable' : 'disable',
+      'data-id': r.id,
+    }, [installedApp.disabled ? 'Enable' : 'Disable']));
+  }
   if (r.installed) {
     actions.appendChild(el('button', {
       class: 'btn-action btn-uninstall',
@@ -282,7 +291,7 @@ function renderApps(state) {
   const ul = $('apps');
   const count = $('apps-count');
   if (!ul) return;
-  const apps = (state.apps ?? []).filter((/** @type {any} */ a) => a.kind !== 'launcher');
+  const apps = (state.apps ?? []).filter((/** @type {any} */ a) => a.kind !== 'launcher' && !a.disabled);
   if (count) count.textContent = String(apps.length);
 
   const q = searchQuery.trim().toLowerCase();
@@ -489,6 +498,40 @@ function wireEvents() {
     }
   });
 
+  const tileMenu = $('tile-menu');
+  const hideTileMenu = () => { tileMenu.hidden = true; tileMenu.replaceChildren(); };
+  $('apps')?.addEventListener('contextmenu', (e) => {
+    const btn = (/** @type {HTMLElement} */ (e.target)).closest('.app-btn');
+    const id = btn?.getAttribute('data-id');
+    const app = (currentState?.apps ?? []).find((/** @type {any} */ a) => a.id === id);
+    if (!app || app.protected) return;
+    e.preventDefault();
+    tileMenu.replaceChildren(
+      el('button', { type: 'button', role: 'menuitem', 'data-tile-action': 'disable', 'data-id': app.id }, ['Disable']),
+      el('button', { type: 'button', role: 'menuitem', 'data-tile-action': 'uninstall', 'data-id': app.id }, ['Uninstall']),
+    );
+    tileMenu.style.left = `${Math.min(e.clientX, window.innerWidth - 180)}px`;
+    tileMenu.style.top = `${Math.min(e.clientY, window.innerHeight - 90)}px`;
+    tileMenu.hidden = false;
+  });
+  tileMenu.addEventListener('click', async (e) => {
+    const btn = (/** @type {HTMLElement} */ (e.target)).closest('button[data-tile-action]');
+    const id = btn?.getAttribute('data-id');
+    if (!btn || !id) return;
+    if (btn.getAttribute('data-tile-action') === 'disable') { hideTileMenu(); await api.setDisabled(id, true); return; }
+    if (btn.getAttribute('data-confirm') !== 'true') {
+      btn.setAttribute('data-confirm', 'true');
+      btn.textContent = 'Confirm uninstall';
+      return;
+    }
+    hideTileMenu();
+    await api.uninstall(id);
+  });
+  document.addEventListener('click', (e) => {
+    if (!tileMenu.hidden && !(/** @type {HTMLElement} */ (e.target)).closest('#tile-menu')) hideTileMenu();
+  });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') hideTileMenu(); });
+
   $('catalog')?.addEventListener('click', async (e) => {
     const target = /** @type {HTMLElement} */ (e.target);
     const btn = target.closest('button[data-action]');
@@ -501,6 +544,8 @@ function wireEvents() {
         if (action === 'install') await api.install(id);
         else if (action === 'rollback') await api.rollback(id);
         else if (action === 'uninstall') await api.uninstall(id);
+        else if (action === 'disable') await api.setDisabled(id, true);
+        else if (action === 'enable') await api.setDisabled(id, false);
       } finally {
         for (const b of document.querySelectorAll('#catalog button')) /** @type {HTMLButtonElement} */ (b).disabled = false;
       }
