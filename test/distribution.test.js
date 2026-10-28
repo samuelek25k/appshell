@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import * as tar from 'tar';
-import { createStore, latestRelease, pack, sha256, sourceAllowed, compareVersions, parseCatalog, isInside } from '../packages/distribution/index.js';
+import { addedCapabilities, createStore, latestRelease, pack, sha256, sourceAllowed, compareVersions, parseCatalog, isInside } from '../packages/distribution/index.js';
 
 const HOST = '0.1.0';
 const fixture = fileURLToPath(new URL('./fixtures/apps/victim', import.meta.url));
@@ -18,11 +18,11 @@ const devPolicy = { developerMode: true, allowedSources: ['https://github.com/ex
  * @param {string} version
  * @returns {Promise<Release>}
  */
-async function release(work, version) {
+async function release(work, version, extra = {}) {
   const dir = join(work, `src-${version}`);
   cpSync(fixture, dir, { recursive: true });
   const manifest = JSON.parse(readFileSync(join(dir, 'manifest.json'), 'utf8'));
-  writeFileSync(join(dir, 'manifest.json'), JSON.stringify({ ...manifest, version }));
+  writeFileSync(join(dir, 'manifest.json'), JSON.stringify({ ...manifest, version, ...extra }));
   const file = join(work, `victim-${version}.tgz`);
   const { sha256: digest } = await pack(dir, file, HOST);
   return { version, channel: 'stable', url: pathToFileURL(file).href, sha256: digest, commit: 'abc1234' };
@@ -86,6 +86,31 @@ test('install, update, rollback and uninstall keep provenance and at most two ve
   store.uninstall('victim');
   assert.deepEqual(store.list(), []);
   assert.equal(existsSync(join(work, 'installed', 'victim')), false);
+});
+
+test('addedCapabilities lists only what the new version adds', () => {
+  assert.deepEqual(addedCapabilities({ secrets: ['a'] }, { secrets: ['a'] }), []);
+  assert.deepEqual(addedCapabilities({ secrets: ['a'] }, { secrets: ['a', 'b'], network: ['x.example'], notifications: true }), ['secrets: b', 'network: x.example', 'notifications']);
+  assert.deepEqual(addedCapabilities(undefined, { identity: true }), ['identity']);
+  assert.deepEqual(addedCapabilities({ identity: true, network: ['x.example'] }, {}), []);
+});
+
+test('an update that adds capabilities is refused until approved, and the old version stays', async (t) => {
+  const work = workspace(t);
+  const store = createStore(join(work, 'store'));
+  const options = { hostVersion: HOST, policy: devPolicy };
+  const v1 = await release(work, '1.0.0');
+  const v2 = await release(work, '1.1.0', { capabilities: { secrets: ['victim-key'], network: ['api.example.com'] } });
+  await store.install(entry([v1]), v1, options);
+  await assert.rejects(store.install(entry([v1, v2]), v2, options), (error) => {
+    const e = /** @type {any} */ (error);
+    assert.equal(e.code, 'CAPABILITIES_ADDED');
+    assert.deepEqual(e.added, ['network: api.example.com']);
+    return true;
+  });
+  assert.equal(store.list()[0].current.version, '1.0.0');
+  await store.install(entry([v1, v2]), v2, { ...options, approveAdded: true });
+  assert.equal(store.list()[0].current.version, '1.1.0');
 });
 
 test('a package whose digest does not match the catalog is rejected', async (t) => {

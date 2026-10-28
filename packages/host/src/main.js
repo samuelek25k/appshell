@@ -147,6 +147,8 @@ let launcherSignature = '';
 let managerError = null;
 /** @type {string | null} */
 let pendingInstall = null;
+/** @type {{ id: string, added: string[] } | null} */
+let pendingUpdate = null;
 
 /** @typedef {{ view: Electron.WebContentsView, title: string }} Running */
 /** @type {Map<string, Running>} */
@@ -302,7 +304,7 @@ function publish() {
       active: homeId(),
       options: [...apps.values()].filter(({ manifest }) => isHome(manifest)).map(({ manifest }) => ({ id: manifest.id, title: manifest.title })),
     },
-    manager: { ...manager.rows(), actionError: managerError, pendingInstall },
+    manager: { ...manager.rows(), actionError: managerError, pendingInstall, pendingUpdate },
     accounts: { list: accounts.list(), activeId: accounts.activeView().id, locked: !unlocked, error: accountError, allowGuest: product.policy.allowGuest !== false },
   });
 }
@@ -333,8 +335,14 @@ async function manage(appId, action, eventType = 'APP_MANAGED') {
     services.audit({ event: eventType, actor: accounts.active().id, target: appId });
     managerError = null;
   } catch (error) {
-    managerError = `${appId}: ${error instanceof Error ? error.message : String(error)}`;
-    hostLog(`manage ${managerError}`);
+    const code = /** @type {any} */ (error)?.code;
+    if (code === 'CAPABILITIES_ADDED') {
+      pendingUpdate = { id: appId, added: /** @type {any} */ (error).added };
+      managerError = null;
+    } else {
+      managerError = `${appId}: ${error instanceof Error ? error.message : String(error)}`;
+      hostLog(`manage ${managerError}`);
+    }
   }
   apps = loadApps(product, appsRoot, manager.installed(), hostLog);
   homeSuspended = false;
@@ -469,12 +477,13 @@ ipcMain.handle('appshell:call', (event, method, params) => {
 });
 ipcMain.handle('host:ready', (event) => { if (fromHost(event)) publish(); });
 ipcMain.handle('host:refreshCatalog', async (event) => { if (fromHostUnlocked(event)) { await manager.refresh(); publish(); } });
-ipcMain.handle('host:install', (event, id) => {
+ipcMain.handle('host:install', (event, id, approveAdded) => {
   if (!fromHostUnlocked(event)) return;
   if (pendingInstall === id) pendingInstall = null;
-  return manage(id, () => manager.install(id), 'APP_INSTALLED');
+  pendingUpdate = null;
+  return manage(id, () => manager.install(id, approveAdded === true), 'APP_INSTALLED');
 });
-ipcMain.handle('host:dismissInstall', (event) => { if (fromHost(event)) { pendingInstall = null; publish(); } });
+ipcMain.handle('host:dismissInstall', (event) => { if (fromHost(event)) { pendingInstall = null; pendingUpdate = null; publish(); } });
 ipcMain.handle('host:rollback', (event, id) => fromHostUnlocked(event) && manage(id, () => manager.rollback(id), 'APP_ROLLEDBACK'));
 ipcMain.handle('host:uninstall', (event, id) => fromHostUnlocked(event) && manage(id, async () => {
   manager.uninstall(id);

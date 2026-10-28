@@ -56,9 +56,9 @@ export function createManager({ policy, catalogUrl, root, hostVersion, fetch }) 
     },
 
     /** @param {string} id */
-    install(id) {
+    install(id, approveAdded = false) {
       const { entry, release } = entryFor(id);
-      return store.install(entry, release, { hostVersion, policy, fetch });
+      return store.install(entry, release, { hostVersion, policy, fetch, approveAdded });
     },
     rollback: (/** @type {string} */ id) => store.rollback(id),
     uninstall: (/** @type {string} */ id) => store.uninstall(id),

@@ -43,7 +43,7 @@ Generate a key with `appshell keygen --out key.pem` (prints the public key), sig
 
 Install links: `<protocol>://_/install/<app-id>` (for example from a store web page) opens the host and asks the user to confirm. The link carries only an id from the product's own catalog, never a URL, so a web page cannot make the host fetch anything else. `_` is never a valid app id.
 
-Installed apps live in `<userData>/installed/<id>/<version>/`, with provenance (repository, commit, URL, digest, time) in `installed.json`. The previous version is kept for rollback. Remove deletes every version and the app's data. Running apps stop before any change. Pre-installed (protected) apps cannot be changed from the catalog.
+Installed apps live in `<userData>/installed/<id>/<version>/`, with provenance (repository, commit, URL, digest, time) in `installed.json`. An update that adds a capability the installed version did not have (a network address, secret, notification or identity access) fails with `CAPABILITIES_ADDED` and lists what it adds; the host shows that list and installs only after the user approves it. The previous version is kept for rollback. Remove deletes every version and the app's data. Running apps stop before any change. Pre-installed (protected) apps cannot be changed from the catalog.
 
 ## Bridge
 
