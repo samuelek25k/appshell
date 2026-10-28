@@ -1,6 +1,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { THEME_COLOR_KEYS } from '@appshell/contracts';
+import { isHome } from './kinds.js';
 
 /** @typedef {{ launcher: string | null, colors: Record<string, string> }} Preferences */
 
@@ -63,5 +64,5 @@ export function createLauncherPreferences(rootOf) {
 export function homeLauncher(apps, wanted, blocked = []) {
   if (!wanted || blocked.includes(wanted)) return null;
   const app = apps.get(wanted);
-  return app?.manifest.kind === 'launcher' && app.manifest.capabilities?.launcher === true ? wanted : null;
+  return app && isHome(app.manifest) && app.manifest.capabilities?.launcher === true ? wanted : null;
 }

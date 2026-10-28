@@ -1,9 +1,9 @@
-import { app, BrowserWindow, dialog, ipcMain, nativeTheme, net, protocol, session } from 'electron';
+import { app, dialog, ipcMain, nativeTheme, net, protocol, session } from 'electron';
 import { randomUUID } from 'node:crypto';
-import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { appendFileSync, mkdirSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { CLOSE_VETO_TIMEOUT_MS, allowsIacReceive, limitsFor } from '@appshell/contracts';
+import { CLOSE_VETO_TIMEOUT_MS, limitsFor } from '@appshell/contracts';
 import { loadProduct, loadApps, ENGINE_VERSION } from './registry.js';
 import { createManager } from './manager.js';
 import { userInfo } from 'node:os';
@@ -16,6 +16,13 @@ import { createServices, appendWithRotation } from './services.js';
 import { createBackend } from './backend.js';
 import { createBridge } from './bridge.js';
 import { createAppView } from './views.js';
+import { createFlag } from './flags.js';
+import { loadBranding } from './branding.js';
+import { createSettings } from './settings.js';
+import { isHome, isOpenable, kindOf } from './kinds.js';
+import { createIac } from './iac.js';
+import { createLinks } from './links.js';
+import { createHostWindow } from './window.js';
 
 if (app.isPackaged && app.commandLine.hasSwitch('no-sandbox')) {
   console.error('Running with --no-sandbox is refused in packaged builds');
@@ -27,49 +34,14 @@ const CHROME_HEIGHT = 48;
 const HOST_UI = fileURLToPath(new URL('../ui/index.html', import.meta.url));
 const HOST_PRELOAD = fileURLToPath(new URL('../preload/host.cjs', import.meta.url));
 
-/** @param {string} name */
-const flag = (name) => {
-  if (app.isPackaged) return undefined;
-  const joined = process.argv.find((a) => a.startsWith(`${name}=`));
-  if (joined) return joined.slice(name.length + 1);
-  const i = process.argv.indexOf(name);
-  return i > 0 ? process.argv[i + 1] : undefined;
-};
+const flag = createFlag(app);
 
 const productFile = resolve(flag('--product') ?? join(process.resourcesPath, 'product', 'product.json'));
 const product = loadProduct(productFile);
 const productDir = dirname(productFile);
-const assetsDir = join(productDir, 'assets');
 const appsRoot = resolve(flag('--apps') ?? join(productDir, 'apps'));
 
-/** @type {string | null} */
-let brandLogo = null;
-const markCandidate = [
-  join(assetsDir, 'mark.svg'),
-  join(productDir, 'mark.svg'),
-  join(process.resourcesPath, 'product', 'assets', 'mark.svg'),
-  join(process.resourcesPath, 'product', 'mark.svg'),
-].find((p) => existsSync(p));
-if (markCandidate) {
-  try {
-    const svgText = readFileSync(markCandidate, 'utf8');
-    brandLogo = `data:image/svg+xml;utf8,${encodeURIComponent(svgText)}`;
-  } catch {}
-}
-
-/** @type {Record<string, string>} */
-let brandColors = {};
-const brandFile = [
-  join(assetsDir, 'brand.json'),
-  join(productDir, 'brand.json'),
-  join(process.resourcesPath, 'product', 'assets', 'brand.json'),
-  join(process.resourcesPath, 'product', 'brand.json'),
-].find((p) => existsSync(p));
-if (brandFile) {
-  try {
-    brandColors = JSON.parse(readFileSync(brandFile, 'utf8'));
-  } catch {}
-}
+const branding = loadBranding(productDir);
 
 app.setName(product.name);
 app.setPath('userData', resolve(flag('--user-data') ?? join(app.getPath('appData'), product.dataDirectory)));
@@ -79,35 +51,19 @@ let unlocked = !accounts.activeView().locked;
 /** @type {string | null} */
 let accountError = null;
 
-const settingsFile = join(dataRoot, 'settings.json');
-/** @type {{ theme?: 'system' | 'light' | 'dark' }} */
-let settings = {};
-try {
-  settings = JSON.parse(readFileSync(settingsFile, 'utf8'));
-} catch {}
-if (settings.theme && ['system', 'light', 'dark'].includes(settings.theme)) {
-  nativeTheme.themeSource = settings.theme;
-}
-
-/** @param {'system' | 'light' | 'dark'} theme */
-function setTheme(theme) {
-  if (!['system', 'light', 'dark'].includes(theme)) return;
-  nativeTheme.themeSource = theme;
-  settings.theme = theme;
-  try {
-    writeFileSync(settingsFile, JSON.stringify(settings, null, 2), 'utf8');
-  } catch (error) {
-    hostLog(`failed to save settings: ${error instanceof Error ? error.message : String(error)}`);
-  }
-  publish();
-}
-
 /** @param {string} message */
 const hostLog = (message) => {
   const dir = join(dataRoot, 'logs');
   mkdirSync(dir, { recursive: true });
   appendWithRotation(join(dir, 'host.log'), `${new Date().toISOString()} ${message}\n`);
 };
+
+const settings = createSettings(dataRoot, nativeTheme, hostLog);
+
+/** @param {'system' | 'light' | 'dark'} theme */
+function setTheme(theme) {
+  if (settings.setTheme(theme)) publish();
+}
 
 protocol.registerSchemesAsPrivileged([
   { scheme: 'app', privileges: { standard: true, secure: true, supportFetchAPI: true, codeCache: true } },
@@ -195,7 +151,7 @@ const widgets = new Map();
 const closeWaiters = new Map();
 /** @type {string | null} */
 let active = null;
-/** @type {BrowserWindow | null} */
+/** @type {Electron.BrowserWindow | null} */
 let win = null;
 
 /** @param {string} appId */
@@ -203,8 +159,7 @@ const appLog = (appId) => (/** @type {string} */ level, /** @type {string} */ me
 
 const identity = createIdentity(join(dataRoot, 'identity'), product.dataDirectory);
 
-/** @type {Map<string, Set<string>>} */
-const channelSubscriptions = new Map();
+const iac = createIac({ apps: () => apps, running, open: (id) => open(id) });
 
 let currentLocale = product.defaultLocale ?? 'en-US';
 
@@ -235,10 +190,13 @@ const bridge = createBridge({
   endpoints: { request: requestEndpoint, list: (appId) => endpointStore.list(appId) },
   launcher: {
     apps: () => [...apps.values()]
-      .filter(({ manifest }) => manifest.kind !== 'launcher' && !product.policy.blockedApps?.includes(manifest.id) && !disabledApps.has(manifest.id))
+      .filter(({ manifest }) => isOpenable(manifest) && !product.policy.blockedApps?.includes(manifest.id) && !disabledApps.has(manifest.id))
       .map(({ manifest }) => ({ id: manifest.id, title: manifest.title, publisher: manifest.publisher, running: running.has(manifest.id) })),
     widgets: () => widgetList(),
-    open: (id) => apps.get(id)?.manifest.kind !== 'launcher' && !disabledApps.has(id) && open(id),
+    open: (id) => {
+      const installed = apps.get(id);
+      return (!installed || isOpenable(installed.manifest)) && !disabledApps.has(id) && open(id);
+    },
     setTheme({ source, colors }) {
       if (colors) launcherPrefs.setColors(colors);
       if (source) setTheme(source); else publish();
@@ -278,69 +236,11 @@ const bridge = createBridge({
     closeWaiters.get(key)?.(allow);
     closeWaiters.delete(key);
   },
-  canReceiveIac(targetId, fromId) {
-    const target = apps.get(targetId);
-    if (!target) return false;
-    return allowsIacReceive(target.manifest, fromId);
-  },
-  async onIacSend(fromId, toId, action, payload, launchIfNeeded) {
-    let entry = running.get(toId);
-    if (!entry && launchIfNeeded) {
-      if (open(toId)) {
-        entry = running.get(toId);
-      }
-    }
-    if (!entry) {
-      return { delivered: false, targetRunning: false };
-    }
-    const timestamp = Date.now();
-    entry.view.webContents.send('appshell:event', 'iac.message', {
-      from: fromId,
-      action,
-      payload,
-      timestamp,
-    });
-    return { delivered: true, targetRunning: true };
-  },
-  onIacPublish(fromId, channel, data) {
-    const subscribers = channelSubscriptions.get(channel);
-    if (!subscribers || subscribers.size === 0) return { subscribersCount: 0 };
-    let count = 0;
-    const timestamp = Date.now();
-    for (const subId of subscribers) {
-      if (subId === fromId) continue;
-      const target = apps.get(subId);
-      if (!target || !allowsIacReceive(target.manifest, fromId)) continue;
-      const entry = running.get(subId);
-      if (entry) {
-        entry.view.webContents.send('appshell:event', 'iac.broadcast', {
-          channel,
-          from: fromId,
-          data,
-          timestamp,
-        });
-        count++;
-      }
-    }
-    return { subscribersCount: count };
-  },
-  onIacSubscribe(appId, channel) {
-    let set = channelSubscriptions.get(channel);
-    if (!set) {
-      set = new Set();
-      channelSubscriptions.set(channel, set);
-    }
-    set.add(appId);
-    return true;
-  },
-  onIacUnsubscribe(appId, channel) {
-    const set = channelSubscriptions.get(channel);
-    if (set) {
-      set.delete(appId);
-      if (set.size === 0) channelSubscriptions.delete(channel);
-    }
-    return true;
-  },
+  canReceiveIac: (targetId, fromId) => iac.canReceive(targetId, fromId),
+  onIacSend: (fromId, toId, action, payload, launchIfNeeded) => iac.send(fromId, toId, action, payload, launchIfNeeded),
+  onIacPublish: (fromId, channel, data) => iac.publish(fromId, channel, data),
+  onIacSubscribe: (appId, channel) => iac.subscribe(appId, channel),
+  onIacUnsubscribe: (appId, channel) => iac.unsubscribe(appId, channel),
 });
 
 function widgetList() {
@@ -371,7 +271,7 @@ function publish() {
   notifyLauncher();
   win.webContents.send('host:state', {
     product: product.name,
-    brand: { logo: brandLogo, colors: { ...brandColors, ...launcherPrefs.get().colors } },
+    brand: { logo: branding.logo, colors: { ...branding.colors, ...launcherPrefs.get().colors } },
     locale: currentLocale,
     active,
     title: active ? running.get(active)?.title : product.name,
@@ -384,14 +284,14 @@ function publish() {
       running: running.has(manifest.id),
       disabled: disabledApps.has(manifest.id),
       capabilities: manifest.capabilities ?? {},
-      kind: manifest.kind ?? 'app',
+      kind: kindOf(manifest),
       categories: (/** @type {any} */ (manifest)).categories ?? [],
     })),
     widgets: widgetList(),
     endpoints: Object.entries(endpointStore.all()).flatMap(([appId, list]) => (apps.has(appId) ? list.map((address) => ({ appId, title: apps.get(appId)?.manifest.title ?? appId, address })) : [])),
     launcher: {
       active: homeId(),
-      options: [...apps.values()].filter(({ manifest }) => manifest.kind === 'launcher').map(({ manifest }) => ({ id: manifest.id, title: manifest.title })),
+      options: [...apps.values()].filter(({ manifest }) => isHome(manifest)).map(({ manifest }) => ({ id: manifest.id, title: manifest.title })),
     },
     manager: { ...manager.rows(), actionError: managerError, pendingInstall },
     accounts: { list: accounts.list(), activeId: accounts.activeView().id, locked: !unlocked, error: accountError, allowGuest: product.policy.allowGuest !== false },
@@ -470,7 +370,7 @@ function open(appId) {
     return false;
   }
   const installed = apps.get(appId);
-  if (installed?.manifest.kind === 'launcher') return false;
+  if (installed && !isOpenable(installed.manifest)) return false;
   if (disabledApps.has(appId)) return false;
   if (!installed) {
     hostLog(`cannot open ${appId}: not in apps (${[...apps.keys()].join(', ')})`);
@@ -502,10 +402,7 @@ function stop(appId) {
   widgets.delete(appId);
   backends.get(appId)?.stop();
   backends.delete(appId);
-  for (const [ch, set] of channelSubscriptions.entries()) {
-    set.delete(appId);
-    if (set.size === 0) channelSubscriptions.delete(ch);
-  }
+  iac.forget(appId);
   if (active === appId) active = null;
   layout();
   publish();
@@ -523,19 +420,6 @@ async function requestClose(appId) {
     entry.view.webContents.send('appshell:event', 'shell.closeRequested', { nonce });
   });
   if (allow) stop(appId);
-}
-
-/** @param {string} link */
-function handleLink(link) {
-  let url;
-  try { url = new URL(link); } catch { return; }
-  if (url.protocol !== `${product.protocol}:`) return;
-  const install = url.host === '_' && /^\/install\/([a-z][a-z0-9.-]{0,63})$/.exec(url.pathname);
-  if (install) { requestInstall(install[1]); return; }
-  if (!open(url.host)) return;
-  const wc = running.get(url.host)?.view.webContents;
-  const send = () => wc?.send('appshell:event', 'shell.deepLink', { path: url.pathname + url.search });
-  if (wc?.isLoading()) wc.once('did-finish-load', send); else send();
 }
 
 /**
@@ -558,7 +442,7 @@ async function requestInstall(appId) {
   publish();
 }
 
-const links = (/** @type {string[]} */ argv) => argv.filter((a) => a.startsWith(`${product.protocol}://`));
+const links = createLinks({ protocol: product.protocol, open: (id) => open(id), requestInstall: (id) => requestInstall(id), running });
 
 /** @param {Electron.IpcMainInvokeEvent} event */
 const fromHost = (event) => event.sender === win?.webContents;
@@ -589,7 +473,7 @@ ipcMain.handle('host:uninstall', (event, id) => fromHost(event) && manage(id, as
 ipcMain.handle('host:setDisabled', (event, id, disabled) => {
   if (!fromHost(event) || typeof id !== 'string' || typeof disabled !== 'boolean') return;
   const installed = apps.get(id);
-  if (!installed || installed.protected || installed.manifest.kind === 'launcher') return;
+  if (!installed || installed.protected || !isOpenable(installed.manifest)) return;
   disabledApps.set(id, disabled);
   services.audit({ event: disabled ? 'APP_DISABLED' : 'APP_ENABLED', actor: accounts.active().id, target: id });
   if (disabled) stop(id);
@@ -714,11 +598,11 @@ nativeTheme.on('updated', () => {
   }
 });
 app.on('second-instance', (_event, argv) => {
-  links(argv).forEach(handleLink);
+  links.from(argv).forEach(links.handle);
   if (win?.isMinimized()) win.restore();
   win?.focus();
 });
-app.on('open-url', (event, url) => { event.preventDefault(); app.whenReady().then(() => handleLink(url)); });
+app.on('open-url', (event, url) => { event.preventDefault(); app.whenReady().then(() => links.handle(url)); });
 app.on('window-all-closed', () => app.quit());
 app.on('web-contents-created', (_event, contents) => {
   contents.on('will-attach-webview', (e) => e.preventDefault());
@@ -727,37 +611,11 @@ app.on('web-contents-created', (_event, contents) => {
 
 app.whenReady().then(async () => {
   if (app.isPackaged) app.setAsDefaultProtocolClient(product.protocol);
-  const iconFile = [
-    join(assetsDir, 'icon.png'),
-    join(assetsDir, 'icon.ico'),
-    join(productDir, 'icon.png'),
-    join(productDir, 'icon.ico'),
-    join(process.resourcesPath, 'product', 'assets', 'icon.png'),
-    join(process.resourcesPath, 'product', 'assets', 'icon.ico'),
-    join(process.resourcesPath, 'product', 'icon.png'),
-    join(process.resourcesPath, 'product', 'icon.ico'),
-  ].find((p) => existsSync(p));
-  win = new BrowserWindow({
-    width: 1200,
-    height: 800,
-    title: product.name,
-    ...(iconFile ? { icon: iconFile } : {}),
-    autoHideMenuBar: true,
-    webPreferences: { preload: HOST_PRELOAD, sandbox: true, contextIsolation: true, nodeIntegration: false, spellcheck: false },
-  });
-  win.on('resize', layout);
-  win.on('maximize', layout);
-  win.on('unmaximize', layout);
-  win.on('enter-full-screen', layout);
-  win.on('leave-full-screen', layout);
-  win.on('closed', () => { win = null; });
-  win.webContents.on('will-navigate', (e) => e.preventDefault());
-  win.webContents.on('console-message', (e) => { if (e.level === 'error') hostLog(`host ui: ${e.message}`); });
-  win.webContents.on('preload-error', (_e, file, error) => hostLog(`host preload ${file}: ${error.message}`));
+  win = createHostWindow({ title: product.name, icon: branding.icon, preload: HOST_PRELOAD, layout, log: hostLog, onClosed: () => { win = null; } });
   await win.loadFile(HOST_UI);
   hostLog(`started ${product.name} with ${apps.size} app(s)`);
   manager.refresh().then(publish);
-  links(process.argv).forEach(handleLink);
+  links.from(process.argv).forEach(links.handle);
 
   setInterval(() => manager.refresh().then(publish), 60 * 60 * 1000).unref();
 });

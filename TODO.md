@@ -22,7 +22,7 @@ Status on 2026-10-28. Update this file when work lands; delete items that are do
 Decisions D28 to D37 hold the options. Order:
 
 1. **Foundation:** split `packages/host/src/main.js`; kinds table instead of `kind ===` checks; settle D28.
-2. **Shell UI:** top bar with tabs for running apps, tab overflow menu, Settings sections (General, Home screen, Apps, Accounts, Network access, Activity), update dialog that shows newly requested capabilities, store page with what an app can and cannot do, command palette, crash and load-failure states, keyboard and screen-reader support.
+2. **Shell UI:** matches the design boards pixel for pixel and reflows when the window is resized (check screenshots at 800, 1024, 1280 and 1920 wide against the boards): top bar with tabs for running apps, tab overflow menu, Settings sections (General, Home screen, Apps, Accounts, Network access, Activity), update dialog that shows newly requested capabilities, store page with what an app can and cannot do, command palette, crash and load-failure states, keyboard and screen-reader support.
 3. **Launcher:** layout editing (pages, folders, dock, widget sizes, wallpaper) as a launcher app; kiosk lock (D35).
 4. **UI kit and apps:** D34; restyle the 11 apps in appshell-apps.
 5. **Developer tools:** D33 and the docs quickstart.
