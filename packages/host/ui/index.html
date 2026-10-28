@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:">
   <title>Appshell</title>
   <link id="favicon" rel="icon" type="image/svg+xml" href="mark.svg">
@@ -10,132 +11,202 @@
 </head>
 <body>
   <header class="chrome">
-    <div class="chrome-nav">
-      <button id="back" title="Back (Esc)" aria-label="Back">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="icon"><path d="M15 18l-6-6 6-6"/></svg>
-      </button>
-      <button id="home" title="Home (Cmd/Ctrl+H)" aria-label="Home">
-        <svg viewBox="0 0 24 24" fill="currentColor" class="icon"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/></svg>
-      </button>
-    </div>
     <div class="chrome-brand">
-      <img id="logo" src="mark.svg" alt="" width="22" height="22" class="logo">
-      <h1 id="title">Appshell</h1>
+      <span class="mark">
+        <svg id="mark-default" class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h6v6H4z M14 4h6v6h-6z M4 14h6v6H4z M14 17h6"/></svg>
+        <img id="logo" alt="" width="24" height="24" hidden>
+      </span>
+      <span id="title" class="name">Appshell</span>
     </div>
+    <nav id="tabs" class="tabs" aria-label="Open apps"></nav>
     <div class="chrome-actions">
-      <div class="account">
-        <button id="account-btn" class="account-btn" aria-haspopup="menu" aria-expanded="false" title="Accounts">
-          <span id="account-initial" class="avatar"></span>
-          <span id="account-name" class="account-label"></span>
-        </button>
-        <div id="account-menu" class="account-menu" role="menu" hidden></div>
-      </div>
-      <select id="locale-select" class="locale-select" title="Change locale" aria-label="Change locale">
-        <option value="en-US">EN</option>
-        <option value="es-ES">ES</option>
-        <option value="fr-FR">FR</option>
-        <option value="de-DE">DE</option>
-        <option value="ja-JP">JA</option>
-        <option value="ar-SA">AR</option>
-      </select>
-      <button id="settings-btn" class="theme-btn" title="Settings" aria-label="Settings">
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+      <button id="store-btn" class="icon-btn" title="Store" aria-label="Store">
+        <svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h16l-1 12H5z M9 8V6a3 3 0 0 1 6 0v2"/></svg>
       </button>
-      <button id="theme-toggle" class="theme-btn" title="Toggle theme" aria-label="Toggle theme">
-        <svg id="theme-icon-system" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-        <svg id="theme-icon-light" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon" hidden><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
-        <svg id="theme-icon-dark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon" hidden><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      <button id="settings-btn" class="icon-btn" title="Settings" aria-label="Settings">
+        <svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h10 M18 7h2 M4 17h2 M10 17h10 M14 5v4 M6 15v4"/></svg>
       </button>
-      <button id="close" title="Close app" aria-label="Close app">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="icon"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      <button id="account-btn" class="avatar-btn" aria-haspopup="menu" aria-expanded="false" title="Accounts">
+        <span id="account-initial" class="avatar"></span>
       </button>
     </div>
   </header>
 
-  <section id="settings-dialog" class="confirm" role="dialog" aria-labelledby="settings-title" hidden>
-    <div class="confirm-content settings-content">
-      <h2 id="settings-title">Settings</h2>
-      <label class="setting">
-        <span>Home screen</span>
-        <select id="launcher-select" aria-label="Home screen"></select>
+  <div id="account-menu" class="menu menu-account" role="menu" aria-label="Accounts" hidden></div>
+  <div id="tabs-menu" class="menu menu-tabs" role="menu" aria-label="Open apps" hidden></div>
+  <div id="tile-menu" class="menu menu-tile" role="menu" hidden></div>
+
+  <div id="toast" class="toast" role="alert" hidden>
+    <span id="manager-error"></span>
+    <button id="toast-close" class="icon-btn" aria-label="Dismiss" type="button">
+      <svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12 M18 6L6 18"/></svg>
+    </button>
+  </div>
+
+  <main id="page-home" class="page">
+    <div id="dashboard" class="page-inner">
+      <label class="search">
+        <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4a7 7 0 1 0 0 14a7 7 0 1 0 0-14z M20 20l-4-4"/></svg>
+        <input type="search" id="search-input" placeholder="Search apps and widgets" aria-label="Search apps and widgets" autocomplete="off">
+        <kbd id="search-hint">Ctrl K</kbd>
       </label>
-      <div id="endpoints-section">
-        <h3>Network access you approved</h3>
-        <ul id="endpoints" class="catalog"></ul>
+
+      <section id="welcome" class="shelf" hidden>
+        <div class="welcome">
+          <span class="welcome-icon">
+            <svg class="icon" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h16l-1 12H5z M9 8V6a3 3 0 0 1 6 0v2"/></svg>
+          </span>
+          <div class="welcome-text">
+            <h2 id="welcome-title">Welcome</h2>
+            <p>Your home is empty. Add apps from your organisation's store to get started.</p>
+          </div>
+          <button id="welcome-store" class="btn primary large" type="button">Open the Store</button>
+        </div>
+        <div class="shelf-head"><h2 id="suggest-title">Suggested to start</h2></div>
+        <div id="suggest" class="suggest"></div>
+      </section>
+
+      <section id="apps-section" class="shelf">
+        <div class="shelf-head">
+          <h2>Apps</h2>
+          <span id="apps-count" class="count"></span>
+        </div>
+        <ul id="apps" class="apps"></ul>
+        <p id="no-match" class="empty" hidden>No apps match your search.</p>
+      </section>
+
+      <section class="shelf">
+        <div class="shelf-head"><h2>Widgets</h2></div>
+        <div id="widgets" class="widgets"></div>
+      </section>
+    </div>
+  </main>
+
+  <main id="page-store" class="page" hidden>
+    <div class="page-inner">
+      <div class="toolbar">
+        <div class="grow">
+          <h1 class="page-title">Store</h1>
+          <p class="page-sub">Apps published by your organisation.</p>
+        </div>
+        <label class="search compact">
+          <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4a7 7 0 1 0 0 14a7 7 0 1 0 0-14z M20 20l-4-4"/></svg>
+          <input type="search" id="store-search" placeholder="Search the store" aria-label="Search the store" autocomplete="off">
+        </label>
+        <button id="refresh" class="btn large" type="button">Refresh</button>
       </div>
-      <div class="shelf-header">
-        <h3>Manage apps</h3>
-        <button id="refresh" class="link">↻ Refresh</button>
-      </div>
-      <p id="manager-error" class="error" role="alert" hidden></p>
-      <ul id="catalog" class="catalog"></ul>
-      <p id="no-catalog" class="empty">No apps in the catalog.</p>
-      <div class="actions">
-        <button id="settings-close" type="button" class="primary">Done</button>
+      <div id="store-chips" class="chips" role="group" aria-label="Categories"></div>
+      <div id="store-cards" class="cards"></div>
+      <p id="no-catalog" class="empty" hidden>No apps in the catalog.</p>
+    </div>
+  </main>
+
+  <main id="page-settings" class="page" hidden>
+    <div class="settings-inner">
+      <nav id="settings-nav" class="settings-nav" aria-label="Settings sections">
+        <button type="button" data-section="general">General</button>
+        <button type="button" data-section="apps">Apps</button>
+        <button type="button" data-section="accounts">Accounts</button>
+        <button type="button" data-section="network">Network access</button>
+      </nav>
+      <div class="settings-body">
+        <section data-panel="general">
+          <div><h1 class="page-title">General</h1><p class="page-sub">Appearance and the home screen for this account.</p></div>
+          <div class="group">
+            <div class="row">
+              <div class="row-text"><div class="row-title">Theme</div><div class="row-meta">Follows the operating system by default.</div></div>
+              <div id="theme-seg" class="seg" role="group" aria-label="Theme">
+                <button type="button" data-theme-choice="system">System</button>
+                <button type="button" data-theme-choice="light">Light</button>
+                <button type="button" data-theme-choice="dark">Dark</button>
+              </div>
+            </div>
+            <div class="row">
+              <div class="row-text"><div class="row-title">Home screen</div><div class="row-meta">Install more home screens from the Store.</div></div>
+              <select id="launcher-select" class="select" aria-label="Home screen"></select>
+            </div>
+            <div class="row">
+              <div class="row-text"><div class="row-title">Language</div><div class="row-meta">Apps follow this setting.</div></div>
+              <select id="locale-select" class="select" aria-label="Language">
+                <option value="en-US">English</option>
+                <option value="es-ES">Español</option>
+                <option value="fr-FR">Français</option>
+                <option value="de-DE">Deutsch</option>
+                <option value="ja-JP">日本語</option>
+                <option value="ar-SA">العربية</option>
+              </select>
+            </div>
+          </div>
+        </section>
+        <section data-panel="apps" hidden>
+          <div><h1 class="page-title">Apps</h1><p class="page-sub">Turn an app off to hide it and stop it from running. Its data is kept. Uninstalling removes the app and its data.</p></div>
+          <div id="catalog" class="group"></div>
+          <p class="note">Core apps come with your organisation's build and cannot be turned off or removed.</p>
+        </section>
+        <section data-panel="accounts" hidden>
+          <div><h1 class="page-title">Accounts</h1><p class="page-sub">Each account has its own app data and home screen. Nothing is shared between accounts.</p></div>
+          <div id="account-list" class="group"></div>
+          <div class="row-actions start">
+            <button id="account-add" class="btn primary large" type="button">Add local account</button>
+            <button id="account-guest" class="btn large" type="button">Start a guest session</button>
+          </div>
+        </section>
+        <section data-panel="network" hidden>
+          <div><h1 class="page-title">Network access</h1><p class="page-sub">Apps can only reach addresses their listing declares, or ones you approved. Remove an approval at any time.</p></div>
+          <div id="endpoints-section">
+            <div id="endpoints" class="group"></div>
+          </div>
+          <p id="no-endpoints" class="empty">You have not approved any addresses.</p>
+        </section>
       </div>
     </div>
-  </section>
+  </main>
 
-  <section id="account-dialog" class="confirm" role="dialog" aria-labelledby="account-title" hidden>
-    <form id="account-form" class="confirm-content">
+  <section id="account-dialog" class="dialog" role="dialog" aria-labelledby="account-title" hidden>
+    <form id="account-form" class="dialog-card">
       <h2 id="account-title"></h2>
-      <p id="account-detail" class="quiet"></p>
-      <input id="account-name-input" type="text" maxlength="40" placeholder="Name" autocomplete="off" aria-label="Name">
-      <input id="account-pin-input" type="password" minlength="4" maxlength="64" placeholder="PIN" autocomplete="off" aria-label="PIN">
+      <p id="account-detail" class="note"></p>
+      <input id="account-name-input" class="field" type="text" maxlength="40" placeholder="Name" autocomplete="off" aria-label="Name">
+      <input id="account-pin-input" class="field" type="password" minlength="4" maxlength="64" placeholder="PIN" autocomplete="off" aria-label="PIN">
       <p id="account-error" class="error" role="alert"></p>
-      <div class="actions">
-        <button id="account-submit" type="submit" class="primary"></button>
-        <button id="account-cancel" type="button">Cancel</button>
+      <div class="dialog-actions">
+        <button id="account-cancel" class="btn large" type="button">Cancel</button>
+        <button id="account-submit" class="btn primary large" type="submit"></button>
       </div>
     </form>
   </section>
 
-  <section id="install-confirm" class="confirm" role="dialog" aria-labelledby="install-title" hidden>
-    <div class="confirm-content">
-      <div class="confirm-badge">
-        <span class="badge-dot"></span>
-        <span>Verified Package</span>
+  <section id="install-confirm" class="dialog" role="dialog" aria-labelledby="install-title" hidden>
+    <div class="dialog-card">
+      <div class="dialog-head">
+        <span id="install-icon" class="app-icon large"></span>
+        <div>
+          <h2 id="install-title">Install app?</h2>
+          <p id="install-detail"></p>
+        </div>
       </div>
-      <h2 id="install-title">Install app?</h2>
-      <p id="install-detail"></p>
-      <p id="install-source" class="quiet"></p>
-      <div class="install-caps">
-        <h4>Declared Capabilities & Governance</h4>
-        <div id="install-caps-list" class="cap-pills"></div>
+      <div class="callout">
+        <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 5-3.5 8-8 9c-4.5-1-8-4-8-9V6z M8.5 12l2.5 2.5L16 9.5"/></svg>
+        <span>The package is checked against the store's record before it is installed.</span>
       </div>
-      <div class="actions">
-        <button id="install-yes" class="primary">Install & Trust</button>
-        <button id="install-no">Cancel</button>
+      <p id="install-description" class="note" hidden></p>
+      <div class="can-list">
+        <h3>This app can</h3>
+        <div><span class="plus">+</span><span>Keep its own data on this computer</span></div>
+        <div><span class="plus">+</span><span>Do only what its listing declares, and nothing it did not declare</span></div>
+      </div>
+      <div class="can-list">
+        <h3>This app cannot</h3>
+        <div><span class="minus">&minus;</span><span>Read your files or folders</span></div>
+        <div><span class="minus">&minus;</span><span>See data from other apps</span></div>
+        <div><span class="minus">&minus;</span><span>Connect anywhere you have not approved</span></div>
+      </div>
+      <p id="install-source" class="note"></p>
+      <div class="dialog-actions">
+        <button id="install-no" class="btn large" type="button">Cancel</button>
+        <button id="install-yes" class="btn primary large" type="button">Install</button>
       </div>
     </div>
   </section>
-
-  <main id="dashboard">
-    <div class="search-bar">
-      <div class="search-input-wrapper">
-        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input type="search" id="search-input" placeholder="Search apps and widgets…" autocomplete="off">
-        <span id="search-clear" class="search-clear" hidden>✕</span>
-      </div>
-    </div>
-
-    <section class="shelf-section">
-      <div class="shelf-header">
-        <h2>Apps</h2>
-        <span id="apps-count" class="count-badge"></span>
-      </div>
-      <ul id="apps" class="apps"></ul>
-      <div id="tile-menu" class="account-menu tile-menu" role="menu" hidden></div>
-    </section>
-
-    <section class="shelf-section">
-      <div class="shelf-header">
-        <h2>Widgets</h2>
-      </div>
-      <div id="widgets" class="widgets"></div>
-      <p id="no-widgets" class="empty">Widgets appear here once an app publishes them.</p>
-    </section>
-
-  </main>
 </body>
 </html>

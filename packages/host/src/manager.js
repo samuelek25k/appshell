@@ -44,13 +44,13 @@ export function createManager({ policy, catalogUrl, root, hostVersion, fetch }) 
       const rows = catalog.map((entry) => {
         const s = installed.get(entry.id);
         return {
-          id: entry.id, title: entry.title, publisher: entry.publisher, description: entry.description ?? '', repository: entry.repository,
+          id: entry.id, title: entry.title, publisher: entry.publisher, description: entry.description ?? '', categories: entry.categories ?? [], repository: entry.repository,
           latest: latestRelease(entry, channel)?.version ?? null,
           installed: s?.current.version ?? null, previous: s?.previous?.version ?? null,
         };
       });
       for (const [id, s] of installed) {
-        if (!catalog.some((e) => e.id === id)) rows.push({ id, title: id, publisher: s.current.repository, description: '', repository: s.current.repository, latest: null, installed: s.current.version, previous: s.previous?.version ?? null });
+        if (!catalog.some((e) => e.id === id)) rows.push({ id, title: id, publisher: s.current.repository, description: '', categories: [], repository: s.current.repository, latest: null, installed: s.current.version, previous: s.previous?.version ?? null });
       }
       return { rows, error: catalogError, enabled: Boolean(catalogUrl) };
     },

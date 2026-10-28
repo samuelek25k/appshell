@@ -492,7 +492,11 @@ ipcMain.handle('host:back', (event) => {
   if (history?.canGoBack()) history.goBack();
   else { active = null; layout(); publish(); }
 });
-ipcMain.handle('host:close', (event) => fromHost(event) && active && requestClose(active));
+ipcMain.handle('host:close', (event, id) => {
+  if (!fromHost(event)) return;
+  const target = typeof id === 'string' ? id : active;
+  return target && requestClose(target);
+});
 function stopAll() {
   homeSuspended = true;
   for (const id of [...running.keys()]) stop(id);
