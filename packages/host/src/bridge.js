@@ -1,4 +1,4 @@
-import { METHODS, ERRORS, SHELL_PROTOCOL, parseEndpoint, validate } from '@appshell/contracts';
+import { METHODS, ERRORS, SHELL_PROTOCOL, parseEndpoint, validate, CAPABILITY_NAMES } from '@appshell/contracts';
 import { fail } from './services.js';
 
 /**
@@ -55,6 +55,10 @@ export function createBridge(deps) {
     'shell.hello': (id) => ({ protocol: SHELL_PROTOCOL, appId: id }),
     'shell.setTitle': (id, p) => deps.onTitle(id, p.title),
     'shell.closeResponse': (id, p) => deps.onCloseResponse(id, p.nonce, p.allow),
+    'shell.supports': (_id, p, app) => {
+      const held = app.manifest.capabilities?.[/** @type {keyof NonNullable<typeof app.manifest.capabilities>} */ (p.name)];
+      return CAPABILITY_NAMES.includes(p.name) && (Array.isArray(held) ? held.length > 0 : Boolean(held));
+    },
     'shell.getLocale': () => {
       const rawLoc = typeof deps.locale === 'function' ? deps.locale() : deps.locale;
       const loc = rawLoc ?? (typeof Intl === 'object' ? Intl.DateTimeFormat().resolvedOptions().locale : 'en-US');

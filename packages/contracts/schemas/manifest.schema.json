@@ -43,7 +43,7 @@
       "properties": {
         "appshell": {
           "type": "string",
-          "pattern": "^\\^\\d+\\.\\d+$"
+          "pattern": "^\\^\\d+(\\.\\d+)?$"
         }
       }
     },
@@ -92,6 +92,9 @@
           }
         }
       }
+    },
+    "optionalCapabilities": {
+      "type": "object"
     },
     "capabilities": {
       "type": "object",

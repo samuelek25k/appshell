@@ -16,6 +16,21 @@ function createTempWorkspace(t, prefix = 'appshell-test-') {
   return dir;
 }
 
+test('shell.supports reports only capabilities the host knows and the app holds', async (t) => {
+  const dir = createTempWorkspace(t, 'appshell-supports-');
+  const bridge = createBridge({
+    policy: {}, services: createServices(dir), locale: 'en-US', identity: /** @type {any} */ ({}), hostLog: () => {},
+    backendFor: /** @type {any} */ (() => {}), onTitle: () => {}, onWidget: () => {}, onCloseResponse: () => {},
+  });
+  const app = { manifest: { id: 'test-app', version: '1.0.0', title: 'Test', publisher: 'Test', engines: { appshell: '^1' }, entry: {}, capabilities: { notifications: true, network: [] } }, dir: '', protected: false };
+  const ask = async (/** @type {string} */ name) => /** @type {any} */ (await bridge(app, 'shell.supports', { name })).result;
+  assert.equal(await ask('notifications'), true);
+  assert.equal(await ask('identity'), false);
+  assert.equal(await ask('network'), false);
+  assert.equal(await ask('hologram'), false);
+  assert.equal((await bridge(app, 'shell.supports', {})).ok, false);
+});
+
 test('bridge supports shell.getLocale and reports system locale information', async (t) => {
   const dir = createTempWorkspace(t, 'appshell-locale-');
 

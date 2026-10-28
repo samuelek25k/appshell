@@ -4,7 +4,7 @@ import { readFile } from 'node:fs/promises';
 import { join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import * as tar from 'tar';
-import { validate, satisfiesEngine } from '@appshell/contracts';
+import { validate, satisfiesEngine, effectiveCapabilities } from '@appshell/contracts';
 
 /** @typedef {import('@appshell/contracts').Manifest} Manifest */
 /** @typedef {{ version: string, channel: 'stable' | 'beta', url: string, sha256: string, commit: string, signature?: string }} Release */
@@ -45,8 +45,10 @@ export function checkAppDir(where, hostVersion) {
   const rawDir = (realpathSync.native ?? realpathSync)(where);
   const dir = rawDir.startsWith('\\\\?\\') ? rawDir.slice(4) : rawDir;
   const manifest = JSON.parse(readFileSync(resolve(dir, 'manifest.json'), 'utf8'));
-  const result = validate('manifest', manifest);
+  const effective = effectiveCapabilities(manifest);
+  const result = validate('manifest', Object.keys(effective).length > 0 ? { ...manifest, capabilities: effective } : manifest);
   if (!result.ok) throw fail('INVALID_MANIFEST', result.errors.join('; '));
+  if (Object.keys(effective).length > 0) manifest.capabilities = effective;
   if (!satisfiesEngine(manifest.engines.appshell, hostVersion)) {
     throw fail('INCOMPATIBLE', `needs appshell ${manifest.engines.appshell}, host is ${hostVersion}`);
   }

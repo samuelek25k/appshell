@@ -10,14 +10,14 @@ One `product.json` per product (`product.schema.json`): name, deep-link protocol
 
 ## App
 
-A folder with `manifest.json` (`manifest.schema.json`). `engines.appshell` is a caret range (`^0.1`) matched against the host's engine version (`appshell.engine` in `packages/host/package.json`), which changes only when this contract does; the product version is separate. For 0.x the minor version must match. Entries must stay inside the app folder. Backends should be `.cjs` or `.mjs` so their format never depends on a parent `package.json`.
+A folder with `manifest.json` (`manifest.schema.json`). `engines.appshell` is a caret range (`^1` or `^1.2`) matched against the host's engine version (`appshell.engine` in `packages/host/package.json`, now 1.0.0), which changes only when this contract does; the product version is separate. A range matches when the major version is equal and the host's minor is at least the range's. Engine 1.x adds capabilities and methods without breaking apps; a breaking change is a new major. `^0.1`, used by the first released apps, is accepted by hosts 0.1 and 1.x and can be dropped in a later major. `optionalCapabilities` has the same shape as `capabilities`: the host uses the entries it knows (checked by the same schema; `capabilities` wins on a clash) and ignores the rest, so an app can use a newer capability without being refused by an older host. Apps check what they have with `shell.supports`. Entries must stay inside the app folder. Backends should be `.cjs` or `.mjs` so their format never depends on a parent `package.json`.
 
 ## Isolation (proved by `test/e2e/hostile.test.js`)
 
 | Boundary | How |
 | --- | --- |
 | UI | Own `WebContentsView`, `sandbox`, `contextIsolation`, no Node, origin `app://<id>/`, session partition `persist:app:<id>` |
-| Files | The partition's protocol handler serves only the app's own folder (symlinks resolved) plus `/__appshell/sdk.js` |
+| Files | The partition's protocol handler serves only the app's own folder (symlinks resolved) plus `/__appshell/sdk.js` and `/__appshell/ui.css` |
 | Network | Own origin, `data:`, `blob:`, and `https`/`wss` to hosts in `capabilities.network` (plus `http`/`ws` for declared loopback hosts: `localhost`, `127.0.0.0/8`, `::1`); everything else is cancelled. CSP mirrors this |
 | Browser | All permission requests denied; `window.open`, webviews and navigation off the app origin blocked |
 | Backend | `utilityProcess` with Node permission model: reads only its folder (also its working directory), no writes, child processes or workers; host environment not inherited |
@@ -63,6 +63,7 @@ UI: `await window.appshell.call(method, params)`; failures reject with `Error("<
 | `identity.token` | | `capabilities.identity` |
 | `identity.publicKey` | | |
 | `shell.getLocale` | | |
+| `shell.supports` | `name` ≤ 64 | |
 | `shell.getTheme` | | |
 | `shell.getVersions` | | |
 | `iac.send` | `to` ≤ 64, `action` ≤ 64, `payload`, `launchIfNeeded` (optional) | `capabilities.iac` (permitting `to`) |
@@ -125,6 +126,10 @@ The host sends `launcher.changed` when apps or widgets change. Colours are store
 
 A local account with a PIN can start kiosk mode from Settings, General. The host then replaces its top bar with a slim bar holding only Exit kiosk, shows the home screen, and refuses installing, removing, turning apps on or off, rolling back, changing the home screen, removing network approvals, and adding, switching or starting accounts. Exit kiosk needs the account's PIN, with the same lockout as switching accounts. The setting is stored with the account, so kiosk mode returns after a restart once the PIN unlocks the account. Starting and ending are audited as `KIOSK_STARTED` and `KIOSK_ENDED`. Kiosk mode restricts the host's own controls; it does not stop someone with access to the computer from quitting the app or using the operating system. Proved by `test/launcher.test.js` and `test/e2e/kiosk.test.js`.
 
+### UI kit
+
+`<link rel="stylesheet" href="/__appshell/ui.css">` loads an optional stylesheet served by the host, with no remote assets. It sets tokens for light and dark (`--ui-bg`, `--ui-panel`, `--ui-line`, `--ui-ink`, `--ui-quiet`, `--ui-accent`, `--ui-danger` and their tints), follows the system theme or `data-theme="light|dark"` on `<html>`, and offers `ui-` classes: `ui-page`, `ui-title`, `ui-card`, `ui-list`, `ui-btn` (`-primary`, `-danger`, `-quiet`), `ui-field`, `ui-row`, `ui-stack`, and the states `ui-loading`, `ui-empty` and `ui-error`. Add `class="ui"` to `<body>` for the base background and text. An app sets its own accent by overriding `--ui-accent` and `--ui-accent-ink`. `@appshell/sdk/tailwind` is a Tailwind preset that maps the same tokens to colour names. Apps may ignore the kit. Proved by `test/ui-kit.test.js` (tokens defined, both dark forms agree, nothing loaded from outside) and `test/e2e/template.test.js` (the host serves it).
+
 ## Events (host to app, `appshell.on(name, fn)`)
 
 | Event | Payload | Expected reply |
@@ -161,6 +166,7 @@ Product policies govern app permissions, life cycle, and administrative control 
 
 The host provides locale-aware environment detection:
 - `shell.getLocale`: returns `{ locale, languages, direction, timeZone }`. Apps query this on launch to initialize translations and RTL layouts (`'ltr' | 'rtl'`).
+- `shell.supports`: `true` when the host knows the capability `name` and this app holds it (declared or optional); `false` otherwise, including for names the host has never heard of.
 - `product.schema.json` supports `defaultLocale` under policy.
 
 ## Inter-App Communication (IAC) (D17)

@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "title": "__TITLE__",
   "publisher": "__PUBLISHER__",
-  "engines": { "appshell": "^0.1" },
+  "engines": { "appshell": "^1" },
   "entry": { "ui": "ui/index.html", "backend": "backend/main.cjs" },
   "widgets": [{ "id": "status", "title": "__TITLE__" }]
 }

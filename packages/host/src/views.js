@@ -8,6 +8,10 @@ import { isLoopback, networkAllowed, parseEndpoint } from '@appshell/contracts';
 import { isInside } from './registry.js';
 
 const SDK_FILE = createRequire(import.meta.url).resolve('@appshell/sdk');
+const SHARED_FILES = /** @type {Record<string, string>} */ ({
+  '/__appshell/sdk.js': SDK_FILE,
+  '/__appshell/ui.css': fileURLToPath(new URL('../../sdk/ui.css', import.meta.url)),
+});
 const APP_PRELOAD = fileURLToPath(new URL('../preload/app.cjs', import.meta.url));
 
 /** @type {Record<string, string>} */
@@ -60,7 +64,7 @@ function prepareSession(app, log, partition, approved) {
     }
     let file;
     try {
-      if (url.pathname === '/__appshell/sdk.js') file = SDK_FILE;
+      if (Object.hasOwn(SHARED_FILES, url.pathname)) file = SHARED_FILES[url.pathname];
       else {
         const resolved = await realpath(resolve(appDir, '.' + decodeURIComponent(url.pathname)));
         file = resolved.startsWith('\\\\?\\') ? resolved.slice(4) : resolved;
@@ -69,7 +73,7 @@ function prepareSession(app, log, partition, approved) {
       log('error', `protocol 404 resolving ${request.url}: ${err instanceof Error ? err.message : String(err)}`);
       return new Response('Not found', { status: 404 });
     }
-    if (file !== SDK_FILE && !isInside(appDir, file)) {
+    if (!Object.values(SHARED_FILES).includes(file) && !isInside(appDir, file)) {
       log('error', `protocol 403 forbidden ${request.url}: file ${file} outside app.dir ${appDir}`);
       return new Response('Forbidden', { status: 403 });
     }

@@ -27,6 +27,18 @@ export function validate(kind, value) {
 
 export const SHELL_PROTOCOL = 1;
 
+export const CAPABILITY_NAMES = /** @type {string[]} */ (Object.keys(load('manifest').properties.capabilities.properties));
+
+/** @param {{ capabilities?: Record<string, unknown>, optionalCapabilities?: Record<string, unknown> }} manifest */
+export function effectiveCapabilities(manifest) {
+  /** @type {Record<string, unknown>} */
+  const optional = {};
+  for (const name of CAPABILITY_NAMES) {
+    if (manifest.optionalCapabilities && Object.hasOwn(manifest.optionalCapabilities, name)) optional[name] = manifest.optionalCapabilities[name];
+  }
+  return { ...optional, ...manifest.capabilities };
+}
+
 export const DEFAULT_LIMITS = /** @type {Readonly<{ storageBytes: number, backendIdleMs: number }>} */ (Object.freeze({ storageBytes: 1024 * 1024, backendIdleMs: 60_000 }));
 export const LIMIT_CEILINGS = /** @type {const} */ ({ storageMb: 32, backendIdleMinutes: 1440 });
 
@@ -69,6 +81,7 @@ export const ERRORS = /** @type {const} */ ({
  *   display?: 'shell' | 'standalone',
  *   kind?: 'app' | 'launcher',
  *   widgets?: { id: string, title: string }[],
+ *   optionalCapabilities?: Record<string, unknown>,
  *   capabilities?: { network?: string[], notifications?: boolean, secrets?: string[], identity?: boolean, launcher?: boolean, userEndpoints?: boolean, iac?: boolean | { send?: string[], receive?: string[], channels?: string[] } }
  * }} Manifest
  */
@@ -143,6 +156,7 @@ export const METHODS = {
   'shell.setTitle': { params: (p) => str(p?.title, 60), requires: () => null },
   'shell.closeResponse': { params: (p) => str(p?.nonce, 64) && typeof p?.allow === 'boolean', requires: () => null },
   'shell.getLocale': { params: () => true, requires: () => null },
+  'shell.supports': { params: (p) => str(p?.name, 64), requires: () => null },
   'shell.getTheme': { params: () => true, requires: () => null },
   'shell.getVersions': { params: () => true, requires: () => null },
   'widgets.update': {
@@ -212,12 +226,13 @@ export const EVENTS = /** @type {const} */ ([
  * @param {string} version
  */
 export function satisfiesEngine(range, version) {
-  const r = /^\^(\d+)\.(\d+)$/.exec(range);
+  const r = /^\^(\d+)(?:\.(\d+))?$/.exec(range);
   const v = /^(\d+)\.(\d+)\.\d+/.exec(version);
   if (!r || !v) return false;
-  const [rMajor, rMinor, vMajor, vMinor] = [r[1], r[2], v[1], v[2]].map(Number);
-  if (vMajor !== rMajor) return false;
-  return rMajor === 0 ? vMinor === rMinor : vMinor >= rMinor;
+  const [rMajor, vMajor, vMinor] = [r[1], v[1], v[2]].map(Number);
+  const rMinor = r[2] === undefined ? 0 : Number(r[2]);
+  if (rMajor === 0) return rMinor === 1 && (vMajor === 1 || (vMajor === 0 && vMinor === 1));
+  return vMajor === rMajor && vMinor >= rMinor;
 }
 
 /** @param {string} host */
