@@ -8,5 +8,5 @@ description: Capture app store screenshots (the app's own view and the dashboard
 1. From an `appshell` checkout with dependencies installed, run under a display (on Linux: `xvfb-run -a -s "-screen 0 1200x800x24"`, see the electron-headless skill):
    `node .agents/skills/store-screenshots/scripts/capture.mjs <app-dir> <app-dir>/store`
 2. If `<app-dir>/store/prepare.js` exists, it runs in the app page first (an async expression) to add realistic content; `store/` is never packaged.
-3. It writes `screenshot-1.png` (the app) and `screenshot-2.png` (dashboard and widgets). Look at both before committing.
-4. List them in `<app-dir>/store/listing.json` under `screenshots`, relative to the app folder. The release workflow copies listing fields into the catalog and leaves `store/` out of the package.
+3. It writes `screenshot-1.png` (the app) and `screenshot-2.png` (dashboard and widgets), each in light and dark (`screenshot-1-dark.png`, `screenshot-2-dark.png`). Look at all four before committing.
+4. List the light ones in `<app-dir>/store/listing.json` under `screenshots`, relative to the app folder; the store shows the `-dark` file next to each when it exists. The release workflow copies listing fields into the catalog and leaves `store/` out of the package.
