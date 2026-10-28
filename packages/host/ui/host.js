@@ -205,7 +205,7 @@ function renderApps(state) {
   if (empty) {
     const current = state.accounts?.list?.find((/** @type {any} */ a) => a.id === state.accounts.activeId);
     $('welcome-title').textContent = current ? `Welcome, ${current.name}` : 'Welcome';
-    const picks = (state.manager?.rows ?? []).filter((/** @type {any} */ r) => !r.installed && r.latest).slice(0, 3);
+    const picks = (state.manager?.rows ?? []).filter((/** @type {any} */ r) => !r.installed && !appById(r.id) && r.latest).slice(0, 3);
     const suggestHead = /** @type {HTMLElement | null} */ ($('suggest-title').closest('.shelf-head'));
     if (suggestHead) suggestHead.hidden = picks.length === 0;
     $('suggest').replaceChildren(...picks.map((/** @type {any} */ r) => el('article', { class: 'suggest-item' }, [
@@ -380,6 +380,7 @@ async function submitAccountDialog(event) {
 
 /** @param {any} r */
 function versionLine(r) {
+  if (!r.installed && appById(r.id)) return 'Built in';
   if (r.installed) return `v${r.installed}${r.latest && r.latest !== r.installed ? ` · v${r.latest} available` : ''}`;
   return r.latest ? `v${r.latest}` : 'No release in this channel';
 }
@@ -429,6 +430,10 @@ function renderStore(state) {
     let button;
     if (update) button = el('button', { type: 'button', class: 'btn', 'data-action': 'install', 'data-id': r.id }, ['Update']);
     else if (r.installed) button = el('button', { type: 'button', class: 'btn', 'data-store-open': r.id, ...(installedApp && !installedApp.disabled ? {} : { disabled: '' }) }, [installedApp?.disabled ? 'Off' : 'Open']);
+    else if (installedApp && installedApp.kind === 'launcher') {
+      const inUse = state.launcher?.active === r.id;
+      button = el('button', { type: 'button', class: 'btn', 'data-store-launcher': r.id, ...(inUse ? { disabled: '' } : {}) }, [inUse ? 'In use' : 'Use as home']);
+    } else if (installedApp) button = el('button', { type: 'button', class: 'btn', 'data-store-open': r.id, ...(installedApp.disabled ? { disabled: '' } : {}) }, [installedApp.disabled ? 'Off' : 'Open']);
     else if (r.latest) button = el('button', { type: 'button', class: 'btn primary', 'data-store-install': r.id }, ['Install']);
     else button = el('button', { type: 'button', class: 'btn', disabled: '' }, ['Unavailable']);
     return el('article', { class: 'card' }, [
@@ -705,6 +710,8 @@ function wireStore() {
     if (install) { confirmInstallId = install; renderConfirm(currentState); return; }
     const open = target.closest('[data-store-open]')?.getAttribute('data-store-open');
     if (open) { openApp(open); return; }
+    const home = target.closest('[data-store-launcher]')?.getAttribute('data-store-launcher');
+    if (home) { await api.setLauncher(home); setPage('home'); return; }
     const update = target.closest('button[data-action="install"]')?.getAttribute('data-id');
     if (update) await api.install(update);
   });
