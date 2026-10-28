@@ -22,7 +22,7 @@ A folder with `manifest.json` (`manifest.schema.json`). `engines.appshell` is a 
 | Browser | All permission requests denied; `window.open`, webviews and navigation off the app origin blocked |
 | Backend | `utilityProcess` with Node permission model: reads only its folder (also its working directory), no writes, child processes or workers; host environment not inherited |
 
-Enforced by preload: backend network limits (TCP, UDP, DNS lookup & resolution). Not yet enforced: package signing (D12).
+Enforced by preload: backend network limits (TCP, UDP, DNS lookup & resolution).
 
 ## Catalog and installs
 
@@ -31,8 +31,15 @@ Enforced by preload: backend network limits (TCP, UDP, DNS lookup & resolution).
 Install and update download the package, then refuse it unless:
 - the repository and release URL start with an entry in `policy.allowedSources` (`file://` needs developer mode);
 - its SHA-256 equals the catalog's;
+- when `policy.trustedKeys` is set, its release carries a `signature` that verifies against one of those keys (see Package signing);
 - it contains only regular files and folders inside the package;
 - its manifest id and version equal the catalog's, and its engine range accepts the host.
+
+### Package signing (D12)
+
+`policy.trustedKeys` lists Ed25519 public keys: `{ "id": "shop", "key": "<base64, 32 bytes>" }`, for example `{ "id": "shop", "key": "/lcIPY/2CpmXV90bCKUAeJhTiPb/sMJ6Io2KzJ5yzPQ=" }` (a sample, not a key anyone holds). When it is set, every catalog install and update needs `signature` on the release: the base64 Ed25519 signature of the exact package bytes. A missing signature fails with `SIGNATURE_MISSING`, one no listed key made with `SIGNATURE_INVALID`. The check runs after the SHA-256 check and records the signing key's id as `signedBy` in `installed.json`. Several keys may be listed so a key can be rotated; removing a key in a new build revokes it. Without `trustedKeys` nothing changes. Pre-installed apps ship inside the installer and are not downloaded, so they are not signed.
+
+Generate a key with `appshell keygen --out key.pem` (prints the public key), sign a package with `appshell sign <package> --key key.pem`, and add the result with `appshell catalog add ... --signature <base64>`. The private key belongs in the release job's secret store, never in a repository. Proved by `test/signing.test.js`.
 
 Install links: `<protocol>://_/install/<app-id>` (for example from a store web page) opens the host and asks the user to confirm. The link carries only an id from the product's own catalog, never a URL, so a web page cannot make the host fetch anything else. `_` is never a valid app id.
 
@@ -138,6 +145,7 @@ Descriptors (`widget.schema.json`) hold up to 8 blocks: `text`, `metric`, `list`
 Product policies govern app permissions, life cycle, and administrative control (`product.schema.json`):
 - `policy.capabilities`: defaults to `'enforce'` (rejections throw `CAPABILITY_DENIED`), or `'warn'`.
 - `policy.grants`: see Grants (D27).
+- `policy.trustedKeys`: see Package signing (D12).
 - `policy.blockedApps`: array of prohibited app IDs blocked from installation, launch, and IAC messaging.
 - **Audit Log (`logs/audit.log`)**: append-only JSONL log recording sensitive life cycle events (`APP_STARTED`, `APP_INSTALLED`, `APP_ROLLEDBACK`, `APP_UNINSTALLED`, `APP_LAUNCH_BLOCKED`, `APP_INSTALL_BLOCKED`, `CAPABILITY_DENIED`, `TOKEN_ISSUED`, `IAC_MESSAGE_SENT`, `IAC_PUBLISHED`, `IAC_DENIED`) with ISO timestamp, actor, target app, and details. Capped with log rotation at 2 MB.
 

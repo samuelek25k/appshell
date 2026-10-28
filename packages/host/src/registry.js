@@ -4,7 +4,7 @@ import { validate } from '@appshell/contracts';
 import { checkAppDir, isInside } from '@appshell/distribution';
 
 /** @typedef {import('@appshell/contracts').Manifest} Manifest */
-/** @typedef {{ name: string, protocol: string, dataDirectory: string, package: { extension: string, displayName: string }, catalog?: string, defaultLocale?: string, supportedLocales?: string[], apps: { path: string, protected?: boolean }[], policy: { capabilities?: 'warn' | 'enforce', developerMode?: boolean, allowedSources?: string[], channel?: 'stable' | 'beta', grants?: import('@appshell/contracts').Grant[], blockedApps?: string[], requireReview?: boolean, allowGuest?: boolean, allowUserEndpoints?: boolean } }} Product */
+/** @typedef {{ name: string, protocol: string, dataDirectory: string, package: { extension: string, displayName: string }, catalog?: string, defaultLocale?: string, supportedLocales?: string[], apps: { path: string, protected?: boolean }[], policy: { capabilities?: 'warn' | 'enforce', developerMode?: boolean, allowedSources?: string[], channel?: 'stable' | 'beta', grants?: import('@appshell/contracts').Grant[], trustedKeys?: { id: string, key: string }[], blockedApps?: string[], requireReview?: boolean, allowGuest?: boolean, allowUserEndpoints?: boolean } }} Product */
 /** @typedef {{ manifest: Manifest, dir: string, protected: boolean, source?: 'bundled' | 'catalog' }} InstalledApp */
 
 const ENGINE_VERSION = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')).appshell.engine;

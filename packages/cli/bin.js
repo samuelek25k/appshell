@@ -7,7 +7,7 @@ import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 import { validate } from '@appshell/contracts';
-import { checkAppDir, pack } from '@appshell/distribution';
+import { checkAppDir, generateSigningKey, pack, signPackage } from '@appshell/distribution';
 
 const require = createRequire(import.meta.url);
 const HOST_DIR = dirname(dirname(require.resolve('@appshell/host')));
@@ -18,7 +18,9 @@ const USAGE = `Usage:
   appshell create <dir> --id <app-id> [--title <title>] [--publisher <name>]
   appshell dev <app-dir>
   appshell package <app-dir> [--out <dir>] [--ext <.ext>]
-  appshell catalog add <index.json> --app <app-dir> --repository <url> --url <release-url> --sha256 <hex> --commit <sha> [--channel stable|beta]`;
+  appshell keygen --out <private-key.pem>
+  appshell sign <package> --key <private-key.pem>
+  appshell catalog add <index.json> --app <app-dir> --repository <url> --url <release-url> --sha256 <hex> --commit <sha> [--channel stable|beta] [--signature <base64>]`;
 
 const [command, ...rest] = process.argv.slice(2);
 const { values, positionals } = parseArgs({
@@ -27,7 +29,7 @@ const { values, positionals } = parseArgs({
     id: { type: 'string' }, title: { type: 'string' }, publisher: { type: 'string' },
     out: { type: 'string' }, ext: { type: 'string', default: '.tgz' },
     app: { type: 'string' }, repository: { type: 'string' }, url: { type: 'string' },
-    sha256: { type: 'string' }, commit: { type: 'string' }, channel: { type: 'string', default: 'stable' },
+    sha256: { type: 'string' }, commit: { type: 'string' }, key: { type: 'string' }, signature: { type: 'string' }, channel: { type: 'string', default: 'stable' },
   },
 });
 
@@ -88,9 +90,24 @@ const commands = {
     console.log(JSON.stringify({ id: manifest.id, version: manifest.version, file, sha256 }, null, 2));
   },
 
+  keygen() {
+    const out = values.out;
+    if (!out) return die(USAGE);
+    const { privateKey, publicKey } = generateSigningKey();
+    writeFileSync(out, privateKey, { mode: 0o600, flag: 'wx' });
+    console.log(`Private key written to ${out}. Keep it secret.\nPublic key for policy.trustedKeys:\n${publicKey}`);
+  },
+
+  sign() {
+    const [file] = positionals;
+    const key = values.key;
+    if (!file || !key) return die(USAGE);
+    console.log(signPackage(readFileSync(file), readFileSync(key, 'utf8')));
+  },
+
   catalog() {
     const [action, indexFile] = positionals;
-    const { app, repository, url, sha256, commit, channel } = values;
+    const { app, repository, url, sha256, commit, channel, signature } = values;
     if (action !== 'add' || !indexFile || !app || !repository || !url || !sha256 || !commit) die(USAGE);
     const { manifest } = checkAppDir(/** @type {string} */ (app), ENGINE_VERSION);
     const catalog = existsSync(indexFile) ? JSON.parse(readFileSync(indexFile, 'utf8')) : { format: 1, apps: [] };
@@ -98,7 +115,7 @@ const commands = {
     if (!entry) catalog.apps.push(entry = { id: manifest.id, title: '', publisher: '', repository: '', releases: [] });
     Object.assign(entry, { title: manifest.title, publisher: manifest.publisher, repository });
     entry.releases = entry.releases.filter((/** @type {{ version: string }} */ r) => r.version !== manifest.version);
-    entry.releases.push({ version: manifest.version, channel, url, sha256, commit });
+    entry.releases.push({ version: manifest.version, channel, url, sha256, commit, ...(signature ? { signature } : {}) });
     const result = validate('catalog', catalog);
     if (!result.ok) die(`Invalid catalog: ${result.errors.join('; ')}`);
     writeFileSync(indexFile, JSON.stringify(catalog, null, 2) + '\n');

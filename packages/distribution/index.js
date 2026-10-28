@@ -1,4 +1,4 @@
-import { createHash, randomUUID } from 'node:crypto';
+import { createHash, createPublicKey, generateKeyPairSync, randomUUID, sign, verify } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, readdirSync, realpathSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { join, resolve, sep } from 'node:path';
@@ -7,9 +7,10 @@ import * as tar from 'tar';
 import { validate, satisfiesEngine } from '@appshell/contracts';
 
 /** @typedef {import('@appshell/contracts').Manifest} Manifest */
-/** @typedef {{ version: string, channel: 'stable' | 'beta', url: string, sha256: string, commit: string }} Release */
+/** @typedef {{ version: string, channel: 'stable' | 'beta', url: string, sha256: string, commit: string, signature?: string }} Release */
+/** @typedef {{ id: string, key: string }} TrustedKey */
 /** @typedef {{ id: string, title: string, publisher: string, repository: string, releases: Release[], description?: string, categories?: string[], icon?: string, screenshots?: string[] }} CatalogEntry */
-/** @typedef {{ id: string, version: string, repository: string, url: string, sha256: string, commit: string, installedAt: string }} Provenance */
+/** @typedef {{ id: string, version: string, repository: string, url: string, sha256: string, commit: string, installedAt: string, signedBy?: string }} Provenance */
 
 const MAX_PACKAGE_BYTES = 100 * 1024 * 1024;
 
@@ -97,6 +98,41 @@ export function compareVersions(a, b) {
   if (!pa) return 1;
   if (!pb) return -1;
   return pa < pb ? -1 : 1;
+}
+
+const SPKI_PREFIX = Buffer.from('302a300506032b6570032100', 'hex');
+
+export function generateSigningKey() {
+  const { publicKey, privateKey } = generateKeyPairSync('ed25519');
+  const spki = publicKey.export({ format: 'der', type: 'spki' });
+  return {
+    privateKey: String(privateKey.export({ format: 'pem', type: 'pkcs8' })),
+    publicKey: spki.subarray(SPKI_PREFIX.length).toString('base64'),
+  };
+}
+
+/**
+ * @param {Uint8Array} bytes
+ * @param {string} privateKeyPem
+ */
+export const signPackage = (bytes, privateKeyPem) => sign(null, bytes, privateKeyPem).toString('base64');
+
+/**
+ * @param {Uint8Array} bytes
+ * @param {string | undefined} signature
+ * @param {TrustedKey[]} keys
+ * @returns {string | null}
+ */
+export function verifySignature(bytes, signature, keys) {
+  if (!signature) return null;
+  const sig = Buffer.from(signature, 'base64');
+  for (const { id, key } of keys) {
+    const raw = Buffer.from(key, 'base64');
+    if (raw.length !== 32) continue;
+    const publicKey = createPublicKey({ key: Buffer.concat([SPKI_PREFIX, raw]), format: 'der', type: 'spki' });
+    if (verify(null, bytes, publicKey, sig)) return id;
+  }
+  return null;
 }
 
 /**
@@ -187,7 +223,7 @@ export function createStore(root) {
     /**
      * @param {CatalogEntry} entry
      * @param {Release} release
-     * @param {{ hostVersion: string, policy: { allowedSources?: string[], developerMode?: boolean }, fetch?: typeof fetch }} options
+     * @param {{ hostVersion: string, policy: { allowedSources?: string[], developerMode?: boolean, trustedKeys?: TrustedKey[] }, fetch?: typeof fetch }} options
      */
     async install(entry, release, options) {
       for (const url of [entry.repository, release.url]) {
@@ -197,6 +233,14 @@ export function createStore(root) {
       if (bytes.length > MAX_PACKAGE_BYTES) throw fail('DOWNLOAD_FAILED', 'package exceeds 100 MB');
       const digest = sha256(bytes);
       if (digest !== release.sha256) throw fail('DIGEST_MISMATCH', `expected ${release.sha256}, got ${digest}`);
+      const keys = options.policy.trustedKeys ?? [];
+      /** @type {string | undefined} */
+      let signedBy;
+      if (keys.length) {
+        if (!release.signature) throw fail('SIGNATURE_MISSING', `${entry.id}@${release.version} is not signed`);
+        signedBy = verifySignature(bytes, release.signature, keys) ?? undefined;
+        if (!signedBy) throw fail('SIGNATURE_INVALID', `${entry.id}@${release.version} is not signed by a trusted key`);
+      }
 
       const staging = join(root, '.staging', randomUUID());
       mkdirSync(staging, { recursive: true });
@@ -221,7 +265,7 @@ export function createStore(root) {
         const state = read();
         const before = state[entry.id];
         /** @type {Provenance} */
-        const current = { id: entry.id, version: release.version, repository: entry.repository, url: release.url, sha256: digest, commit: release.commit, installedAt: new Date().toISOString() };
+        const current = { id: entry.id, version: release.version, repository: entry.repository, url: release.url, sha256: digest, commit: release.commit, installedAt: new Date().toISOString(), ...(signedBy ? { signedBy } : {}) };
         const target = dirOf(current);
         rmSync(target, { recursive: true, force: true });
         mkdirSync(join(root, entry.id), { recursive: true });
