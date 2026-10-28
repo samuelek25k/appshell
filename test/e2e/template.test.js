@@ -47,5 +47,6 @@ test('a new app from the template runs with its sandboxed backend', { timeout: 9
   let pageHtml = '';
   try { pageHtml = await evaluate(port, 'app://hello', 'document.body.innerHTML'); } catch {}
   const readLog = (/** @type {string} */ name) => { try { return readFileSync(join(name === 'host.log' ? join(work, 'data') : accountRoot(join(work, 'data')), 'logs', name), 'utf8'); } catch { return '<none>'; } };
+  assert.notEqual((await evaluate(port, 'app://hello', "getComputedStyle(document.documentElement).getPropertyValue('--ui-accent')")).trim(), '', 'the UI kit loads from the host');
   assert.equal(greeting, 'Hello from the backend. Visit 1.', `Greeting mismatch.\nPage HTML: ${pageHtml}\nEval error: ${evalError}\nHost log:\n${readLog('host.log')}\nHello log:\n${readLog('hello.log')}\nChild stderr:\n${childStderr}`);
 });

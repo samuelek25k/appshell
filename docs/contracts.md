@@ -17,7 +17,7 @@ A folder with `manifest.json` (`manifest.schema.json`). `engines.appshell` is a 
 | Boundary | How |
 | --- | --- |
 | UI | Own `WebContentsView`, `sandbox`, `contextIsolation`, no Node, origin `app://<id>/`, session partition `persist:app:<id>` |
-| Files | The partition's protocol handler serves only the app's own folder (symlinks resolved) plus `/__appshell/sdk.js` |
+| Files | The partition's protocol handler serves only the app's own folder (symlinks resolved) plus `/__appshell/sdk.js` and `/__appshell/ui.css` |
 | Network | Own origin, `data:`, `blob:`, and `https`/`wss` to hosts in `capabilities.network` (plus `http`/`ws` for declared loopback hosts: `localhost`, `127.0.0.0/8`, `::1`); everything else is cancelled. CSP mirrors this |
 | Browser | All permission requests denied; `window.open`, webviews and navigation off the app origin blocked |
 | Backend | `utilityProcess` with Node permission model: reads only its folder (also its working directory), no writes, child processes or workers; host environment not inherited |
@@ -125,6 +125,10 @@ The host sends `launcher.changed` when apps or widgets change. Colours are store
 ### Kiosk mode
 
 A local account with a PIN can start kiosk mode from Settings, General. The host then replaces its top bar with a slim bar holding only Exit kiosk, shows the home screen, and refuses installing, removing, turning apps on or off, rolling back, changing the home screen, removing network approvals, and adding, switching or starting accounts. Exit kiosk needs the account's PIN, with the same lockout as switching accounts. The setting is stored with the account, so kiosk mode returns after a restart once the PIN unlocks the account. Starting and ending are audited as `KIOSK_STARTED` and `KIOSK_ENDED`. Kiosk mode restricts the host's own controls; it does not stop someone with access to the computer from quitting the app or using the operating system. Proved by `test/launcher.test.js` and `test/e2e/kiosk.test.js`.
+
+### UI kit
+
+`<link rel="stylesheet" href="/__appshell/ui.css">` loads an optional stylesheet served by the host, with no remote assets. It sets tokens for light and dark (`--ui-bg`, `--ui-panel`, `--ui-line`, `--ui-ink`, `--ui-quiet`, `--ui-accent`, `--ui-danger` and their tints), follows the system theme or `data-theme="light|dark"` on `<html>`, and offers `ui-` classes: `ui-page`, `ui-title`, `ui-card`, `ui-list`, `ui-btn` (`-primary`, `-danger`, `-quiet`), `ui-field`, `ui-row`, `ui-stack`, and the states `ui-loading`, `ui-empty` and `ui-error`. Add `class="ui"` to `<body>` for the base background and text. An app sets its own accent by overriding `--ui-accent` and `--ui-accent-ink`. `@appshell/sdk/tailwind` is a Tailwind preset that maps the same tokens to colour names. Apps may ignore the kit. Proved by `test/ui-kit.test.js` (tokens defined, both dark forms agree, nothing loaded from outside) and `test/e2e/template.test.js` (the host serves it).
 
 ## Events (host to app, `appshell.on(name, fn)`)
 

@@ -22,7 +22,7 @@ Status on 2026-10-28. Update this file when work lands; delete items that are do
 Decisions D28 to D37 hold the options. Order:
 
 1. **Foundation:** done. Engine 1.0 with optional capabilities (D28) is built; apps in the apps repository still declare `^0.1`, which engine 1.x accepts, and move to `^1` when they are next released.
-2. **Shell UI:** top bar with tabs, tab overflow menu, Home, Store with categories and install confirmation, Settings (General, Apps, Accounts, Network access), account menu and tile menu are built and checked at 800, 1024, 1280 and 1920 wide in light and dark. Still to build: Activity log (needs an audit-read host API), capability diff in the update dialog (needs capabilities in the catalog), app glyph icons, Lock button, command palette, crash and load-failure states.
+2. **Shell UI and UI kit:** the optional UI kit (`/__appshell/ui.css`, D34) is built and the template uses it. Restyling the 11 apps happens in the apps repository. Shell UI: top bar with tabs, tab overflow menu, Home, Store with categories and install confirmation, Settings (General, Apps, Accounts, Network access), account menu and tile menu are built and checked at 800, 1024, 1280 and 1920 wide in light and dark. Still to build: Activity log (needs an audit-read host API), capability diff in the update dialog (needs capabilities in the catalog), app glyph icons, Lock button, command palette, crash and load-failure states.
 3. **Launcher:** kiosk lock is built (D35). Still to build: layout editing (pages, folders, dock, widget sizes, wallpaper) as a launcher app.
 4. **UI kit and apps:** D34; restyle the 11 apps in appshell-apps.
 5. **Developer tools:** D33 and the docs quickstart.

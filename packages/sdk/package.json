@@ -4,6 +4,8 @@
   "type": "module",
   "exports": {
     ".": "./index.js",
-    "./backend": "./backend.cjs"
+    "./backend": "./backend.cjs",
+    "./ui.css": "./ui.css",
+    "./tailwind": "./tailwind.preset.cjs"
   }
 }
