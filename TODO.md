@@ -32,7 +32,7 @@ Decisions D28 to D37 hold the options. Order:
 
 ## Needs the repo owner
 
-- [ ] Decide D28 to D37. D22, D23 and D27 are decided.
+- [ ] Decide D29 (when the third capability lands) and D36 (when device services start). All other decisions are decided.
 - [ ] Merge the grants and package signing PRs. Generate the signing key, set it as a release secret and sign the apps repository releases (protected workflow change).
 - [ ] Sign and merge the release workflow change (`.github/` is protected).
 
