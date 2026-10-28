@@ -27,6 +27,29 @@ export function validate(kind, value) {
 
 export const SHELL_PROTOCOL = 1;
 
+export const DEFAULT_LIMITS = /** @type {Readonly<{ storageBytes: number, backendIdleMs: number }>} */ (Object.freeze({ storageBytes: 1024 * 1024, backendIdleMs: 60_000 }));
+export const LIMIT_CEILINGS = /** @type {const} */ ({ storageMb: 32, backendIdleMinutes: 1440 });
+
+/** @typedef {{ from: ('bundled' | 'catalog')[], apps?: string[], storageMb?: number, backendIdleMinutes?: number }} Grant */
+
+/**
+ * @param {Grant[] | undefined} grants
+ * @param {{ id: string, source?: 'bundled' | 'catalog' }} app
+ */
+export function limitsFor(grants, app) {
+  let storageBytes = DEFAULT_LIMITS.storageBytes;
+  let backendIdleMs = DEFAULT_LIMITS.backendIdleMs;
+  let granted = false;
+  for (const grant of grants ?? []) {
+    if (!app.source || !grant.from.includes(app.source) || (grant.apps && !grant.apps.includes(app.id))) continue;
+    const bytes = Math.min(grant.storageMb ?? 0, LIMIT_CEILINGS.storageMb) * 1024 * 1024;
+    const idle = Math.min(grant.backendIdleMinutes ?? 0, LIMIT_CEILINGS.backendIdleMinutes) * 60_000;
+    if (bytes > storageBytes) { storageBytes = bytes; granted = true; }
+    if (idle > backendIdleMs) { backendIdleMs = idle; granted = true; }
+  }
+  return { storageBytes, backendIdleMs, granted };
+}
+
 export const CLOSE_VETO_TIMEOUT_MS = 600;
 
 export const ERRORS = /** @type {const} */ ({
