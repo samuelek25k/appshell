@@ -10,7 +10,7 @@ One `product.json` per product (`product.schema.json`): name, deep-link protocol
 
 ## App
 
-A folder with `manifest.json` (`manifest.schema.json`). `engines.appshell` is a caret range (`^0.1`) matched against the host's engine version (`appshell.engine` in `packages/host/package.json`), which changes only when this contract does; the product version is separate. For 0.x the minor version must match. Entries must stay inside the app folder. Backends should be `.cjs` or `.mjs` so their format never depends on a parent `package.json`.
+A folder with `manifest.json` (`manifest.schema.json`). `engines.appshell` is a caret range (`^1` or `^1.2`) matched against the host's engine version (`appshell.engine` in `packages/host/package.json`, now 1.0.0), which changes only when this contract does; the product version is separate. A range matches when the major version is equal and the host's minor is at least the range's. Engine 1.x adds capabilities and methods without breaking apps; a breaking change is a new major. `^0.1`, used by the first released apps, is accepted by hosts 0.1 and 1.x and can be dropped in a later major. `optionalCapabilities` has the same shape as `capabilities`: the host uses the entries it knows (checked by the same schema; `capabilities` wins on a clash) and ignores the rest, so an app can use a newer capability without being refused by an older host. Apps check what they have with `shell.supports`. Entries must stay inside the app folder. Backends should be `.cjs` or `.mjs` so their format never depends on a parent `package.json`.
 
 ## Isolation (proved by `test/e2e/hostile.test.js`)
 
@@ -63,6 +63,7 @@ UI: `await window.appshell.call(method, params)`; failures reject with `Error("<
 | `identity.token` | | `capabilities.identity` |
 | `identity.publicKey` | | |
 | `shell.getLocale` | | |
+| `shell.supports` | `name` ≤ 64 | |
 | `shell.getTheme` | | |
 | `shell.getVersions` | | |
 | `iac.send` | `to` ≤ 64, `action` ≤ 64, `payload`, `launchIfNeeded` (optional) | `capabilities.iac` (permitting `to`) |
@@ -161,6 +162,7 @@ Product policies govern app permissions, life cycle, and administrative control 
 
 The host provides locale-aware environment detection:
 - `shell.getLocale`: returns `{ locale, languages, direction, timeZone }`. Apps query this on launch to initialize translations and RTL layouts (`'ltr' | 'rtl'`).
+- `shell.supports`: `true` when the host knows the capability `name` and this app holds it (declared or optional); `false` otherwise, including for names the host has never heard of.
 - `product.schema.json` supports `defaultLocale` under policy.
 
 ## Inter-App Communication (IAC) (D17)

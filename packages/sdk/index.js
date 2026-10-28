@@ -6,6 +6,7 @@ export const shell = {
   hello: () => call('shell.hello'),
   setTitle: (/** @type {string} */ title) => call('shell.setTitle', { title }),
   getLocale: () => call('shell.getLocale'),
+  supports: (/** @type {string} */ name) => call('shell.supports', { name }),
   onLocaleChanged: (/** @type {(locale: { locale: string, direction: 'ltr' | 'rtl', timeZone: string, languages: string[] }) => void} */ fn) =>
     bridge.on('shell.localeChanged', fn),
   getTheme: () => call('shell.getTheme'),
