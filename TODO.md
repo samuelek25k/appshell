@@ -32,7 +32,7 @@ Decisions D28 to D37 hold the options. Order:
 
 ## Needs the repo owner
 
-- [ ] Decide D22 (installer signing), D23 (product and engine versions, see D28), D27 (grants) and D28 to D37.
+- [ ] Decide D29 (when the third capability lands) and D36 (when device services start). All other decisions are decided.
 - [ ] Merge the grants and package signing PRs. Generate the signing key, set it as a release secret and sign the apps repository releases (protected workflow change).
 - [ ] Sign and merge the release workflow change (`.github/` is protected).
 
@@ -41,7 +41,7 @@ Decisions D28 to D37 hold the options. Order:
 - [x] Run the release workflow by hand for a release candidate on all three platforms.
 - [ ] On the candidate: run the hostile-app gate against the packaged build, install a catalog app, uninstall and check nothing is left behind.
 - [ ] Release the apps that need this host: `launcher-grid`, `launcher-list`, `resume-builder` 0.2.0.
-- [ ] Tag `v0.4.1`. Release notes state that installers are unsigned until D22.
+- [ ] Tag `v0.4.1`. Release notes state that installers are unsigned (D22 option B).
 - [ ] Verified sign-in (Google, Microsoft, custom OIDC, GitHub), the second part of D24; it needs client IDs from the owner.
 
 ## Phase 1 gate
