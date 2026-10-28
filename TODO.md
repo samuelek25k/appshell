@@ -36,12 +36,15 @@ Decisions D28 to D37 hold the options. Order:
 - [ ] Merge the grants and package signing PRs. Generate the signing key, set it as a release secret and sign the apps repository releases (protected workflow change).
 - [ ] Sign and merge the release workflow change (`.github/` is protected).
 
-## Next: v0.4.1
+## Next: v0.5.0
 
-- [x] Run the release workflow by hand for a release candidate on all three platforms.
-- [ ] On the candidate: run the hostile-app gate against the packaged build, install a catalog app, uninstall and check nothing is left behind.
-- [ ] Release the apps that need this host: `launcher-grid`, `launcher-list`, `resume-builder` 0.2.0.
-- [ ] Tag `v0.4.1`. Release notes state that installers are unsigned (D22 option B).
+Contents: top-bar shell, kiosk mode, engine 1.0 with optional capabilities, UI kit.
+
+- [ ] Main is green after this change; start the candidate build (`gh workflow run release --ref main`) on all three platforms.
+- [ ] On the candidate (Windows): install, install a catalog app, run the hostile-app gate against the packaged build, uninstall, check the install and data folders are gone.
+- [ ] Tag `v0.5.0` (owner). Release notes state that installers are unsigned (D22 option B).
+- [ ] Publish the host release first, then release the apps that need engine 1: the eight restyled apps (0.2.0), `launcher-grid`, `launcher-list` and `resume-builder` 0.2.0.
+- [ ] Delete the stale v0.3.0, v0.4.0 and v0.4.1 drafts.
 - [ ] Verified sign-in (Google, Microsoft, custom OIDC, GitHub), the second part of D24; it needs client IDs from the owner.
 
 ## Phase 1 gate
