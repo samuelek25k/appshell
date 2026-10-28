@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { KINDS, isHome, isOpenable, kindOf } from '../packages/host/src/kinds.js';
 
+/** @param {'app' | 'launcher'} [kind] */
 const manifest = (kind) => ({ id: 'a', version: '1.0.0', title: 'A', publisher: 'P', engines: { appshell: '^0.1' }, entry: { ui: 'index.html' }, ...(kind ? { kind } : {}) });
 
 test('an app without a kind is an openable app', () => {
